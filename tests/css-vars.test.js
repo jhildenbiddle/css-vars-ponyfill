@@ -59,8 +59,10 @@ describe('css-vars', function() {
         });
 
         it('handles <link> elements', function(done) {
-            const linkUrl1  = location.origin + '/base/tests/fixtures/test-declaration.css';
-            const linkUrl2  = location.origin + '/base/tests/fixtures/test-value.css';
+            console.log(location);
+
+            const linkUrl1  = '/base/tests/fixtures/test-declaration.css';
+            const linkUrl2  = '/base/tests/fixtures/test-value.css';
             const expectCss = 'p{color:red;}';
 
             createElmsWrap([
@@ -80,8 +82,8 @@ describe('css-vars', function() {
         });
 
         it('handles <link> and <style> elements', function(done) {
-            const linkUrl1  = location.origin + '/base/tests/fixtures/test-declaration.css';
-            const linkUrl2  = location.origin + '/base/tests/fixtures/test-value.css';
+            const linkUrl1  = '/base/tests/fixtures/test-declaration.css';
+            const linkUrl2  = '/base/tests/fixtures/test-value.css';
             const styleCss  = `
                 @import url("${linkUrl2}");
                 @import url("${linkUrl1}");
@@ -294,7 +296,7 @@ describe('css-vars', function() {
     // -------------------------------------------------------------------------
     describe('Callbacks', function() {
         it('triggers onError callback with proper arguments', function(done) {
-            const linkUrl  = location.origin + '/base/tests/fixtures/test-onerror.css';
+            const linkUrl  = '/base/tests/fixtures/test-onerror.css';
             const styleCss = ':root { --error: red;';
             const elms     = createElmsWrap([
                 { tag: 'link', attr: { rel: 'stylesheet', href: 'fail.css' } },
