@@ -1,0 +1,11 @@
+# Folders
+coverage
+node_modules
+
+# Files
+*.log
+
+# OS
+._*
+.cache
+.DS_Store

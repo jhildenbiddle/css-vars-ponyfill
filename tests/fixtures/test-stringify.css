@@ -1,0 +1,96 @@
+a{height:0;}
+a{height:0;}
+a{height:0;}
+a{height:0;}
+a{height:0;}
+a{height:0;}
+
+a,b,c{height:0;}
+a,b,c{height:0;}
+a,b,c{height:0;}
+
+a{background:url('path;to;file?a=1&b=2') 50% 50% no-repeat;}
+a{background:url("path;to;file?a=1&b=2") 50% 50% no-repeat;}
+
+a[bar="foo,bar"]{height:0;}
+a:first-child(.foo,.bar){height:0;}
+
+a{margin:1px 2px 3px\9;}
+
+:root{--color:red;}
+a{color:var(--color);}
+
+foo bar baz{bizz-buzz:word "ferrets";*even:'ie boo';}
+.wtf{*overflow-x:hidden;//max-height:110px;#height:18px;}
+
+@charset "UTF-8";
+
+@custom-media --test (max-width: 1024px);
+@custom-media --narrow-window (max-width: 1024px);
+@custom-media --wide-window screen and (max-width: 1024px);
+
+@document url-prefix(){.test{height:0;}}
+@-moz-document url-prefix(){.test1{height:0;}.test2{height:0;}}
+
+@font-face{font-family:"Bitstream Vera Serif Bold";src:url("http://developer.mozilla.org/@api/deki/files/2934/=VeraSeBd.ttf");}
+
+@host{:scope{height:0;}}
+
+@import 'test.css';
+@import "test.css" screen, projection;
+@import url('test.css');
+@import url("test.css") print;
+@import url("test.css") projection, tv;
+@import url('test.css') screen and (orientation:landscape);
+
+@keyframes test1{from{opacity:0;}to{opacity:1;}}
+@-webkit-keyframes test2{from{opacity:0;}to{opacity:1;}}
+@keyframes test3{0%{opacity:0;}30.50%{opacity:0.3050;}.68%,72%,85%{opacity:0.85;}100%{opacity:1;}}
+
+@media (min-width: 1024px){.test{height:0;}}
+@media screen, print{.test{height:0;}}
+
+@namespace svg "http://www.w3.org/2000/svg";
+@namespace "http://www.w3.org/1999/xhtml";
+
+@page {margin:1cm;}
+@page :first{margin:1cm;}
+@page toc, index:blank{margin:1cm;}
+@page toc, index:blank{margin:1cm;}
+
+@supports (display: flex){a{height:0;}}
+@supports (display: flex) or (display: box){a{height:0;}}
+
+a[bcd="e\",f"]{height:0;}
+#♥{height:0;}
+#©{height:0;}
+#“‘’”{height:0;}
+#☺☃{height:0;}
+#⌘⌥{height:0;}
+#𝄞♪♩♫♬{height:0;}
+#\?{height:0;}
+#\@{height:0;}
+#\.{height:0;}
+#\3A \){height:0;}
+#\3A \`\({height:0;}
+#\31 23{height:0;}
+#\31 a2b3c{height:0;}
+#\<p\>{height:0;}
+#\<\>\<\<\<\>\>\<\>{height:0;}
+#\+\+\+\+\+\+\+\+\+\+\[\>\+\+\+\+\+\+\+\>\+\+\+\+\+\+\+\+\+\+\>\+\+\+\>\+\<\<\<\<\-\]\>\+\+\.\>\+\.\+\+\+\+\+\+\+\.\.\+\+\+\.\>\+\+\.\<\<\+\+\+\+\+\+\+\+\+\+\+\+\+\+\+\.\>\.\+\+\+\.\-\-\-\-\-\-\.\-\-\-\-\-\-\-\-\.\>\+\.\>\.{height:0;}
+#\#{height:0;}
+#\#\#{height:0;}
+#\#\.\#\.\#{height:0;}
+#\_{height:0;}
+#\.fake\-class{height:0;}
+#foo\.bar{height:0;}
+#\3A hover{height:0;}
+#\3A hover\3A focus\3A active{height:0;}
+#\[attr\=value\]{height:0;}
+#f\/o\/o{height:0;}
+#f\\o\\o{height:0;}
+#f\*o\*o{height:0;}
+#f\!o\!o{height:0;}
+#f\'o\'o{height:0;}
+#f\~o\~o{height:0;}
+#f\+o\+o{height:0;}
