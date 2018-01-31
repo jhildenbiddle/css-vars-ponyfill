@@ -10,6 +10,7 @@ import balanced     from 'balanced-match';
 import mergeDeep    from './merge-deep';
 import parseCss     from './parse-css';
 import stringifyCss from './stringify-css';
+import walkCss      from './walk-css';
 
 
 // Constants & Variables
@@ -268,44 +269,6 @@ function resolveValue(value, map, settings) {
     }
 
     return value;
-}
-
-/**
- * Visit `node` declarations recursively and invoke `fn(declarations, node)`.
- *
- * Based on rework-visit by reworkcss
- * https://github.com/reworkcss/rework-visit
- *
- * @param {object} node
- * @param {function} fn
- */
-function walkCss(node, fn){
-    node.rules.forEach(function(rule){
-        // @media etc
-        if (rule.rules) {
-            walkCss(rule, fn);
-
-            return;
-        }
-
-        // keyframes
-        if (rule.keyframes) {
-            rule.keyframes.forEach(function(keyframe){
-                if (keyframe.type === 'keyframe') {
-                    fn(keyframe.declarations, rule);
-                }
-            });
-
-            return;
-        }
-
-        // @charset, @import etc
-        if (!rule.declarations) {
-            return;
-        }
-
-        fn(rule.declarations, node);
-    });
 }
 
 

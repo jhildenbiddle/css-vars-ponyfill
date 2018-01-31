@@ -628,6 +628,26 @@
         }
         return visit(tree.stylesheet.rules);
     }
+    function walkCss(node, fn) {
+        node.rules.forEach(function(rule) {
+            if (rule.rules) {
+                walkCss(rule, fn);
+                return;
+            }
+            if (rule.keyframes) {
+                rule.keyframes.forEach(function(keyframe) {
+                    if (keyframe.type === "keyframe") {
+                        fn(keyframe.declarations, rule);
+                    }
+                });
+                return;
+            }
+            if (!rule.declarations) {
+                return;
+            }
+            fn(rule.declarations, node);
+        });
+    }
     var VAR_PROP_IDENTIFIER = "--";
     var VAR_FUNC_IDENTIFIER = "var";
     var reVarProp = /^--/;
@@ -769,26 +789,6 @@
             value = resolveValue(value, map, settings);
         }
         return value;
-    }
-    function walkCss(node, fn) {
-        node.rules.forEach(function(rule) {
-            if (rule.rules) {
-                walkCss(rule, fn);
-                return;
-            }
-            if (rule.keyframes) {
-                rule.keyframes.forEach(function(keyframe) {
-                    if (keyframe.type === "keyframe") {
-                        fn(keyframe.declarations, rule);
-                    }
-                });
-                return;
-            }
-            if (!rule.declarations) {
-                return;
-            }
-            fn(rule.declarations, node);
-        });
     }
     var name = "css-vars-ponyfill";
     var defaults = {
