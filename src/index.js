@@ -172,12 +172,13 @@ function cssVars(options = {}) {
                             // Append <style> element to either the <head> or
                             // <body> based on the position of last stylesheet
                             // node.
-                            const styleTargetNode = document.querySelector(`body link[rel=stylesheet], body style:not(#${styleNodeId})`) ? document.body : document.head;
-                            const isNewTarget     = styleNode.parentNode !== styleTargetNode;
-                            const isLastStyleElm  = matchesSelector(styleNode, 'style:last-of-type');
+                            const sourceNodes = document.querySelectorAll('link[rel=stylesheet],style');
+                            const styleTarget = document.querySelector(`body link[rel=stylesheet], body style:not(#${styleNodeId})`) ? document.body : document.head;
+                            const isNewTarget = styleNode.parentNode !== styleTarget;
+                            const isNotLast   = sourceNodes[sourceNodes.length -1] !== styleNode;
 
-                            if (isNewTarget || !isLastStyleElm) {
-                                styleTargetNode.appendChild(styleNode);
+                            if (isNewTarget || isNotLast) {
+                                styleTarget.appendChild(styleNode);
                             }
                         }
                     }
