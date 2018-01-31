@@ -59,8 +59,6 @@ describe('css-vars', function() {
         });
 
         it('handles <link> elements', function(done) {
-            console.log(location);
-
             const linkUrl1  = '/base/tests/fixtures/test-declaration.css';
             const linkUrl2  = '/base/tests/fixtures/test-value.css';
             const expectCss = 'p{color:red;}';
@@ -112,59 +110,6 @@ describe('css-vars', function() {
     // Tests: Options
     // -------------------------------------------------------------------------
     describe('Options', function() {
-        describe('appendStyle', function() {
-            it('true (appends to <head>)', function() {
-                const elm = createElmsWrap({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'head'
-                })[0];
-
-                cssVars({
-                    include    : '[data-test]',
-                    appendStyle: true,
-                    onlyLegacy : false,
-                    onComplete(cssText, styleNode) {
-                        expect(styleNode.parentNode).to.equal(elm.parentNode);
-                    }
-                });
-            });
-
-            it('true (appends to <body>)', function() {
-                const elm = createElmsWrap({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'body'
-                })[0];
-
-                cssVars({
-                    include    : '[data-test]',
-                    appendStyle: true,
-                    onlyLegacy : false,
-                    onComplete(cssText, styleNode) {
-                        expect(styleNode.parentNode).to.equal(elm.parentNode);
-                    }
-                });
-            });
-
-            it('false (does not append <style>)', function() {
-                createElmsWrap({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'head'
-                });
-
-                cssVars({
-                    include    : '[data-test]',
-                    appendStyle: false,
-                    onlyLegacy : false,
-                    onComplete(cssText, styleNode) {
-                        expect(styleNode).to.equal(null);
-                    }
-                });
-            });
-        });
-
         describe('onlyLegacy', function() {
             it('true', function() {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';
@@ -261,6 +206,59 @@ describe('css-vars', function() {
             });
         });
 
+        describe('updateDOM', function() {
+            it('true (appends to <head>)', function() {
+                const elm = createElmsWrap({
+                    tag     : 'style',
+                    text    : ':root{--color:red;}p{color:var(--color);}',
+                    appendTo: 'head'
+                })[0];
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateDOM : true,
+                    onComplete(cssText, styleNode) {
+                        expect(styleNode.parentNode).to.equal(elm.parentNode);
+                    }
+                });
+            });
+
+            it('true (appends to <body>)', function() {
+                const elm = createElmsWrap({
+                    tag     : 'style',
+                    text    : ':root{--color:red;}p{color:var(--color);}',
+                    appendTo: 'body'
+                })[0];
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateDOM : true,
+                    onComplete(cssText, styleNode) {
+                        expect(styleNode.parentNode).to.equal(elm.parentNode);
+                    }
+                });
+            });
+
+            it('false (does not append <style>)', function() {
+                createElmsWrap({
+                    tag     : 'style',
+                    text    : ':root{--color:red;}p{color:var(--color);}',
+                    appendTo: 'head'
+                });
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateDOM : false,
+                    onComplete(cssText, styleNode) {
+                        expect(styleNode).to.equal(null);
+                    }
+                });
+            });
+        });
+
         describe('variables', function() {
             it('passed to transform-css', function() {
                 const styleCss  = `
@@ -289,6 +287,28 @@ describe('css-vars', function() {
                     }
                 });
             });
+
+            if (hasNativeSupport) {
+                it('updates values in modern browsers via native methods', function() {
+                    const testElms = createElmsWrap([
+                        '<p style="color: var(--color1);"></p>',
+                        '<p style="color: var(--color2);"></p>',
+                        '<p style="color: var(--color3);"></p>'
+                    ]);
+
+                    cssVars({
+                        variables: {
+                            color1    : 'red',   // No leading --
+                            '-color2' : 'green', // Malformed
+                            '--color3': 'blue'   // Leading --
+                        }
+                    });
+
+                    expect(window.getComputedStyle(testElms[0]).color.replace(/\s/g,'')).to.equal('rgb(255,0,0)');
+                    expect(window.getComputedStyle(testElms[1]).color.replace(/\s/g,'')).to.equal('rgb(0,128,0)');
+                    expect(window.getComputedStyle(testElms[2]).color.replace(/\s/g,'')).to.equal('rgb(0,0,255)');
+                });
+            }
         });
     });
 
@@ -304,23 +324,32 @@ describe('css-vars', function() {
                 { tag: 'style', text: styleCss }
             ]);
 
-            let   onErrorCount = 0;
-            let   onErrorMsg;
+            const onErrorMsgs  = [];
             const onErrorNodes = [];
+            let   onErrorCount = 0;
+            let   onErrorXHR;
+            let   onErrorURL;
 
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
                 silent    : true, // remove to display console error messages
-                onError(errorMsg, node) {
+                onError(errorMsg, node, xhr, url) {
                     onErrorCount++;
-                    onErrorMsg = errorMsg;
+                    onErrorMsgs.push(errorMsg);
                     onErrorNodes.push(node);
+
+                    if (xhr) {
+                        onErrorXHR = xhr;
+                        onErrorURL = url;
+                    }
                 },
                 onComplete(cssText, styleNode) {
                     expect(onErrorCount, 'onError count').to.equal(elms.length);
-                    expect(onErrorMsg.toLowerCase().indexOf('error') > -1, 'onError message').to.be.true;
+                    expect(onErrorMsgs.filter(msg => msg.toLowerCase().indexOf('error') > -1), 'onError message').to.have.length(elms.length);
                     expect(onErrorNodes, 'onError nodes').to.include.members(elms);
+                    expect(onErrorXHR.status, 'onError XHR').to.equal(404);
+                    expect(onErrorURL, 'onError URL').to.include('fail.css');
                     done();
                 }
             });

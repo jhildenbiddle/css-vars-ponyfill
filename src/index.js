@@ -10,15 +10,15 @@ import { name as pkgName } from '../package.json';
 // =============================================================================
 const defaults = {
     // Sources
-    include    : 'style,link[rel=stylesheet]',
-    exclude    : '',
+    include   : 'style,link[rel=stylesheet]',
+    exclude   : '',
     // Options
-    appendStyle: true,  // cssVars
-    onlyLegacy : true,  // cssVars
-    onlyVars   : true,  // cssVars, transformCss
-    preserve   : true,  // transformCss
-    silent     : false, // cssVars
-    variables  : {},    // transformCss
+    onlyLegacy: true,  // cssVars
+    onlyVars  : true,  // cssVars, transformCss
+    preserve  : true,  // transformCss
+    silent    : false, // cssVars
+    updateDOM : true,  // cssVars
+    variables : {},    // transformCss
     // Callbacks
     onSuccess() {},     // cssVars
     onError() {},       // cssVars
@@ -27,8 +27,6 @@ const defaults = {
 };
 // Regex: CSS variable :root declarations and var() function values
 const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
-
-
 
 
 // Functions
@@ -42,8 +40,6 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *                   matching <link> and <style> nodes to include
  * @param {string}   [options.exclude=""] CSS selector matching <link> and
  *                   <style> nodes to exclude
- * @param {boolean}  [options.appendStyle=true] Append <style> node containing
- *                   updated CSS to DOM
  * @param {boolean}  [options.onlyLegacy=true] Only process CSS variables in
  *                   browsers that lack native support
  * @param {boolean}  [options.onlyVars=true] Remove declarations that do not
@@ -56,13 +52,15 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *                   native CSS variable support.
  * @param {boolean}  [options.silent=false] Prevent console warnign and error
  *                   messages
+ * @param {boolean}  [options.updateDOM=true] Append <style> node containing
+ *                   updated CSS to DOM
  * @param {object}   [options.variables={}] CSS variable definitions to include
  *                   during transformation. Can be used to add new override
  *                   exisitng definitions.
  * @param {function} [options.onSuccess] Callback after all stylesheets have
  *                   been processed succesfully. Passes 1) a CSS string with CSS
  *                   variable values resolved as an argument. Modifying the CSS
- *                   appended when 'appendStyle' is 'true' can be done by
+ *                   appended when 'updateDOM' is 'true' can be done by
  *                   returning a string value from this funtion (or 'false' to
  *                   skip).
  * @param {function} [options.onError] Callback on each error. Passes 1) an
@@ -72,20 +70,23 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @param {function} [options.onComplete] Callback after all stylesheets have
  *                   been processed succesfully and <style> node containing
  *                   updated CSS has been appended to the DOM (based on
- *                   'appendStyle' setting. Passes 1) a CSS string with CSS
+ *                   'updateDOM' setting. Passes 1) a CSS string with CSS
  *                   variable values resolved, and 2) a reference to the
  *                   appended <style> node.
  *
  * @example
  *
  *   cssVars({
- *     include    : 'style,link[rel="stylesheet"]', // default
- *     exclude    : '',
- *     appendStyle: true, // default
- *     onlyLegacy : true, // default
- *     onlyVars   : true, // default
- *     preserve   : true, // default
- *     silent     : false, // default
+ *     include   : 'style,link[rel="stylesheet"]', // default
+ *     exclude   : '',
+ *     onlyLegacy: true, // default
+ *     onlyVars  : true, // default
+ *     preserve  : true, // default
+ *     silent    : false, // default
+ *     updateDOM : true, // default
+ *     variables : {
+ *       // ...
+ *     },
  *     onError(message, node) {
  *       // ...
  *     },
@@ -103,14 +104,14 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
 function cssVars(options = {}) {
     const settings = mergeDeep(defaults, options);
 
-    function handleError(message, sourceNode) {
+    function handleError(message, sourceNode, xhr, url) {
         /* istanbul ignore next */
         if (!settings.silent) {
             // eslint-disable-next-line
             console.error(`${message}\n`, sourceNode);
         }
 
-        settings.onError(message, sourceNode);
+        settings.onError(message, sourceNode, xhr, url);
     }
 
     function handleWarning(message) {
@@ -160,7 +161,7 @@ function cssVars(options = {}) {
                         // Set cssText to return value (if provided)
                         cssText = returnVal === false ? '' : returnVal || cssText;
 
-                        if (settings.appendStyle) {
+                        if (settings.updateDOM) {
                             styleNode = document.querySelector(`#${styleNodeId}`) || document.createElement('style');
                             styleNode.setAttribute('id', styleNodeId);
 
@@ -208,10 +209,21 @@ function cssVars(options = {}) {
                     settings.onComplete(cssText, styleNode);
                 },
                 onError(xhr, node, url) {
-                    const errorMsg = `Unable to process ${url} (${xhr.status} - ${xhr.statusText}}`;
+                    const errorMsg = `CSS XHR error: "${xhr.responseURL}" ${xhr.status}` + (xhr.statusText ? ` (${xhr.statusText})` : '');
 
-                    handleError(errorMsg, node);
+                    handleError(errorMsg, node, xhr, url);
                 }
+            });
+        }
+        // Has native support
+        else if (hasNativeSupport && settings.updateDOM) {
+            // Set variables using native methods
+            Object.keys(settings.variables).forEach(key => {
+                // Normalize variables by ensuring all start with leading '--'
+                const varName  = `--${key.replace(/^-+/, '')}`;
+                const varValue = settings.variables[key];
+
+                document.documentElement.style.setProperty(varName, varValue);
             });
         }
     }

@@ -794,11 +794,11 @@
     var defaults = {
         include: "style,link[rel=stylesheet]",
         exclude: "",
-        appendStyle: true,
         onlyLegacy: true,
         onlyVars: true,
         preserve: true,
         silent: false,
+        updateDOM: true,
         variables: {},
         onSuccess: function onSuccess() {},
         onError: function onError() {},
@@ -815,8 +815,6 @@
  *                   matching <link> and <style> nodes to include
  * @param {string}   [options.exclude=""] CSS selector matching <link> and
  *                   <style> nodes to exclude
- * @param {boolean}  [options.appendStyle=true] Append <style> node containing
- *                   updated CSS to DOM
  * @param {boolean}  [options.onlyLegacy=true] Only process CSS variables in
  *                   browsers that lack native support
  * @param {boolean}  [options.onlyVars=true] Remove declarations that do not
@@ -829,13 +827,15 @@
  *                   native CSS variable support.
  * @param {boolean}  [options.silent=false] Prevent console warnign and error
  *                   messages
+ * @param {boolean}  [options.updateDOM=true] Append <style> node containing
+ *                   updated CSS to DOM
  * @param {object}   [options.variables={}] CSS variable definitions to include
  *                   during transformation. Can be used to add new override
  *                   exisitng definitions.
  * @param {function} [options.onSuccess] Callback after all stylesheets have
  *                   been processed succesfully. Passes 1) a CSS string with CSS
  *                   variable values resolved as an argument. Modifying the CSS
- *                   appended when 'appendStyle' is 'true' can be done by
+ *                   appended when 'updateDOM' is 'true' can be done by
  *                   returning a string value from this funtion (or 'false' to
  *                   skip).
  * @param {function} [options.onError] Callback on each error. Passes 1) an
@@ -845,20 +845,23 @@
  * @param {function} [options.onComplete] Callback after all stylesheets have
  *                   been processed succesfully and <style> node containing
  *                   updated CSS has been appended to the DOM (based on
- *                   'appendStyle' setting. Passes 1) a CSS string with CSS
+ *                   'updateDOM' setting. Passes 1) a CSS string with CSS
  *                   variable values resolved, and 2) a reference to the
  *                   appended <style> node.
  *
  * @example
  *
  *   cssVars({
- *     include    : 'style,link[rel="stylesheet"]', // default
- *     exclude    : '',
- *     appendStyle: true, // default
- *     onlyLegacy : true, // default
- *     onlyVars   : true, // default
- *     preserve   : true, // default
- *     silent     : false, // default
+ *     include   : 'style,link[rel="stylesheet"]', // default
+ *     exclude   : '',
+ *     onlyLegacy: true, // default
+ *     onlyVars  : true, // default
+ *     preserve  : true, // default
+ *     silent    : false, // default
+ *     updateDOM : true, // default
+ *     variables : {
+ *       // ...
+ *     },
  *     onError(message, node) {
  *       // ...
  *     },
@@ -875,11 +878,11 @@
  */    function cssVars() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
         var settings = mergeDeep(defaults, options);
-        function handleError(message, sourceNode) {
+        function handleError(message, sourceNode, xhr, url) {
             if (!settings.silent) {
                 console.error(message + "\n", sourceNode);
             }
-            settings.onError(message, sourceNode);
+            settings.onError(message, sourceNode, xhr, url);
         }
         function handleWarning(message) {
             if (!settings.silent) {
@@ -906,7 +909,7 @@
                             });
                             var returnVal = settings.onSuccess(cssText);
                             cssText = returnVal === false ? "" : returnVal || cssText;
-                            if (settings.appendStyle) {
+                            if (settings.updateDOM) {
                                 styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");
                                 styleNode.setAttribute("id", styleNodeId);
                                 if (styleNode.textContent !== cssText) {
@@ -937,9 +940,15 @@
                         settings.onComplete(cssText, styleNode);
                     },
                     onError: function onError(xhr, node, url) {
-                        var errorMsg = "Unable to process " + url + " (" + xhr.status + " - " + xhr.statusText + "}";
-                        handleError(errorMsg, node);
+                        var errorMsg = 'CSS XHR error: "' + xhr.responseURL + '" ' + xhr.status + (xhr.statusText ? " (" + xhr.statusText + ")" : "");
+                        handleError(errorMsg, node, xhr, url);
                     }
+                });
+            } else if (hasNativeSupport && settings.updateDOM) {
+                Object.keys(settings.variables).forEach(function(key) {
+                    var varName = "--" + key.replace(/^-+/, "");
+                    var varValue = settings.variables[key];
+                    document.documentElement.style.setProperty(varName, varValue);
                 });
             }
         } else {
