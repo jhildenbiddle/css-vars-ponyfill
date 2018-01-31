@@ -1,7 +1,7 @@
 {
   "name": "css-vars-ponyfill",
   "version": "0.0.1",
-  "description": "A ponyfill providing client-side legacy support for CSS custom properties (aka \"CSS variables\") and a unified interface for modifying values in both modern and legacy browsers.",
+  "description": "A lightweight (4.5k min+gzip), dependency-free ponyfill that provides client-side support for CSS custom properties (or \"CSS variables\") in legacy browsers.",
   "author": "John Hildenbiddle <http://hildenbiddle.com>",
   "license": "MIT",
   "homepage": "https://github.com/jhildenbiddle/css-vars-ponyfill",
