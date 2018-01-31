@@ -260,7 +260,7 @@ describe('css-vars', function() {
         });
 
         describe('variables', function() {
-            it('passed to transform-css', function() {
+            it('updates values via generated CSS (passed to transform-css)', function() {
                 const styleCss  = `
                     :root{ --color1: black; }
                     p { color: var(--color1); }
@@ -289,7 +289,7 @@ describe('css-vars', function() {
             });
 
             if (hasNativeSupport) {
-                it('updates values in modern browsers via native methods', function() {
+                it('updates values via native setProperty() method', function() {
                     const testElms = createElmsWrap([
                         '<p style="color: var(--color1);"></p>',
                         '<p style="color: var(--color2);"></p>',
