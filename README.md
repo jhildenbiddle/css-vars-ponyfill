@@ -421,7 +421,7 @@ cssVars({
 - Type: `object`
 - Default: `{}`
 
-A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`—`), and values specified here will override previous values.
+A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`—`), and values specified will override previous values.
 
 Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native custom property support will apply these values using the native [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
 
@@ -444,7 +444,7 @@ cssVars({
 - Arguments:
   1. **cssText**: A `string` of CSS text from `node` and `url`
 
-Callback after all CSS has been processed and legacy-compatible CSS has been generated, but *before* the legacy CSS has been appended to the DOM (optional). Allows modifying the CSS data by returning any `string` value (or `false` to skip) before [options.onComplete](#optionsoncomplete) is triggered.
+Callback after all CSS has been processed and legacy-compatible CSS has been generated, but *before* the legacy CSS has been appended to the DOM. Allows modifying the CSS data by returning any `string` value (or `false` to skip) before [options.onComplete](#optionsoncomplete) is triggered.
 
 **Example**
 
