@@ -366,6 +366,7 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
+                updateDOM : false,
                 onSuccess(cssText) {
                     onSuccessCssText = cssText;
                 },
@@ -409,6 +410,7 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
+                updateDOM : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss);
                     done();
@@ -420,12 +422,40 @@ describe('css-vars', function() {
     // Tests: Updates
     // -------------------------------------------------------------------------
     describe('Updates', function() {
-        it('updates properly when called multiple times', function() {
+        it('updates value when called multiple times', function() {
+            const expectCss = [
+                'p{color:red;}',
+                'p{color:green;}'
+            ];
+
+            createElmsWrap({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                preserve  : false,
+                onComplete(cssText, styleNode) {
+                    expect(cssText).to.equal(expectCss[0]);
+                }
+            });
+
+            createElmsWrap({ tag: 'style', text: ':root { --color: green; }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                preserve  : false,
+                onComplete(cssText, styleNode) {
+                    expect(cssText).to.equal(expectCss[1]);
+                }
+            });
+        });
+
+        it('updates <style> parent when called multiple times', function() {
             const expectCss = [
                 'p{color:red;}',
                 'p{color:green;}',
-                'p{color:green;}div{color:green;}',
-                'p{color:blue;}div{color:blue;}',
+                'p{color:green;}div{color:green;}'
             ];
 
             createElmsWrap({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
@@ -470,14 +500,59 @@ describe('css-vars', function() {
                     expect(cssText).to.equal(expectCss[2]);
                 }
             });
+        });
+
+        it('persists options.variables when called multiple times', function() {
+            const expectCss = [
+                'p{color:red;}',
+                'p{color:red;}p{width:100px;}',
+                'p{color:blue;}p{width:200px;}'
+            ];
+
+            createElmsWrap({ tag: 'style', text: 'p { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                preserve  : false,
+                variables : { color: 'red' },
+                onComplete(cssText, styleNode) {
+                    expect(cssText).to.equal(expectCss[0]);
+                }
+            });
+
+            createElmsWrap({ tag: 'style', text: 'p { width: var(--width); }' });
 
             cssVars({
                 exclude   : ':not([data-test])',
                 onlyLegacy: false,
                 preserve  : false,
-                variables : { color: 'blue' },
+                variables : { width: '100px' },
                 onComplete(cssText, styleNode) {
-                    expect(cssText).to.equal(expectCss[3]);
+                    expect(cssText, 'persists').to.equal(expectCss[1]);
+                }
+            });
+
+            cssVars({
+                exclude   : ':not([data-test])',
+                onlyLegacy: false,
+                preserve  : false,
+                updateDOM : false,
+                variables : {
+                    color: 'blue',
+                    width: '200px'
+                },
+                onComplete(cssText, styleNode) {
+                    expect(cssText).to.equal(expectCss[2]);
+                }
+            });
+
+            cssVars({
+                exclude   : ':not([data-test])',
+                onlyLegacy: false,
+                preserve  : false,
+                onComplete(cssText, styleNode) {
+                    expect(cssText, 'does not persists').to.equal(expectCss[1]);
                 }
             });
         });

@@ -15,10 +15,11 @@ import walkCss      from './walk-css';
 
 // Constants & Variables
 // =============================================================================
+const persistStore        = {};
+const reVarProp           = /^--/;
+const reVarVal            = /^var(.*)/;
 const VAR_PROP_IDENTIFIER = '--';
 const VAR_FUNC_IDENTIFIER = 'var';
-const reVarProp = /^--/;
-const reVarVal  = /^var(.*)/;
 
 
 // Functions
@@ -33,6 +34,9 @@ const reVarVal  = /^var(.*)/;
  *                   contain a CSS variable from the return value. Note that
  *                   @font-face and @keyframe rules require all declarations to
  *                   be returned if a CSS variable is used.
+ * @param {boolean}  [options.persist=false] Persists options.variables,
+ *                   allowing variables set in previous calls to be applied in
+ *                   subsequent calls.
  * @param {boolean}  [options.preserve=true] Preserve CSS variable definitions
  *                   and functions in the return value, allowing "live" variable
  *                   updates via JavaScript to continue working in browsers with
@@ -47,12 +51,14 @@ const reVarVal  = /^var(.*)/;
 function transformVars(cssText, options = {}) {
     const defaults = {
         onlyVars : true,
+        persist  : false,
         preserve : true,
         variables: {},
         onWarning() {}
     };
-    const map      = {};
-    const settings = mergeDeep(defaults, options);
+    const map       = {};
+    const settings  = mergeDeep(defaults, options);
+    const varSource = settings.persist ? persistStore : settings.variables;
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText);
@@ -94,27 +100,48 @@ function transformVars(cssText, options = {}) {
     });
 
     // Handle variables defined in settings.variables
-    if (Object.keys(settings.variables).length) {
+    Object.keys(settings.variables).forEach(key => {
+        // Convert all property names to leading '--' style
+        const prop  = `--${key.replace(/^-+/, '')}`;
+        const value = settings.variables[key];
+
+        // Update settings.variables
+        if (key !== prop) {
+            settings.variables[prop] = value;
+            delete settings.variables[key];
+        }
+
+        // Store variables so they can be reapplied on subsequent call. For
+        // example, if '--myvar' is set on the first call it should continue to
+        // be set on each call thereafter (otherwise each call removes the
+        // previously set variables).
+        if (settings.persist) {
+            persistStore[prop] = value;
+        }
+    });
+
+    if (Object.keys(varSource).length) {
         const newRule = {
             declarations: [],
             selectors   : [':root'],
             type        : 'rule'
         };
 
-        Object.keys(settings.variables).forEach(function(key) {
-            // Normalize variables by ensuring all start with leading '--'
-            const varName  = `--${key.replace(/^-+/, '')}`;
-            const varValue = settings.variables[key];
-
-            // Update internal map value with settings.variables value
-            map[varName] = varValue;
+        Object.keys(varSource).forEach(function(key) {
+            // Update internal map value with varSource value
+            map[key] = varSource[key];
 
             // Add new declaration to newRule
             newRule.declarations.push({
                 type    : 'declaration',
-                property: varName,
-                value   : varValue
+                property: key,
+                value   : varSource[key]
             });
+
+            // Add to persistent storage
+            if (settings.persist) {
+                persistStore[key] = varSource[key];
+            }
         });
 
         // Append new :root ruleset

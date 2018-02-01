@@ -658,24 +658,28 @@ function walkCss(node, fn) {
     });
 }
 
-var VAR_PROP_IDENTIFIER = "--";
-
-var VAR_FUNC_IDENTIFIER = "var";
+var persistStore = {};
 
 var reVarProp = /^--/;
 
 var reVarVal = /^var(.*)/;
 
+var VAR_PROP_IDENTIFIER = "--";
+
+var VAR_FUNC_IDENTIFIER = "var";
+
 function transformVars(cssText) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     var defaults = {
         onlyVars: true,
+        persist: false,
         preserve: true,
         variables: {},
         onWarning: function onWarning() {}
     };
     var map = {};
     var settings = mergeDeep(defaults, options);
+    var varSource = settings.persist ? persistStore : settings.variables;
     var cssTree = cssParse(cssText);
     if (settings.onlyVars) {
         cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
@@ -702,21 +706,33 @@ function transformVars(cssText) {
             }
         }
     });
-    if (Object.keys(settings.variables).length) {
+    Object.keys(settings.variables).forEach(function(key) {
+        var prop = "--" + key.replace(/^-+/, "");
+        var value = settings.variables[key];
+        if (key !== prop) {
+            settings.variables[prop] = value;
+            delete settings.variables[key];
+        }
+        if (settings.persist) {
+            persistStore[prop] = value;
+        }
+    });
+    if (Object.keys(varSource).length) {
         var newRule = {
             declarations: [],
             selectors: [ ":root" ],
             type: "rule"
         };
-        Object.keys(settings.variables).forEach(function(key) {
-            var varName = "--" + key.replace(/^-+/, "");
-            var varValue = settings.variables[key];
-            map[varName] = varValue;
+        Object.keys(varSource).forEach(function(key) {
+            map[key] = varSource[key];
             newRule.declarations.push({
                 type: "declaration",
-                property: varName,
-                value: varValue
+                property: key,
+                value: varSource[key]
             });
+            if (settings.persist) {
+                persistStore[key] = varSource[key];
+            }
         });
         if (settings.preserve) {
             cssTree.stylesheet.rules.push(newRule);
@@ -923,6 +939,7 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
                     try {
                         cssText = transformVars(cssText, {
                             onlyVars: settings.onlyVars,
+                            persist: settings.updateDOM,
                             preserve: settings.preserve,
                             variables: settings.variables,
                             onWarning: handleWarning
@@ -935,11 +952,12 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
                             if (styleNode.textContent !== cssText) {
                                 styleNode.textContent = cssText;
                             }
-                            var styleTargetNode = document.querySelector("body link[rel=stylesheet], body style:not(#" + styleNodeId + ")") ? document.body : document.head;
-                            var isNewTarget = styleNode.parentNode !== styleTargetNode;
-                            var isLastStyleElm = matchesSelector$1(styleNode, "style:last-of-type");
-                            if (isNewTarget || !isLastStyleElm) {
-                                styleTargetNode.appendChild(styleNode);
+                            var sourceNodes = document.querySelectorAll("link[rel=stylesheet],style");
+                            var styleTarget = document.querySelector("body link[rel=stylesheet], body style:not(#" + styleNodeId + ")") ? document.body : document.head;
+                            var isNewTarget = styleNode.parentNode !== styleTarget;
+                            var isNotLast = sourceNodes[sourceNodes.length - 1] !== styleNode;
+                            if (isNewTarget || isNotLast) {
+                                styleTarget.appendChild(styleNode);
                             }
                         }
                     } catch (err) {
@@ -966,9 +984,9 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
             });
         } else if (hasNativeSupport && settings.updateDOM) {
             Object.keys(settings.variables).forEach(function(key) {
-                var varName = "--" + key.replace(/^-+/, "");
-                var varValue = settings.variables[key];
-                document.documentElement.style.setProperty(varName, varValue);
+                var prop = "--" + key.replace(/^-+/, "");
+                var value = settings.variables[key];
+                document.documentElement.style.setProperty(prop, value);
             });
         }
     } else {
@@ -977,11 +995,6 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
             document.removeEventListener("DOMContentLoaded", init);
         });
     }
-}
-
-function matchesSelector$1(elm, selector) {
-    var matches = elm.matches || elm.matchesSelector || elm.webkitMatchesSelector || elm.mozMatchesSelector || elm.msMatchesSelector || elm.oMatchesSelector;
-    return matches.call(elm, selector);
 }
 
 export default cssVars;

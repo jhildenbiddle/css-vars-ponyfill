@@ -147,6 +147,7 @@ function cssVars(options = {}) {
                     try {
                         cssText = transformCss(cssText, {
                             onlyVars : settings.onlyVars,
+                            persist  : settings.updateDOM,
                             preserve : settings.preserve,
                             variables: settings.variables,
                             onWarning: handleWarning
@@ -220,11 +221,11 @@ function cssVars(options = {}) {
         else if (hasNativeSupport && settings.updateDOM) {
             // Set variables using native methods
             Object.keys(settings.variables).forEach(key => {
-                // Normalize variables by ensuring all start with leading '--'
-                const varName  = `--${key.replace(/^-+/, '')}`;
-                const varValue = settings.variables[key];
+                // Convert all property names to leading '--' style
+                const prop  = `--${key.replace(/^-+/, '')}`;
+                const value = settings.variables[key];
 
-                document.documentElement.style.setProperty(varName, varValue);
+                document.documentElement.style.setProperty(prop, value);
             });
         }
     }
@@ -237,23 +238,6 @@ function cssVars(options = {}) {
             document.removeEventListener('DOMContentLoaded', init);
         });
     }
-}
-
-
-// Functions (Private)
-// =============================================================================
-/**
- * Ponyfill for native Element.matches method
- *
- * @param   {object} elm - The element to test
- * @param   {string} selector - The CSS selector to test against
- * @returns {boolean}
- */
-function matchesSelector(elm, selector) {
-    /* istanbul ignore next */
-    const matches = elm.matches || elm.matchesSelector || elm.webkitMatchesSelector || elm.mozMatchesSelector || elm.msMatchesSelector || elm.oMatchesSelector;
-
-    return matches.call(elm, selector);
 }
 
 
