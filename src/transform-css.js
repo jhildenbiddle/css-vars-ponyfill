@@ -16,8 +16,6 @@ import walkCss      from './walk-css';
 // Constants & Variables
 // =============================================================================
 const persistStore        = {};
-const reVarProp           = /^--/;
-const reVarVal            = /^var(.*)/;
 const VAR_PROP_IDENTIFIER = '--';
 const VAR_FUNC_IDENTIFIER = 'var';
 
@@ -216,7 +214,12 @@ function filterVars(rules) {
             // variable can be removed.
             let declArray = rule.type === 'font-face' ? [] : rule.declarations;
 
-            declArray = rule.declarations.filter(d => reVarProp.test(d.property) || reVarVal.test(d.value));
+            declArray = rule.declarations.filter(d => {
+                const hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
+                const hasVarVal  = d.value && d.value.indexOf(`${VAR_FUNC_IDENTIFIER}(`) === 0;
+
+                return hasVarProp || hasVarVal;
+            });
 
             return Boolean(declArray.length);
         }
@@ -225,7 +228,12 @@ function filterVars(rules) {
             // @keyframe rules require all declarations to be retained if any
             // declaration contains a CSS variable definition or value.
             return Boolean(rule.keyframes.filter(k =>
-                Boolean(k.declarations.filter(d => reVarProp.test(d.property) || reVarVal.test(d.value)).length)
+                Boolean(k.declarations.filter(d => {
+                    const hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
+                    const hasVarVal  = d.value && d.value.indexOf(`${VAR_FUNC_IDENTIFIER}(`) === 0;
+
+                    return hasVarProp || hasVarVal;
+                }).length)
             ).length);
         }
         // @document, @media, @supports

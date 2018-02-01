@@ -649,8 +649,6 @@
         });
     }
     var persistStore = {};
-    var reVarProp = /^--/;
-    var reVarVal = /^var(.*)/;
     var VAR_PROP_IDENTIFIER = "--";
     var VAR_FUNC_IDENTIFIER = "var";
     function transformVars(cssText) {
@@ -758,13 +756,17 @@
             if (rule.declarations) {
                 var declArray = rule.type === "font-face" ? [] : rule.declarations;
                 declArray = rule.declarations.filter(function(d) {
-                    return reVarProp.test(d.property) || reVarVal.test(d.value);
+                    var hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
+                    var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") === 0;
+                    return hasVarProp || hasVarVal;
                 });
                 return Boolean(declArray.length);
             } else if (rule.keyframes) {
                 return Boolean(rule.keyframes.filter(function(k) {
                     return Boolean(k.declarations.filter(function(d) {
-                        return reVarProp.test(d.property) || reVarVal.test(d.value);
+                        var hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
+                        var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") === 0;
+                        return hasVarProp || hasVarVal;
                     }).length);
                 }).length);
             } else if (rule.rules) {
