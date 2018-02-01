@@ -1,14 +1,13 @@
 // Dependencies
 // =============================================================================
-import babel      from 'rollup-plugin-babel';
-import commonjs   from 'rollup-plugin-commonjs';
-import eslint     from 'rollup-plugin-eslint';
-import json       from 'rollup-plugin-json';
-import merge      from 'lodash.merge';
-import pkg        from './package.json';
-import resolve    from 'rollup-plugin-node-resolve';
-import uglify     from 'rollup-plugin-uglify';
-import { minify } from 'uglify-es';
+import babel    from 'rollup-plugin-babel';
+import commonjs from 'rollup-plugin-commonjs';
+import eslint   from 'rollup-plugin-eslint';
+import json     from 'rollup-plugin-json';
+import merge    from 'lodash.merge';
+import pkg      from './package.json';
+import resolve  from 'rollup-plugin-node-resolve';
+import uglify   from 'rollup-plugin-uglify';
 
 const path      = require('path');
 const entryFile = path.resolve(__dirname, 'src', 'index.js');
@@ -57,7 +56,7 @@ const settings = {
             compress: true,
             mangle  : true,
             output  : {
-                comments: /^!/
+                comments: new RegExp(pkg.name)
             }
         }
     }
@@ -96,7 +95,7 @@ const esm = merge({}, config, {
         format: 'es'
     },
     plugins: [
-        uglify(settings.uglify.beautify, minify)
+        uglify(settings.uglify.beautify)
     ]
 });
 
@@ -107,7 +106,7 @@ const esmMinified = merge({}, config, {
         format: esm.output.format
     },
     plugins: [
-        uglify(settings.uglify.minify, minify)
+        uglify(settings.uglify.minify)
     ]
 });
 
@@ -117,7 +116,7 @@ const umd = merge({}, config, {
         format: 'umd'
     },
     plugins: [
-        uglify(settings.uglify.beautify, minify)
+        uglify(settings.uglify.beautify)
     ]
 });
 
@@ -128,7 +127,7 @@ const umdMinified = merge({}, config, {
         format: umd.output.format
     },
     plugins: [
-        uglify(settings.uglify.minify, minify)
+        uglify(settings.uglify.minify)
     ]
 });
 

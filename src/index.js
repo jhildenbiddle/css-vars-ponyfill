@@ -37,42 +37,46 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @preserve
  * @param {object}   [options] Options object
  * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
- *                   matching <link> and <style> nodes to include
- * @param {string}   [options.exclude=""] CSS selector matching <link> and
- *                   <style> nodes to exclude
- * @param {boolean}  [options.onlyLegacy=true] Only process CSS variables in
- *                   browsers that lack native support
- * @param {boolean}  [options.onlyVars=true] Remove declarations that do not
- *                   contain a CSS variable from the return value. Note that
- *                   font-face and keyframe rules require all declarations to be
- *                   returned if a CSS variable is used.
- * @param {boolean}  [options.preserve=true] Preserve CSS variable definitions
- *                   and functions in the return value, allowing "live" variable
- *                   updates via JavaScript to continue working in browsers with
- *                   native CSS variable support.
- * @param {boolean}  [options.silent=false] Prevent console warnign and error
- *                   messages
- * @param {boolean}  [options.updateDOM=true] Append <style> node containing
- *                   updated CSS to DOM
- * @param {object}   [options.variables={}] CSS variable definitions to include
- *                   during transformation. Can be used to add new override
- *                   exisitng definitions.
- * @param {function} [options.onSuccess] Callback after all stylesheets have
- *                   been processed succesfully. Passes 1) a CSS string with CSS
- *                   variable values resolved as an argument. Modifying the CSS
- *                   appended when 'updateDOM' is 'true' can be done by
- *                   returning a string value from this funtion (or 'false' to
- *                   skip).
- * @param {function} [options.onError] Callback on each error. Passes 1) an
- *                   error message, and 2) source node reference as arguments.
- * @param {function} [options.onWarning] Callback on each warning. Passes 1) a
- *                   warning message as an argument.
- * @param {function} [options.onComplete] Callback after all stylesheets have
- *                   been processed succesfully and <style> node containing
- *                   updated CSS has been appended to the DOM (based on
- *                   'updateDOM' setting. Passes 1) a CSS string with CSS
- *                   variable values resolved, and 2) a reference to the
- *                   appended <style> node.
+ *                   matching <link re="stylesheet"> and <style> nodes to
+ *                   process
+ * @param {string}   [options.exclude=""] CSS selector matching <link
+ *                   rel="stylehseet"> and <style> nodes to exclude from those
+ *                   matches by options.include
+ * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
+ *                   only generate legacy-compatible CSS in browsers that lack
+ *                   native support (i.e., legacy browsers)
+ * @param {boolean}  [options.onlyVars=true] Determines if CSS rulesets and
+ *                   declarations without a custom property value should be
+ *                   removed from the ponyfill-generated CSS
+ * @param {boolean}  [options.preserve=true] Determines if the original CSS
+ *                   custom property declaration will be retained in the
+ *                   ponyfill-generated CSS.
+ * @param {boolean}  [options.silent=false] Determines if warning and error
+ *                   messages will be displayed on the console
+ * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
+ *                   update the DOM after processing CSS custom properties
+ * @param {object}   [options.variables={}] A map of custom property name/value
+ *                   pairs. Property names can omit or include the leading
+ *                   double-hyphen (—), and values specified will override
+ *                   previous values.
+ * @param {function} [options.onSuccess] Callback after all CSS has been
+ *                   processed and legacy-compatible CSS has been generated, but
+ *                   before the legacy CSS has been appended to the DOM. Allows
+ *                   modifying the CSS data by returning any string value (or
+ *                   false to skip) before options.onComplete is triggered.
+ *                   Passes 1) a CSS string with CSS variable values resolved as
+ *                   an argument.
+ * @param {function} [options.onError] Callback after a CSS parsing error has
+ *                   occurred or an XHR request has failed. Passes 1) an error
+ *                   message, and 2) source node reference, 3) xhr, and 4 url as
+ *                   arguments.
+ * @param {function} [options.onWarning] Callback after each CSS parsing warning
+ *                   has occurred. Passes 1) a warning message as an argument.
+ * @param {function} [options.onComplete] Callback after all CSS has been
+ *                   processed, legacy-compatible CSS has been generated, and
+ *                   (optionally) the DOM has been updated. Passes 1) a CSS
+ *                   string with CSS variable values resolved, and 2) a
+ *                   reference to the appended <style> node.
  *
  * @example
  *

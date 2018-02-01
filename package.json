@@ -74,14 +74,13 @@
     "lodash.merge": "^4.6.0",
     "mocha": "^4.1.0",
     "rimraf": "^2.6.2",
-    "rollup": "^0.54.1",
+    "rollup": "^0.55.1",
     "rollup-plugin-babel": "^3.0.2",
-    "rollup-plugin-commonjs": "^8.2.6",
+    "rollup-plugin-commonjs": "^8.3.0",
     "rollup-plugin-eslint": "^4.0.0",
     "rollup-plugin-json": "^2.3.0",
     "rollup-plugin-node-resolve": "^3.0.0",
-    "rollup-plugin-uglify": "^2.0.1",
-    "uglify-es": "^3.3.4",
+    "rollup-plugin-uglify": "^3.0.0",
     "webpack": "^3.10.0"
   }
 }
