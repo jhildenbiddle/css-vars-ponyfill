@@ -6,7 +6,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
 
-A lightweight (4.5k min+gzip), dependency-free [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) ("CSS variables") in legacy browsers.
+A [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) ("CSS variables") in legacy browsers.
 
 ## Why
 
@@ -21,7 +21,7 @@ This ponyfill was created specifically to address this issue. There are limitati
 - Persistant changes on subsequent calls in legacy browsers
 - Support for custom property fallback values
 - UMD and ES6 modules available
-- Lightweight (4.5k min+gzip) and dependency-free
+- Lightweight (less than 5k min+gzip) and dependency-free
 
 **Limitations**
 
