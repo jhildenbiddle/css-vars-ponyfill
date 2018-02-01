@@ -1,4 +1,4 @@
-# css-vars-ponyfill
+# css-vars-ponyfill [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%20ponyfill%20that%20provides%20client-side%20support%20for%20CSS%20custom%20properties%20(%22CSS%20variables%22)&url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&via=jhildenbiddle&hashtags=css,developers,frontend,javascript)
 
 [![NPM](https://img.shields.io/npm/v/css-vars-ponyfill.svg?style=flat-square)](https://www.npmjs.com/package/css-vars-ponyfill)
 [![Build Status](https://img.shields.io/travis/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://travis-ci.org/jhildenbiddle/css-vars-ponyfill)
@@ -6,7 +6,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
 
-A lightweight (4.5k min+gzip), dependency-free [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) (or "CSS variables") in legacy browsers.
+A lightweight (4.5k min+gzip), dependency-free [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) ("CSS variables") in legacy browsers.
 
 ## Why
 
@@ -17,8 +17,9 @@ This ponyfill was created specifically to address this issue. There are limitati
 ## Features
 
 - Client-side transformation of CSS custom properties to static values in legacy browsers
-- Unified interface for adding or modifying values in modern and legacy browsers
-- Supports custom property fallback values
+- Unified interface for modifying runtime values in modern and legacy browsers
+- Persistant changes on subsequent calls in legacy browsers
+- Support for custom property fallback values
 - UMD and ES6 modules available
 - Lightweight (4.5k min+gzip) and dependency-free
 
@@ -190,10 +191,10 @@ cssVars({
 
 ### options.include
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to process. The default value includes all style and link nodes.
-
 - Type: `string`
 - Default: `"link[rel=stylesheet],style"`
+
+CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to process. The default value includes all style and link nodes.
 
 **Example**
 
@@ -207,10 +208,10 @@ cssVars({
 
 ### options.exclude
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to exclude from those matched by [options.include](#optionsinclude).
-
 - Type: `string`
 - Default: *none*
+
+CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to exclude from those matched by [options.include](#optionsinclude).
 
 **Example**
 
@@ -224,14 +225,14 @@ cssVars({
 
 ### options.onlyLegacy
 
+- Type: `boolean`
+- Default: `true`
+
 Determines if the ponyfill will only generate legacy-compatible CSS in browsers that lack native support (i.e., legacy browsers).
 
 When `true`, the ponyfill will only generate legacy-compatible CSS, trigger callbacks, and (optionally) update the DOM in browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
 
 **Tip:** Setting this value to `false` can be useful when all browsers should function identically, such as when testing the ponyfill using a modern browser.
-
-- Type: `boolean`
-- Default: `true`
 
 **Example**
 
@@ -243,14 +244,14 @@ cssVars({
 
 ### options.onlyVars
 
-Determines if CSS rulesets and declarations without a custom property value should be removed from the ponyfill-generated CSS. 
+- Type: `boolean`
+- Default: `true`
+
+Determines if CSS rulesets and declarations without a custom property value should be removed from the ponyfill-generated CSS.
 
 When `true`, rulesets and declarations without a custom property value will be removed from the generated CSS, reducing CSS output size. When `false`, all rulesets and declarations will be retained in the generated CSS.
 
 **Note:** `@font-face` and `@keyframes` require all declarations to be retained if a CSS custom property is used anywhere within the ruleset.
-
-- Type: `boolean`
-- Default: `true`
 
 **Example**
 
@@ -309,12 +310,12 @@ p {
 
 ### options.preserve
 
+- Type: `boolean`
+- Default: `true`
+
 Determines if the original CSS custom property declaration will be retained in the ponyfill-generated CSS.
 
 When `true`, the original custom property declarations are available in the ponyfill-generated CSS along with their static values. This allows native methods like [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) and [getPropertyValue()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/getPropertyValue) to continue working as expected in modern browsers. When `false`, only static values are available in the ponyfill-generated CSS. This reduces the CSS output size, but prevents modifying property values using native methods due to the browser's cascade behavior.
-
-- Type: `boolean`
-- Default: `true`
 
 **Example**
 
@@ -359,12 +360,12 @@ p {
 
 ### options.silent
 
+- Type: `boolean`
+- Default: `false`
+
 Determines if warning and error messages will be displayed on the console.
 
 When `true`, messages will be displayed on the console for each warning and error encountered while processing CSS. When `false`, messages will not be displayed on the console but will still be available using the [options.onWarning](#optionsonwarning) and [options.onSuccess](#optionsonsuccess) callbacks.
-
-- Type: `boolean`
-- Default: `false`
 
 **Example**
 
@@ -400,12 +401,12 @@ Console:
 
 ### options.updateDOM
 
-Determines if the ponyfill will update the DOM after processing CSS custom properties.
-
-When `true`, legacy browsers will have a `<style>` node appended with ponyfill-generated CSS. If specified, modern browsers with native custom property support will apply [options.variables](#optionsvariabls) values using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but ponyfill-generated CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
-
 - Type: `boolean`
 - Default: `true`
+
+Determines if the ponyfill will update the DOM after processing CSS custom properties.
+
+When `true`, legacy browsers will have a `<style>` node appended with ponyfill-generated CSS and modern browsers with native support will apply [options.variables](#optionsvariabls) as custom properties using the native  [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but ponyfill-generated CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
 
 **Example**
 
@@ -417,12 +418,12 @@ cssVars({
 
 ### options.variables
 
-A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`—`), and values specified here will override existing DOM values.
-
-Legacy browsers will include these values while generating legacy-compatible CSS. Modern browsers with native custom property support will apply these values using the native [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
-
 - Type: `object`
 - Default: `{}`
+
+A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`—`), and values specified here will override previous values.
+
+Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native custom property support will apply these values using the native [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
 
 **Example**
 
@@ -439,11 +440,11 @@ cssVars({
 
 ### options.onSuccess
 
-Callback after all CSS has been processed and legacy-compatible CSS has been generated, but *before* the legacy CSS has been appended to the DOM (optional). Allows modifying the CSS data by returning any `string` value (or `false` to skip) before [options.onComplete](#optionsoncomplete) is triggered.
-
 - Type: `function`
 - Arguments:
   1. **cssText**: A `string` of CSS text from `node` and `url`
+
+Callback after all CSS has been processed and legacy-compatible CSS has been generated, but *before* the legacy CSS has been appended to the DOM (optional). Allows modifying the CSS data by returning any `string` value (or `false` to skip) before [options.onComplete](#optionsoncomplete) is triggered.
 
 **Example**
 
@@ -459,14 +460,14 @@ cssVars({
 
 ### options.onError
 
-Callback after a CSS parsing error has occurred or an XHR request has failed.
-
 - Type: `function`
 - Arguments:
   1. **message**: The error message
   2. **node**: The source node `object` reference
   3. **xhr**: The XHR `object` containing details of the failed request
   4. **url**: The source URL `string` (`<link>` href or `@import` url)
+
+Callback after a CSS parsing error has occurred or an XHR request has failed.
 
 **Example**
 
@@ -498,11 +499,11 @@ cssVars({
 
 ### options.onWarning
 
-Callback after each CSS parsing warning has occurred.
-
 - Type: `function`
 - Arguments:
   1. **message**: The warning message
+
+Callback after each CSS parsing warning has occurred.
 
 **Example**
 
@@ -528,12 +529,12 @@ cssVars({
 
 ### options.onComplete
 
-Callback after all CSS has been processed, legacy-compatible CSS has been generated, and (optionally) the DOM has been updated.
-
 - Type: `function`
 - Arguments:
   1. **cssText**: A `string` of concatenated CSS text from all nodes in DOM order
   2. **styleNode**: An `object` reference to the appended `<style>` node
+
+Callback after all CSS has been processed, legacy-compatible CSS has been generated, and (optionally) the DOM has been updated.
 
 **Example**
 
@@ -547,7 +548,7 @@ cssVars({
 
 ## Attribution
 
-This ponyfill includes modified code from the following repositories:
+This ponyfill includes code based on the following projects. Many thanks to the authors and contributors for helping to make this project possible.
 
 - [**rework-vars**](https://github.com/reworkcss/rework-vars) by [reworkcss](https://github.com/reworkcss)
 - [**rework-visit**](https://github.com/reworkcss/rework-visit) by [reworkcss](https://github.com/reworkcss)
@@ -555,10 +556,10 @@ This ponyfill includes modified code from the following repositories:
 
 ## Contact
 
-- Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports or feature requests
-- Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for update announcements
+- Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports, feature requests, or questions
+- Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for announcements
 
 ## License
 
-[MIT License](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE) for details.
 
