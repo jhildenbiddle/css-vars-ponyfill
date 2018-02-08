@@ -768,18 +768,20 @@ function transformVars(cssText) {
 function filterVars(rules) {
     return rules.filter(function(rule) {
         if (rule.declarations) {
-            var declArray = rule.type === "font-face" ? [] : rule.declarations;
-            declArray = rule.declarations.filter(function(d) {
+            var declArray = rule.declarations.filter(function(d) {
                 var hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") === 0;
+                var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") > -1;
                 return hasVarProp || hasVarVal;
             });
+            if (rule.type !== "font-face") {
+                rule.declarations = declArray;
+            }
             return Boolean(declArray.length);
         } else if (rule.keyframes) {
             return Boolean(rule.keyframes.filter(function(k) {
                 return Boolean(k.declarations.filter(function(d) {
                     var hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                    var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") === 0;
+                    var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") > -1;
                     return hasVarProp || hasVarVal;
                 }).length);
             }).length);
@@ -817,7 +819,7 @@ function resolveValue(value, map, settings) {
         return replacement;
     });
     value = value.split(varFunc).join(varResult);
-    if (value.indexOf(VAR_FUNC_IDENTIFIER) !== -1) {
+    if (value.indexOf(VAR_FUNC_IDENTIFIER + "(") !== -1) {
         value = resolveValue(value, map, settings);
     }
     return value;

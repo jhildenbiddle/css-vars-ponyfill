@@ -1,5 +1,7 @@
 // Dependencies
 // =============================================================================
+const path = require('path');
+
 import babel    from 'rollup-plugin-babel';
 import commonjs from 'rollup-plugin-commonjs';
 import eslint   from 'rollup-plugin-eslint';
@@ -9,13 +11,15 @@ import pkg      from './package.json';
 import resolve  from 'rollup-plugin-node-resolve';
 import uglify   from 'rollup-plugin-uglify';
 
-const path      = require('path');
-const entryFile = path.resolve(__dirname, 'src', 'index.js');
-const fnName    = 'cssVars';
 
-
-// Constants & Variables
+// Settings
 // =============================================================================
+// Output
+const entryFile  = path.resolve(__dirname, 'src', 'index.js');
+const outputFile = path.resolve(__dirname, 'dist', `${pkg.name}.js`);
+const outputName = 'cssVars';
+
+// Banner
 const bannerData = [
     `${pkg.name}`,
     `v${pkg.version}`,
@@ -23,7 +27,9 @@ const bannerData = [
     `(c) ${(new Date()).getFullYear()} ${pkg.author}`,
     `${pkg.license} license`
 ];
-const settings = {
+
+// Plugins
+const pluginSettings = {
     eslint: {
         exclude       : ['node_modules/**', './package.json'],
         throwOnWarning: false,
@@ -69,8 +75,8 @@ const settings = {
 const config = {
     input : entryFile,
     output: {
-        file     : path.resolve(__dirname, 'dist', `${pkg.name}.js`),
-        name     : fnName,
+        file     : outputFile,
+        name     : outputName,
         banner   : `/*!\n * ${ bannerData.join('\n * ') }\n */`,
         sourcemap: true
     },
@@ -78,15 +84,15 @@ const config = {
         resolve(),
         commonjs(),
         json(),
-        eslint(settings.eslint),
-        babel(settings.babel)
+        eslint(pluginSettings.eslint),
+        babel(pluginSettings.babel)
     ],
     watch: {
         clearScreen: false
     }
 };
 
-// Output
+// Formats
 // -----------------------------------------------------------------------------
 // ES Module
 const esm = merge({}, config, {
@@ -95,7 +101,7 @@ const esm = merge({}, config, {
         format: 'es'
     },
     plugins: [
-        uglify(settings.uglify.beautify)
+        uglify(pluginSettings.uglify.beautify)
     ]
 });
 
@@ -106,7 +112,7 @@ const esmMinified = merge({}, config, {
         format: esm.output.format
     },
     plugins: [
-        uglify(settings.uglify.minify)
+        uglify(pluginSettings.uglify.minify)
     ]
 });
 
@@ -116,7 +122,7 @@ const umd = merge({}, config, {
         format: 'umd'
     },
     plugins: [
-        uglify(settings.uglify.beautify)
+        uglify(pluginSettings.uglify.beautify)
     ]
 });
 
@@ -127,7 +133,7 @@ const umdMinified = merge({}, config, {
         format: umd.output.format
     },
     plugins: [
-        uglify(settings.uglify.minify)
+        uglify(pluginSettings.uglify.minify)
     ]
 });
 

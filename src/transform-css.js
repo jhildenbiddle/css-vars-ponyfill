@@ -208,18 +208,20 @@ function filterVars(rules) {
     return rules.filter(rule => {
         // Rule, @font-face, @host, @page
         if (rule.declarations) {
-            // @font-face rules require all declarations to be retained if any
-            // declaration contains a CSS variable definition or value.
-            // For other rules, any declaration that does not contain a CSS
-            // variable can be removed.
-            let declArray = rule.type === 'font-face' ? [] : rule.declarations;
-
-            declArray = rule.declarations.filter(d => {
+            const declArray = rule.declarations.filter(d => {
                 const hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                const hasVarVal  = d.value && d.value.indexOf(`${VAR_FUNC_IDENTIFIER}(`) === 0;
+                const hasVarVal  = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + '(') > -1;
 
                 return hasVarProp || hasVarVal;
             });
+
+            // For most rule types the filtered declarations should be applied.
+            // @font-face declaratons are unique and require all declarations to
+            // be retained if any declaration contains a CSS variable definition
+            // or value.
+            if (rule.type !== 'font-face') {
+                rule.declarations = declArray;
+            }
 
             return Boolean(declArray.length);
         }
@@ -230,7 +232,7 @@ function filterVars(rules) {
             return Boolean(rule.keyframes.filter(k =>
                 Boolean(k.declarations.filter(d => {
                     const hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                    const hasVarVal  = d.value && d.value.indexOf(`${VAR_FUNC_IDENTIFIER}(`) === 0;
+                    const hasVarVal  = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + '(') > -1;
 
                     return hasVarProp || hasVarVal;
                 }).length)
@@ -299,7 +301,7 @@ function resolveValue(value, map, settings) {
     value = value.split(varFunc).join(varResult);
 
     // recursively resolve any remaining variables in the value
-    if (value.indexOf(VAR_FUNC_IDENTIFIER) !== -1) {
+    if (value.indexOf(VAR_FUNC_IDENTIFIER + '(') !== -1) {
         value = resolveValue(value, map, settings);
     }
 

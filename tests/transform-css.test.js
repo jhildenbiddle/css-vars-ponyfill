@@ -91,6 +91,17 @@ describe('transform-css', function() {
             expect(cssOut).to.equal(expectCss);
         });
 
+        it('transforms variable function in mixed property value', function() {
+            const cssIn = `
+                :root { --margin: 20px; }
+                p { margin: 10px var(--margin); }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = ':root{--margin:20px;}p{margin:10px 20px;margin:10px var(--margin);}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
         it('transforms variable function fallback', function() {
             const cssIn     = 'p { color: var(--fail, red); }';
             const cssOut    = transformCss(cssIn);
@@ -111,7 +122,7 @@ describe('transform-css', function() {
                 const cssIn = `
                     /* Comment */
                     :root { --color: red; }
-                    p { color: var(--color); }
+                    p { color: var(--color); margin: 20px; }
                     p { color: green; }
                 `;
                 const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
