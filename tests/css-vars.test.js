@@ -51,7 +51,6 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss);
                 }
@@ -71,7 +70,6 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss);
                     done();
@@ -98,7 +96,6 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss);
                     done();
@@ -120,7 +117,6 @@ describe('css-vars', function() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: true,
-                    preserve  : false,
                     onComplete(cssText, styleNode) {
                         expect(cssText).to.equal(expectCss);
                     }
@@ -144,7 +140,6 @@ describe('css-vars', function() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
-                    preserve  : false,
                     onComplete(cssText, styleNode) {
                         expect(cssText).to.equal(expectCss);
                     }
@@ -164,7 +159,6 @@ describe('css-vars', function() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
-                    preserve  : false,
                     onComplete(cssText, styleNode) {
                         expect(cssText).to.equal(expectCss);
                     }
@@ -224,23 +218,6 @@ describe('css-vars', function() {
                 });
             });
 
-            it('true (appends to <body>)', function() {
-                const elm = createElmsWrap({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'body'
-                })[0];
-
-                cssVars({
-                    include   : '[data-test]',
-                    onlyLegacy: false,
-                    updateDOM : true,
-                    onComplete(cssText, styleNode) {
-                        expect(styleNode.parentNode).to.equal(elm.parentNode);
-                    }
-                });
-            });
-
             it('false (does not append <style>)', function() {
                 createElmsWrap({
                     tag     : 'style',
@@ -275,7 +252,6 @@ describe('css-vars', function() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
-                    preserve  : false,
                     variables : {
                         color2    : 'green',  // No leading --
                         '-color3' : 'blue',   // Malformed
@@ -357,7 +333,7 @@ describe('css-vars', function() {
 
         it('triggers onSuccess callback with proper arguments', function(done) {
             const styleCss  = ':root { --color: red; } p { color: var(--color); }';
-            const expectCss = ':root{--color:red;}p{color:red;color:var(--color);}';
+            const expectCss = 'p{color:red;}';
 
             let onSuccessCssText;
 
@@ -403,7 +379,7 @@ describe('css-vars', function() {
 
         it('triggers onComplete callback with proper arguments', function(done) {
             const styleCss  = ':root { --color: red; } p { color: var(--color); }';
-            const expectCss = ':root{--color:red;}p{color:red;color:var(--color);}';
+            const expectCss = 'p{color:red;}';
 
             createElmsWrap({ tag: 'style', text: styleCss });
 
@@ -433,7 +409,6 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss[0]);
                 }
@@ -444,7 +419,6 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss[1]);
                 }
@@ -458,46 +432,33 @@ describe('css-vars', function() {
                 'p{color:green;}div{color:green;}'
             ];
 
+            // Insert new <style>
             createElmsWrap({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
 
+            // Insert ponyfill <style> BEFORE the first <style>
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
-                    const styleNameParentTag = styleNode.parentNode.tagName.toLowerCase();
+                    const styleElms = document.querySelectorAll('style');
 
-                    expect(styleNameParentTag, 'appended to <head>').to.equal('head');
+                    expect(styleNode, 'inserted before first CSS source node').to.equal(styleElms[0]);
                     expect(cssText).to.equal(expectCss[0]);
                 }
             });
 
-            createElmsWrap({ tag: 'style', text: ':root { --color: green; }' });
+            // Insert new <style> BEFORE ponyfill <style>
+            createElmsWrap({ tag: 'style', text: ':root { --color: green; }', insertBefore: 'style' });
 
+            // Move ponyfill <style> BEFORE first <style>
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
-                    const styleElms    = document.querySelectorAll('head style');
-                    const lastStyleElm = styleElms[styleElms.length - 1];
+                    const styleElms = document.querySelectorAll('style');
 
-                    expect(styleNode, 'appended again to make last <style> node').to.equal(lastStyleElm);
+                    expect(styleNode, 're-inserted before first <style>').to.equal(styleElms[0]);
                     expect(cssText).to.equal(expectCss[1]);
-                }
-            });
-
-            createElmsWrap({ tag: 'style', text: 'div { color: var(--color); }', appendTo: 'body' });
-
-            cssVars({
-                include   : '[data-test]',
-                onlyLegacy: false,
-                preserve  : false,
-                onComplete(cssText, styleNode) {
-                    const styleNameParentTag = styleNode.parentNode.tagName.toLowerCase();
-
-                    expect(styleNameParentTag, 'appended to <body>').to.equal('body');
-                    expect(cssText).to.equal(expectCss[2]);
                 }
             });
         });
@@ -514,7 +475,6 @@ describe('css-vars', function() {
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                preserve  : false,
                 variables : { color: 'red' },
                 onComplete(cssText, styleNode) {
                     expect(cssText).to.equal(expectCss[0]);
@@ -526,7 +486,6 @@ describe('css-vars', function() {
             cssVars({
                 exclude   : ':not([data-test])',
                 onlyLegacy: false,
-                preserve  : false,
                 variables : { width: '100px' },
                 onComplete(cssText, styleNode) {
                     expect(cssText, 'persists').to.equal(expectCss[1]);
@@ -536,7 +495,6 @@ describe('css-vars', function() {
             cssVars({
                 exclude   : ':not([data-test])',
                 onlyLegacy: false,
-                preserve  : false,
                 updateDOM : false,
                 variables : {
                     color: 'blue',
@@ -550,7 +508,6 @@ describe('css-vars', function() {
             cssVars({
                 exclude   : ':not([data-test])',
                 onlyLegacy: false,
-                preserve  : false,
                 onComplete(cssText, styleNode) {
                     expect(cssText, 'does not persists').to.equal(expectCss[1]);
                 }

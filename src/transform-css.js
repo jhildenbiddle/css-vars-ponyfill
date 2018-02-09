@@ -35,7 +35,7 @@ const VAR_FUNC_IDENTIFIER = 'var';
  * @param {boolean}  [options.persist=false] Persists options.variables,
  *                   allowing variables set in previous calls to be applied in
  *                   subsequent calls.
- * @param {boolean}  [options.preserve=true] Preserve CSS variable definitions
+ * @param {boolean}  [options.preserve=false] Preserve CSS variable definitions
  *                   and functions in the return value, allowing "live" variable
  *                   updates via JavaScript to continue working in browsers with
  *                   native CSS variable support.
@@ -50,7 +50,7 @@ function transformVars(cssText, options = {}) {
     const defaults = {
         onlyVars : true,
         persist  : false,
-        preserve : true,
+        preserve : false,
         variables: {},
         onWarning() {}
     };

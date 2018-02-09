@@ -31,10 +31,7 @@ describe('transform-css', function() {
                 p { color: var(--color); }
             `;
             const cssOut    = transformCss(cssIn);
-            const expectCss = `
-                :root { --color: red; }
-                p { color: red; color: var(--color); }
-            `.replace(/\n|\s/g, '');
+            const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
         });
@@ -53,10 +50,7 @@ describe('transform-css', function() {
                 }
             `;
             const cssOut    = transformCss(cssIn);
-            const expectCss = `
-                :root { --color: red; }
-                p { color: red; color: var(--color); }
-            `.replace(/\n|\s/g, '');
+            const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
         });
@@ -67,10 +61,7 @@ describe('transform-css', function() {
                 :root { --color: red; }
             `;
             const cssOut = transformCss(cssIn);
-            const expectCss = `
-                p { color: red; color: var(--color); }
-                :root { --color: red; }
-            `.replace(/\n|\s/g, '');
+            const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
         });
@@ -82,11 +73,7 @@ describe('transform-css', function() {
                 p { color: var(--color1); }
             `;
             const cssOut    = transformCss(cssIn);
-            const expectCss = `
-                :root { --color1: red; --color1: var(--color2); }
-                :root { --color2: red; }
-                p { color: red; color: var(--color1); }
-            `.replace(/\n|\s/g, '');
+            const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
         });
@@ -97,7 +84,7 @@ describe('transform-css', function() {
                 p { margin: 10px var(--margin); }
             `;
             const cssOut    = transformCss(cssIn);
-            const expectCss = ':root{--margin:20px;}p{margin:10px 20px;margin:10px var(--margin);}';
+            const expectCss = 'p{margin:10px 20px;}';
 
             expect(cssOut).to.equal(expectCss);
         });
@@ -105,7 +92,7 @@ describe('transform-css', function() {
         it('transforms variable function fallback', function() {
             const cssIn     = 'p { color: var(--fail, red); }';
             const cssOut    = transformCss(cssIn);
-            const expectCss = 'p{color:red;color:var(--fail, red);}';
+            const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
         });
@@ -126,10 +113,7 @@ describe('transform-css', function() {
                     p { color: green; }
                 `;
                 const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
-                const expectCss = `
-                    :root{ --color:red; }
-                    p { color: red; color: var(--color); }
-                `.replace(/\n|\s/g, '');
+                const expectCss = 'p{color:red;}';
 
                 expect(cssOut).to.equal(expectCss);
             });
@@ -148,11 +132,9 @@ describe('transform-css', function() {
                 `;
                 const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
                 const expectCss = `
-                    :root { --weight: normal; }
                     @font-face {
                         font-family: "test1";
                         font-weight: normal;
-                        font-weight: var(--weight);
                     }
                 `.replace(/\n|\s/g, '');
 
@@ -173,9 +155,8 @@ describe('transform-css', function() {
                 `;
                 const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
                 const expectCss = `
-                    :root { --color: red;}
                     @keyframes test1 {
-                        from { color: red; color: var(--color); }
+                        from { color: red; }
                         to { color: green; }
                     }
                 `.replace(/\n|\s/g, '').replace(/@keyframes/, '@keyframes ');
@@ -193,9 +174,8 @@ describe('transform-css', function() {
                 `;
                 const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
                 const expectCss = `
-                    :root { --color: red; }
                     @media screen {
-                        p { color: red; color: var(--color); }
+                        p { color: red; }
                     }
                 `.replace(/\n|\s/g, '').replace(/@media/, '@media ');
 
@@ -209,7 +189,7 @@ describe('transform-css', function() {
                     :root { --color: red; }
                     p { color: var(--color); }
                 `;
-                const cssOut    = transformCss(cssIn).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, { preserve: true }).replace(/\n/g, '');
                 const expectCss = `
                     :root { --color: red; }
                     p { color: red; color: var(--color); }
@@ -262,7 +242,6 @@ describe('transform-css', function() {
             it('No leading --', function() {
                 const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
                 const cssOut    = transformCss(cssIn, {
-                    preserve : false,
                     variables: { color2: 'green' }
                 }).replace(/\n/g, '');
                 const expectCss = 'p{color:red;}p{color:green;}';
@@ -273,7 +252,6 @@ describe('transform-css', function() {
             it('Malformed single -', function() {
                 const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
                 const cssOut    = transformCss(cssIn, {
-                    preserve : false,
                     variables: { '-color2': 'green' }
                 }).replace(/\n/g, '');
                 const expectCss = 'p{color:red;}p{color:green;}';
@@ -284,7 +262,6 @@ describe('transform-css', function() {
             it('Leading --', function() {
                 const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
                 const cssOut    = transformCss(cssIn, {
-                    preserve : false,
                     variables: { '--color2': 'green' }
                 }).replace(/\n/g, '');
                 const expectCss = 'p{color:red;}p{color:green;}';
@@ -295,7 +272,6 @@ describe('transform-css', function() {
             it('Override existing variable', function() {
                 const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
                 const cssOut    = transformCss(cssIn, {
-                    preserve : false,
                     variables: {
                         '--color1': 'blue',
                         '--color2': 'green'

@@ -15,7 +15,7 @@ const defaults = {
     // Options
     onlyLegacy: true,  // cssVars
     onlyVars  : true,  // cssVars, transformCss
-    preserve  : true,  // transformCss
+    preserve  : false,  // transformCss
     silent    : false, // cssVars
     updateDOM : true,  // cssVars
     variables : {},    // transformCss
@@ -48,7 +48,7 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @param {boolean}  [options.onlyVars=true] Determines if CSS rulesets and
  *                   declarations without a custom property value should be
  *                   removed from the ponyfill-generated CSS
- * @param {boolean}  [options.preserve=true] Determines if the original CSS
+ * @param {boolean}  [options.preserve=false] Determines if the original CSS
  *                   custom property declaration will be retained in the
  *                   ponyfill-generated CSS.
  * @param {boolean}  [options.silent=false] Determines if warning and error
@@ -83,11 +83,11 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *   cssVars({
  *     include   : 'style,link[rel="stylesheet"]', // default
  *     exclude   : '',
- *     onlyLegacy: true, // default
- *     onlyVars  : true, // default
- *     preserve  : true, // default
+ *     onlyLegacy: true,  // default
+ *     onlyVars  : true,  // default
+ *     preserve  : false, // default
  *     silent    : false, // default
- *     updateDOM : true, // default
+ *     updateDOM : true,  // default
  *     variables : {
  *       // ...
  *     },
@@ -167,6 +167,8 @@ function cssVars(options = {}) {
                         cssText = returnVal === false ? '' : returnVal || cssText;
 
                         if (settings.updateDOM) {
+                            const insertBeforeNode = document.querySelector('head link[rel=stylesheet],head style, head :last-child');
+
                             styleNode = document.querySelector(`#${styleNodeId}`) || document.createElement('style');
                             styleNode.setAttribute('id', styleNodeId);
 
@@ -174,17 +176,9 @@ function cssVars(options = {}) {
                                 styleNode.textContent = cssText;
                             }
 
-                            // Append <style> element to either the <head> or
-                            // <body> based on the position of last stylesheet
-                            // node.
-                            const sourceNodes = document.querySelectorAll('link[rel=stylesheet],style');
-                            const styleTarget = document.querySelector(`body link[rel=stylesheet], body style:not(#${styleNodeId})`) ? document.body : document.head;
-                            const isNewTarget = styleNode.parentNode !== styleTarget;
-                            const isNotLast   = sourceNodes[sourceNodes.length -1] !== styleNode;
-
-                            if (isNewTarget || isNotLast) {
-                                styleTarget.appendChild(styleNode);
-                            }
+                            // Insert <style> before other source elements to
+                            // maintain cascade order
+                            document.head.insertBefore(styleNode, insertBeforeNode);
                         }
                     }
                     catch(err) {

@@ -6,7 +6,8 @@
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
 
-A [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) ("CSS variables") in legacy browsers.
+> A [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) ("CSS variables") in legacy browsers.
+>
 
 ## Why
 
@@ -168,7 +169,7 @@ cssVars({
   exclude   : '',
   onlyLegacy: true,
   onlyVars  : true,
-  preserve  : true,
+  preserve  : false,
   silent    : false,
   updateDOM : true,
   variables : {
@@ -231,8 +232,6 @@ cssVars({
 Determines if the ponyfill will only generate legacy-compatible CSS in browsers that lack native support (i.e., legacy browsers).
 
 When `true`, the ponyfill will only generate legacy-compatible CSS, trigger callbacks, and (optionally) update the DOM in browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
-
-**Tip:** Setting this value to `false` can be useful when all browsers should function identically, such as when testing the ponyfill using a modern browser.
 
 **Example**
 
@@ -311,11 +310,11 @@ p {
 ### options.preserve
 
 - Type: `boolean`
-- Default: `true`
+- Default: `false`
 
 Determines if the original CSS custom property declaration will be retained in the ponyfill-generated CSS.
 
-When `true`, the original custom property declarations are available in the ponyfill-generated CSS along with their static values. This allows native methods like [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) and [getPropertyValue()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/getPropertyValue) to continue working as expected in modern browsers. When `false`, only static values are available in the ponyfill-generated CSS. This reduces the CSS output size, but prevents modifying property values using native methods due to the browser's cascade behavior.
+When `true`, the original custom property declarations are available in the ponyfill-generated CSS along with their static values. When `false`, only static values are available in the ponyfill-generated CSS.
 
 **Example**
 

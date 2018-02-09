@@ -669,7 +669,7 @@ function transformVars(cssText) {
     var defaults = {
         onlyVars: true,
         persist: false,
-        preserve: true,
+        preserve: false,
         variables: {},
         onWarning: function onWarning() {}
     };
@@ -832,7 +832,7 @@ var defaults = {
     exclude: "",
     onlyLegacy: true,
     onlyVars: true,
-    preserve: true,
+    preserve: false,
     silent: false,
     updateDOM: true,
     variables: {},
@@ -861,7 +861,7 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
  * @param {boolean}  [options.onlyVars=true] Determines if CSS rulesets and
  *                   declarations without a custom property value should be
  *                   removed from the ponyfill-generated CSS
- * @param {boolean}  [options.preserve=true] Determines if the original CSS
+ * @param {boolean}  [options.preserve=false] Determines if the original CSS
  *                   custom property declaration will be retained in the
  *                   ponyfill-generated CSS.
  * @param {boolean}  [options.silent=false] Determines if warning and error
@@ -896,11 +896,11 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
  *   cssVars({
  *     include   : 'style,link[rel="stylesheet"]', // default
  *     exclude   : '',
- *     onlyLegacy: true, // default
- *     onlyVars  : true, // default
- *     preserve  : true, // default
+ *     onlyLegacy: true,  // default
+ *     onlyVars  : true,  // default
+ *     preserve  : false, // default
  *     silent    : false, // default
- *     updateDOM : true, // default
+ *     updateDOM : true,  // default
  *     variables : {
  *       // ...
  *     },
@@ -953,18 +953,13 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
                         var returnVal = settings.onSuccess(cssText);
                         cssText = returnVal === false ? "" : returnVal || cssText;
                         if (settings.updateDOM) {
+                            var insertBeforeNode = document.querySelector("head link[rel=stylesheet],head style, head :last-child");
                             styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");
                             styleNode.setAttribute("id", styleNodeId);
                             if (styleNode.textContent !== cssText) {
                                 styleNode.textContent = cssText;
                             }
-                            var sourceNodes = document.querySelectorAll("link[rel=stylesheet],style");
-                            var styleTarget = document.querySelector("body link[rel=stylesheet], body style:not(#" + styleNodeId + ")") ? document.body : document.head;
-                            var isNewTarget = styleNode.parentNode !== styleTarget;
-                            var isNotLast = sourceNodes[sourceNodes.length - 1] !== styleNode;
-                            if (isNewTarget || isNotLast) {
-                                styleTarget.appendChild(styleNode);
-                            }
+                            document.head.insertBefore(styleNode, insertBeforeNode);
                         }
                     } catch (err) {
                         var errorThrown = false;
