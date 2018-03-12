@@ -1,6 +1,6 @@
 /*!
  * css-vars-ponyfill
- * v1.1.0
+ * v1.1.1
  * https://github.com/jhildenbiddle/css-vars-ponyfill
  * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
