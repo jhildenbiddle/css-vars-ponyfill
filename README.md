@@ -1,27 +1,37 @@
-# css-vars-ponyfill [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%20ponyfill%20that%20provides%20client-side%20support%20for%20CSS%20custom%20properties%20(%22CSS%20variables%22)&url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&via=jhildenbiddle&hashtags=css,developers,frontend,javascript)
+# css-vars-ponyfill
 
 [![NPM](https://img.shields.io/npm/v/css-vars-ponyfill.svg?style=flat-square)](https://www.npmjs.com/package/css-vars-ponyfill)
 [![Build Status](https://img.shields.io/travis/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://travis-ci.org/jhildenbiddle/css-vars-ponyfill)
 [![Codacy grade](https://img.shields.io/codacy/grade/5d967da1e518489aac42d99b87088671.svg?style=flat-square)](https://www.codacy.com/app/jhildenbiddle/css-vars-ponyfill?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jhildenbiddle/css-vars-ponyfill&amp;utm_campaign=Badge_Grade)
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
+[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Client-side%20legacy%20support%20for%20CSS%20custom%20properties%20(%22CSS%20variables%22)&url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript)
 
-> A [ponyfill](https://github.com/sindresorhus/ponyfill) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) ("CSS variables") in legacy browsers.
->
+A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) (aka "CSS variables") in legacy browsers.
 
-## Why
+- [Demo / Playground](https://codepen.io/jhildenbiddle/pen/ZxYJrR/) (CodePen)
 
-Legacy "support" for CSS custom properties often means using a CSS preprocessor such as [PostCSS](http://postcss.org/) or [Sass](http://sass-lang.com/) to perform a one-time transformation of custom properties to static values prior to deployment. This approach allows developers to define variables and values using the CSS custom property *syntax*, but it fails to deliver one of the primary benefits of CSS custom properties: the ability to **set values dynamically at runtime** and have the DOM update accordingly.
+------
 
-This ponyfill was created specifically to address this issue. There are limitations to consider (see below), but if these limitations are acceptable then this ponyfill should simplify working with custom properties when legacy support is required.
+- [Features](#features)
+- [Installation](#installation)
+- [Examples](#examples)
+- [Options](#options)
+- [Attribution](#attribution)
+- [Contact](#contact)
+- [License](#license)
+
+------
 
 ## Features
 
-- Client-side transformation of CSS custom properties to static values in legacy browsers
-- Unified interface for modifying runtime values in modern and legacy browsers
-- Persistant changes on subsequent calls in legacy browsers
-- Support for custom property fallback values
-- UMD and ES6 modules available
+- Client-side transformation of CSS custom properties to static values
+- Live updates of runtime values in both modern and legacy browsers
+- Transforms `<style>`,  `<link>`, and `@import` CSS
+- Supports chained custom property references
+- Supports complex values
+- Supports fallback values
+- UMD and ES6 module available
 - Lightweight (less than 5k min+gzip) and dependency-free
 
 **Limitations**
@@ -29,12 +39,18 @@ This ponyfill was created specifically to address this issue. There are limitati
 - Custom property support is limited to `:root` declarations
 - The use of `var()` is limited to property values (per [W3C specification](https://www.w3.org/TR/css-variables/))
 
+**Browser Support**
+
+| IE   | Edge | Chrome | Firefox | Safari |
+| ---- | ---- | ------ | ------- | ------ |
+| 9+   | 12+  | 17+    | 6+      | 5.1+   |
+
 ## Installation
 
 NPM:
 
 ```shell
-npm install css-vars-ponyfill
+npm i css-vars-ponyfill
 ```
 
 Git:
@@ -43,122 +59,116 @@ Git:
 git clone https://github.com/jhildenbiddle/css-vars-ponyfill.git
 ```
 
-CDN ([unpkg.com](https://unpkg.com/) shown, also on [jsdelivr.net](https://www.jsdelivr.com/)):
+CDN ([unpkg](https://unpkg.com/css-vars-ponyfill/dist/) or [jsdelivr](https://www.jsdelivr.com/package/npm/css-vars-ponyfill)):
 
 ```html
-<!-- ES5 in file.html (latest v1.x.x) -->
+<!-- Minified UMD (latest v1.x.x) -->
 <script src="https://unpkg.com/css-vars-ponyfill@1"></script>
-<script>
-  cssVars({
-    // options...
-  });
-</script>
 ```
 
-```html
-<!-- ES6 module in file.html (latest v1.x.x) -->
-<script type="module">
-  import cssVars from 'https://unpkg.com/css-vars-ponyfill@1/dist/css-vars-ponyfill.esm.min.js';
-  cssVars({
-    // options...
-  });
-</script>
-```
+## Examples
+
+JavaScript (see [Options](#options)):
 
 ```javascript
-// ES6 module in file.js (latest v1.x.x)
-import cssVars from 'https://unpkg.com/css-vars-ponyfill@1/dist/css-vars-ponyfill.esm.min.js';
+import cssVars from 'css-vars-ponyfill';
+
+// Call using defaults
+cssVars();
+
+// Or call with options
 cssVars({
-  // options...
+  // ...
 });
 ```
-
-## Example
 
 HTML:
 
 ```html
-<link rel="stylesheet" href="style.css">
-<style>
-  :root {
-    --color2: green;
-  }
-  .two {
-    color: var(--color2);
-  }
-</style>
+<head>
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Local CSS -->
+  <style>
+    :root {
+      --color: black;
+    }
+  </style>
+</head>
 ```
 
 External CSS:
 
 ```css
-/* style.css */
+/* File: style.css */
 :root {
-  --color1: red;
+  /* Chained references */
+  --a: var(--b);
+  --b: var(--c);
+  --c: 10px;
 }
-.two {
-  color: var(--color1);
+
+div {
+  color: var(--color);
+
+  /* Fallback */
+  margin: var(--unknown, 20px));
+
+  /* Complex value */
+  padding: calc(2 * var(--a));
 }
 ```
 
-JavaScript (see [Options](#options) for details):
+Transformed CSS prepended to `<head>`:
 
-```javascript
-// Call using default options
-cssVars();
-```
-
-CSS is generated and appended to the DOM:
-
-```css
+```html
 <style id="css-vars-ponyfill">
-  :root {
-    --color1: red;
-    --color2: green;
-  }
-  .one {
-    color: red;
-    color: var(--color1);
-  }
-  .two {
-    color: green;
-    color: var(--color2);
+  div {
+    color: black;
+    margin: 20px;
+    padding: calc(2 * 10px);
   }
 </style>
 ```
 
-To add or modify values, call `cssVars()` using [options.variables](#optionsvariables)...
+To update values, call `cssVars()` with [options.variables](#optionsvariables) specified...
 
 ```javascript
-// Call using default options
 cssVars({
   variables: {
-    color1: 'blue',
-    color2: 'purple'
+    color: 'red',
+    unknown: '5px'
   }
 });
 ```
 
-… and the previously generated CSS will be updated.
+… and the previously transformed CSS is updated with new values.
 
-```css
+```html
 <style id="css-vars-ponyfill">
-  :root {
-    --color1: blue;
-    --color2: purple;
-  }
-  .one {
-    color: blue;
-    color: var(--color1);
-  }
-  .two {
-    color: purple;
-    color: var(--color2);
+  div {
+    color: red;
+    margin: 5px;
+    padding: calc(2 * 10px);
   }
 </style>
 ```
 
 ## Options
+
+- [include](#optionsinclude)
+- [excluse](#optionsexclude)
+- [onlyLegacy](#optionsonlylegacy)
+- [onlyVars](#optionsonlyvars)
+- [preserve](#optionspreserve)
+- [silent](#optionssilent)
+- [updateDOM](#optionsupdatedom)
+- [variables](#optionsvariables)
+- [onSuccess](#optionsonsuccess)
+- [onError](#optionsonerror)
+- [onWarning](#optionsonwarning)
+- [onComplete](#optionsoncomplete)
 
 **Example**
 
@@ -237,7 +247,7 @@ When `true`, the ponyfill will only generate legacy-compatible CSS, trigger call
 
 ```javascript
 cssVars({
-  onlyLegacy: true
+  onlyLegacy: true // default
 });
 ```
 
@@ -246,7 +256,7 @@ cssVars({
 - Type: `boolean`
 - Default: `true`
 
-Determines if CSS rulesets and declarations without a custom property value should be removed from the ponyfill-generated CSS.
+Determines if CSS rulesets and declarations without a custom property value should be removed from the transformed CSS.
 
 When `true`, rulesets and declarations without a custom property value will be removed from the generated CSS, reducing CSS output size. When `false`, all rulesets and declarations will be retained in the generated CSS.
 
@@ -274,28 +284,21 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onlyVars: true
+  onlyVars: true // default
 });
 ```
 
 Output when `onlyVars: true`
 
 ```css
-:root {
-  --color: red;
-}
 p {
   color: red;
-  color: var(--color);
 }
 ```
 
 Output when `onlyVars: false`
 
 ```css
-:root {
-  --color: red;
-}
 h1 {
   font-weight: bold;
 }
@@ -303,7 +306,6 @@ p {
   margin: 20px;
   padding: 10px;
   color: red;
-  color: var(--color);
 }
 ```
 
@@ -312,9 +314,9 @@ p {
 - Type: `boolean`
 - Default: `false`
 
-Determines if the original CSS custom property declaration will be retained in the ponyfill-generated CSS.
+Determines if the original CSS custom property declaration will be retained in the transformed CSS.
 
-When `true`, the original custom property declarations are available in the ponyfill-generated CSS along with their static values. When `false`, only static values are available in the ponyfill-generated CSS.
+When `true`, the original custom property declarations are available in the transformed CSS along with their static values. When `false`, only static values are available in the transformed CSS.
 
 **Example**
 
@@ -333,8 +335,16 @@ JavaScript:
 
 ```javascript
 cssVars({
-  preserve: true
+  preserve: false // default
 });
+```
+
+Output when `preserve: false`
+
+```css
+p {
+  color: red;
+}
 ```
 
 Output when `preserve: true`
@@ -346,14 +356,6 @@ Output when `preserve: true`
 p {
   color: red;
   color: var(--color);
-}
-```
-
-Output when `preserve: false`
-
-```css
-p {
-  color: red;
 }
 ```
 
@@ -386,7 +388,7 @@ JavaScript:
 
 ```javascript
 cssVars({
-  silent: false
+  silent: false // default
 });
 ```
 
@@ -405,14 +407,37 @@ Console:
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, legacy browsers will have a `<style>` node appended with ponyfill-generated CSS and modern browsers with native support will apply [options.variables](#optionsvariabls) as custom properties using the native  [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but ponyfill-generated CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
+When `true`, legacy browsers will have a `<style>` node with transformed CSS prepended to the `<head>`, while browsers with native support will apply [options.variables](#optionsvariabls) custom properties using the native  [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
 
 **Example**
 
+HTML:
+
+```html
+<head>
+  <title>Title</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+```
+
+JavaScript:
+
 ```javascript
 cssVars({
-  updateDOM: true
+  updateDOM: true // default
 });
+```
+
+Result when `updateDOM: true`
+
+```html
+<head>
+  <title>Title</title>
+  <style id="css-vars-ponyfill">
+    /* Transformed CSS ... */
+  </style>
+  <link rel="stylesheet" href="style.css">
+</head>
 ```
 
 ### options.variables
@@ -420,7 +445,7 @@ cssVars({
 - Type: `object`
 - Default: `{}`
 
-A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`—`), and values specified will override previous values.
+A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`--`), and values specified will override previous values.
 
 Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native custom property support will apply these values using the native [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
 
@@ -429,9 +454,7 @@ Legacy browsers will process these values while generating legacy-compatible CSS
 ```javascript
 cssVars({
   variables: {
-    // without leading '--'
     color1    : 'red',
-    // with leading '--'
     '--color2': 'green'
   }
 });
@@ -448,11 +471,12 @@ Callback after all CSS has been processed and legacy-compatible CSS has been gen
 **Example**
 
 ```javascript
-// Beautify CSS output (requires separate beautify lib)
+const beautifyCss = require('js-beautify').css;
+
 cssVars({
   onSuccess(cssText, node, url) {
-    const newCssText = beautify(cssText);
-    return newCssText;
+    // Beautify CSS
+    return beautifyCss(cssText);
   }
 });
 ```
@@ -557,8 +581,8 @@ This ponyfill includes code based on the following projects. Many thanks to the 
 
 - Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports, feature requests, or questions
 - Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for announcements
+- Add a [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or [tweet](https://twitter.com/intent/tweet?text=Client-side%20legacy%20support%20for%20CSS%20custom%20properties%20(%22CSS%20variables%22)&url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE) for details.
-
