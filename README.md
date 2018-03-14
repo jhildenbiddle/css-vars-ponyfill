@@ -43,7 +43,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 | IE   | Edge | Chrome | Firefox | Safari |
 | ---- | ---- | ------ | ------- | ------ |
-| 9+   | 12+  | 17+    | 6+      | 5.1+   |
+| 9+   | 12+  | 19+    | 6+      | 6+     |
 
 ## Installation
 
