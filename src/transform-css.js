@@ -240,7 +240,7 @@ function filterVars(rules) {
         }
         // @document, @media, @supports
         else if (rule.rules) {
-            rule.rules = filterVars(rule.rules).filter(r => r.declarations.length);
+            rule.rules = filterVars(rule.rules).filter(r => r.declarations && r.declarations.length);
 
             return Boolean(rule.rules.length);
         }
