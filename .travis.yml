@@ -13,9 +13,9 @@ before_install:
 
 script:
   # Main repo
-  - if [ $TRAVIS_PULL_REQUEST != "false" ]; then npm run test-remote; fi
+  - if [ $TRAVIS_PULL_REQUEST = "false" ]; then npm run test-remote; fi
   # Forks (Travis blocks encrypted environment variables, so no remote tests)
-  - if [ $TRAVIS_PULL_REQUEST = "false" ]; then npm run test; fi
+  - if [ $TRAVIS_PULL_REQUEST != "false" ]; then npm test; fi
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -e TRAVIS_NODE_VERSION
