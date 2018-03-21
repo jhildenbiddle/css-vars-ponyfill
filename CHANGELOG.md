@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.2.1 - 2018-03-20
+
+**Changed**
+
+- Updated README Examples section
+
 ## 1.2.0 - 2018-03-20
 
 **Fixed**
@@ -11,7 +17,7 @@
 
 **Changed**
 
-- Updated README: browser support table.
+- Updated README browser support table.
 
 ## 1.1.1 - 2018-03-12
 

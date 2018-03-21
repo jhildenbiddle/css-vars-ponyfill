@@ -68,40 +68,22 @@ CDN ([unpkg](https://unpkg.com/css-vars-ponyfill/dist/) or [jsdelivr](https://ww
 
 ## Examples
 
-JavaScript (see [Options](#options)):
-
-```javascript
-import cssVars from 'css-vars-ponyfill';
-
-// Call using defaults
-cssVars();
-
-// Or call with options
-cssVars({
-  // ...
-});
-```
-
-HTML:
+HTML / CSS:
 
 ```html
-<head>
-  <!-- External CSS -->
-  <link rel="stylesheet" href="style.css">
+<!-- file.html -->
 
-  <!-- Local CSS -->
-  <style>
-    :root {
-      --color: black;
-    }
-  </style>
-</head>
+<link rel="stylesheet" href="style.css">
+<style>
+  :root {
+    --color: black;
+  }
+</style>
 ```
 
-External CSS:
-
 ```css
-/* File: style.css */
+/* style.css */
+
 :root {
   /* Chained references */
   --a: var(--b);
@@ -120,7 +102,21 @@ div {
 }
 ```
 
-Transformed CSS prepended to `<head>`:
+JavaScript (see [Options](#options)):
+
+```javascript
+import cssVars from 'css-vars-ponyfill';
+
+// Call using defaults
+cssVars();
+
+// Or call with options
+cssVars({
+  // ...
+});
+```
+
+CSS is fetched, parsed, transformed, and prepended to `<head>`:
 
 ```html
 <style id="css-vars-ponyfill">
@@ -132,7 +128,7 @@ Transformed CSS prepended to `<head>`:
 </style>
 ```
 
-To update values, call `cssVars()` with [options.variables](#optionsvariables) specified...
+To update values, call `cssVars()` with [options.variables](#optionsvariables):
 
 ```javascript
 cssVars({
@@ -143,7 +139,7 @@ cssVars({
 });
 ```
 
-… and the previously transformed CSS is updated with new values.
+Changes are applied in legacy and modern browsers. For legacy browsers, the previously transformed CSS is transformed once again and prepended to the `<head>` (below). For modern browsers with native custom property support, values are updated using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
 
 ```html
 <style id="css-vars-ponyfill">
