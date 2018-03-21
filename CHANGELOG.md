@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.2.0 - 2018-03-20
+
+**Fixed**
+
+- Fixed "Cannot read property 'length' of undefined" bug triggered while
+  filtering comments that are a direct descendant of an at-rule.
+
 ## 1.1.2 - 2018-03-12
 
 **Changed**

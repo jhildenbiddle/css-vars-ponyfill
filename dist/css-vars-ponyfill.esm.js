@@ -787,7 +787,7 @@ function filterVars(rules) {
             }).length);
         } else if (rule.rules) {
             rule.rules = filterVars(rule.rules).filter(function(r) {
-                return r.declarations.length;
+                return r.declarations && r.declarations.length;
             });
             return Boolean(rule.rules.length);
         }
