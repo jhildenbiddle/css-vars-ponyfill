@@ -95,7 +95,7 @@ div {
   color: var(--color);
 
   /* Fallback */
-  margin: var(--unknown, 20px));
+  margin: var(--unknown, 20px);
 
   /* Complex value */
   padding: calc(2 * var(--a));
@@ -139,22 +139,31 @@ cssVars({
 });
 ```
 
-Changes are applied in legacy and modern browsers. For legacy browsers, the previously transformed CSS is transformed once again and prepended to the `<head>` (below). For modern browsers with native custom property support, values are updated using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
+Updated values are applied in both legacy and modern browsers:
 
-```html
-<style id="css-vars-ponyfill">
-  div {
-    color: red;
-    margin: 5px;
-    padding: calc(2 * 10px);
-  }
-</style>
-```
+- Legacy browsers will parse, transform, and prepend CSS to the `<head>` element once again.
+
+   ```html
+   <style id="css-vars-ponyfill">
+     div {
+       color: red;
+       margin: 5px;
+       padding: calc(2 * 10px);
+     }
+   </style>
+   ```
+
+- Modern browsers with native custom property support will update using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
+
+   ```javascript
+   document.documentElement.style.setProperty('--color', 'red');
+   document.documentElement.style.setProperty('--unknown', '5px');
+   ```
 
 ## Options
 
 - [include](#optionsinclude)
-- [excluse](#optionsexclude)
+- [exclude](#optionsexclude)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
