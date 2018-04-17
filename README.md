@@ -280,6 +280,7 @@ Output when `fixNestedCalc: true`
 
 ```css
 p {
+  /* Works in legacy browsers */
   margin: calc(1px + (2px + (3px + 4)));
 }
 ```
@@ -288,6 +289,7 @@ Output when `fixNestedCalc: false`
 
 ```css
 p {
+  /* Does not work in legacy browsers */
 	margin: calc(1px + calc(2px + calc(3px + 4)));
 }
 ```
