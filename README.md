@@ -95,6 +95,7 @@ HTML / CSS:
 }
 
 div {
+  /* External value (from <style>) */
   color: var(--color);
 
   /* Fallback */
