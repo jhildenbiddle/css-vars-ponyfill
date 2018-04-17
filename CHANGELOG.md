@@ -1,16 +1,23 @@
 # Change Log
 
+## 1.3.0 - 2018-04-17
+
+**Added**
+
+- Added `fixNestedCalc` option to remove nested `calc` keywords for legacy
+  browser compatibility.
+
 ## 1.2.2 - 2018-03-24
 
 **Changed**
 
-- Updated README Examples section
+- Updated README Examples section.
 
 ## 1.2.1 - 2018-03-20
 
 **Changed**
 
-- Updated README Examples section
+- Updated README Examples section.
 
 ## 1.2.0 - 2018-03-20
 

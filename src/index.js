@@ -10,15 +10,16 @@ import { name as pkgName } from '../package.json';
 // =============================================================================
 const defaults = {
     // Sources
-    include   : 'style,link[rel=stylesheet]',
-    exclude   : '',
+    include      : 'style,link[rel = stylesheet]',
+    exclude      : '',
     // Options
-    onlyLegacy: true,  // cssVars
-    onlyVars  : true,  // cssVars, transformCss
-    preserve  : false,  // transformCss
-    silent    : false, // cssVars
-    updateDOM : true,  // cssVars
-    variables : {},    // transformCss
+    fixNestedCalc: true,  // transformCss
+    onlyLegacy   : true,  // cssVars
+    onlyVars     : true,  // cssVars, transformCss
+    preserve     : false, // transformCss
+    silent       : false, // cssVars
+    updateDOM    : true,  // cssVars
+    variables    : {},    // transformCss
     // Callbacks
     onSuccess() {},     // cssVars
     onError() {},       // cssVars
@@ -42,6 +43,8 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @param {string}   [options.exclude=""] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
+ * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
+ *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -81,14 +84,15 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @example
  *
  *   cssVars({
- *     include   : 'style,link[rel="stylesheet"]', // default
- *     exclude   : '',
- *     onlyLegacy: true,  // default
- *     onlyVars  : true,  // default
- *     preserve  : false, // default
- *     silent    : false, // default
- *     updateDOM : true,  // default
- *     variables : {
+ *     include      : 'style,link[rel="stylesheet"]', // default
+ *     exclude      : '',
+ *     fixNestedCalc: true,  // default
+ *     onlyLegacy   : true,  // default
+ *     onlyVars     : true,  // default
+ *     preserve     : false, // default
+ *     silent       : false, // default
+ *     updateDOM    : true,  // default
+ *     variables    : {
  *       // ...
  *     },
  *     onError(message, node) {
@@ -150,11 +154,12 @@ function cssVars(options = {}) {
 
                     try {
                         cssText = transformCss(cssText, {
-                            onlyVars : settings.onlyVars,
-                            persist  : settings.updateDOM,
-                            preserve : settings.preserve,
-                            variables: settings.variables,
-                            onWarning: handleWarning
+                            fixNestedCalc: settings.fixNestedCalc,
+                            onlyVars     : settings.onlyVars,
+                            persist      : settings.updateDOM,
+                            preserve     : settings.preserve,
+                            variables    : settings.variables,
+                            onWarning    : handleWarning
                         });
 
                         // Success if an error was not been throw during

@@ -114,6 +114,48 @@ describe('transform-css', function() {
     // Tests: Options
     // -------------------------------------------------------------------------
     describe('Options', function() {
+        describe('fixNestedCalc', function() {
+            it('true (without vars)', function() {
+                const cssIn = 'p { margin: calc(1px + calc(2px + calc(3px + 3px))); }';
+                const cssOut    = transformCss(cssIn, {
+                    fixNestedCalc: true,
+                    onlyVars     : false
+                }).replace(/\n/g, '');
+                const expectCss = 'p{margin:calc(1px + (2px + (3px + 3px)));}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+
+            it('true (with vars)', function() {
+                const cssIn = `
+                    :root {
+                        --a: calc(1 + var(--b));
+                        --b: calc(2 + var(--c));
+                        --c: calc(3 + var(--d));
+                        --d: 3;
+                    }
+                    p {
+                        margin: 1px var(--a) 2px;
+                    }
+                `;
+                const cssOut    = transformCss(cssIn, { fixNestedCalc: true }).replace(/\n/g, '');
+                const expectCss = 'p{margin:1px calc(1 + (2 + (3 + 3))) 2px;}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+
+            it('false (without vars)', function() {
+                const cssIn = 'p { margin: calc(1px + calc(2px + calc(3px + 3px))); }';
+                const cssOut    = transformCss(cssIn, {
+                    fixNestedCalc: false,
+                    onlyVars     : false
+                }).replace(/\n/g, '');
+                const expectCss = 'p{margin:calc(1px + calc(2px + calc(3px + 3px)));}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+        });
+
         // The 'onlyVars' option is used in this module as well as the index.js
         // module. Testing how this options is handled by each module is handled
         // in each module's test file.

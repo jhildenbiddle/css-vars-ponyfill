@@ -654,6 +654,7 @@
     function transformVars(cssText) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
+            fixNestedCalc: true,
             onlyVars: true,
             persist: false,
             preserve: false,
@@ -749,6 +750,9 @@
                 }
             }
         });
+        if (settings.fixNestedCalc) {
+            fixNestedCalc(cssTree.stylesheet.rules);
+        }
         return stringifyCss(cssTree);
     }
     function filterVars(rules) {
@@ -778,6 +782,28 @@
                 return Boolean(rule.rules.length);
             }
             return true;
+        });
+    }
+    function fixNestedCalc(rules) {
+        var reCalcExp = /(-[a-z]+-)?calc\(/;
+        rules.forEach(function(rule) {
+            if (rule.declarations) {
+                rule.declarations.forEach(function(decl) {
+                    var oldValue = decl.value;
+                    var newValue = "";
+                    while (reCalcExp.test(oldValue)) {
+                        var rootCalc = balancedMatch("calc(", ")", oldValue || "");
+                        oldValue = oldValue.slice(rootCalc.end);
+                        while (reCalcExp.test(rootCalc.body)) {
+                            var nestedCalc = balancedMatch(reCalcExp, ")", rootCalc.body);
+                            rootCalc.body = nestedCalc.pre + "(" + nestedCalc.body + ")" + nestedCalc.post;
+                        }
+                        newValue += rootCalc.pre + "calc(" + rootCalc.body;
+                        newValue += !reCalcExp.test(oldValue) ? ")" + rootCalc.post : "";
+                    }
+                    decl.value = newValue || decl.value;
+                });
+            }
         });
     }
     function resolveValue(value, map, settings) {
@@ -811,8 +837,9 @@
     }
     var name = "css-vars-ponyfill";
     var defaults = {
-        include: "style,link[rel=stylesheet]",
+        include: "style,link[rel = stylesheet]",
         exclude: "",
+        fixNestedCalc: true,
         onlyLegacy: true,
         onlyVars: true,
         preserve: false,
@@ -836,6 +863,8 @@
  * @param {string}   [options.exclude=""] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
+ * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
+ *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -875,14 +904,15 @@
  * @example
  *
  *   cssVars({
- *     include   : 'style,link[rel="stylesheet"]', // default
- *     exclude   : '',
- *     onlyLegacy: true,  // default
- *     onlyVars  : true,  // default
- *     preserve  : false, // default
- *     silent    : false, // default
- *     updateDOM : true,  // default
- *     variables : {
+ *     include      : 'style,link[rel="stylesheet"]', // default
+ *     exclude      : '',
+ *     fixNestedCalc: true,  // default
+ *     onlyLegacy   : true,  // default
+ *     onlyVars     : true,  // default
+ *     preserve     : false, // default
+ *     silent       : false, // default
+ *     updateDOM    : true,  // default
+ *     variables    : {
  *       // ...
  *     },
  *     onError(message, node) {
@@ -925,6 +955,7 @@
                         var styleNode = null;
                         try {
                             cssText = transformVars(cssText, {
+                                fixNestedCalc: settings.fixNestedCalc,
                                 onlyVars: settings.onlyVars,
                                 persist: settings.updateDOM,
                                 preserve: settings.preserve,

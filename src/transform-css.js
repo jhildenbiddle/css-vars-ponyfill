@@ -28,6 +28,8 @@ const VAR_FUNC_IDENTIFIER = 'var';
  *
  * @param {object}   cssText CSS containing variable definitions and functions
  * @param {object}   [options] Options object
+ * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
+ *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyVars=true] Remove declarations that do not
  *                   contain a CSS variable from the return value. Note that
  *                   @font-face and @keyframe rules require all declarations to
@@ -48,10 +50,11 @@ const VAR_FUNC_IDENTIFIER = 'var';
  */
 function transformVars(cssText, options = {}) {
     const defaults = {
-        onlyVars : true,
-        persist  : false,
-        preserve : false,
-        variables: {},
+        fixNestedCalc: true,
+        onlyVars     : true,
+        persist      : false,
+        preserve     : false,
+        variables    : {},
         onWarning() {}
     };
     const map       = {};
@@ -188,6 +191,11 @@ function transformVars(cssText, options = {}) {
         }
     });
 
+    // Fix nested calc() values
+    if (settings.fixNestedCalc) {
+        fixNestedCalc(cssTree.stylesheet.rules);
+    }
+
     // Return CSS string
     return stringifyCss(cssTree);
 }
@@ -246,6 +254,42 @@ function filterVars(rules) {
         }
 
         return true;
+    });
+}
+
+/**
+ * Removes nested calc keywords for legacy browser compatibility.
+ * Example: calc(1 + calc(2 + calc(3 + 3))) => calc(1 + (2 + (3 + 3)))
+ *
+ * @param {array} rules
+ */
+function fixNestedCalc(rules) {
+    const reCalcExp = /(-[a-z]+-)?calc\(/; // Match "calc(" or "-vendor-calc("
+
+    rules.forEach(rule => {
+        if (rule.declarations) {
+            rule.declarations.forEach(decl => {
+                let oldValue = decl.value;
+                let newValue = '';
+
+                while (reCalcExp.test(oldValue)) {
+                    const rootCalc = balanced('calc(', ')', oldValue || '');
+
+                    oldValue = oldValue.slice(rootCalc.end);
+
+                    while (reCalcExp.test(rootCalc.body)) {
+                        const nestedCalc = balanced(reCalcExp, ')', rootCalc.body);
+
+                        rootCalc.body = `${nestedCalc.pre}(${nestedCalc.body})${nestedCalc.post}`;
+                    }
+
+                    newValue += `${rootCalc.pre}calc(${rootCalc.body}`;
+                    newValue += !reCalcExp.test(oldValue) ? `)${rootCalc.post}` : '';
+                }
+
+                decl.value = newValue || decl.value;
+            });
+        }
     });
 }
 

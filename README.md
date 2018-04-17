@@ -59,10 +59,13 @@ Git:
 git clone https://github.com/jhildenbiddle/css-vars-ponyfill.git
 ```
 
-CDN ([unpkg](https://unpkg.com/css-vars-ponyfill/dist/) or [jsdelivr](https://www.jsdelivr.com/package/npm/css-vars-ponyfill)):
+CDN (minified UMD via [unpkg](https://unpkg.com/css-vars-ponyfill/dist/) or [jsdelivr](https://www.jsdelivr.com/package/npm/css-vars-ponyfill)):
 
 ```html
-<!-- Minified UMD (latest v1.x.x) -->
+<!-- Latest version -->
+<script src="https://unpkg.com/css-vars-ponyfill"></script>
+
+<!-- Latest v1.x.x -->
 <script src="https://unpkg.com/css-vars-ponyfill@1"></script>
 ```
 
@@ -164,6 +167,7 @@ Updated values are applied in both legacy and modern browsers:
 
 - [include](#optionsinclude)
 - [exclude](#optionsexclude)
+- [fixNestedCalc](#optionsfixnestedcalc)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
@@ -237,6 +241,53 @@ cssVars({
   // with an href that contains "bootstrap"
   exclude: '[href*=bootstrap]'
 });
+```
+
+### options.fixNestedCalc
+
+- Type: `boolean`
+- Default: `true`
+
+Determines if nested `calc` keywords will be removed for compatibility with legacy browsers.
+
+**Example**
+
+CSS:
+
+```css
+:root {
+  --a: calc(1px + var(--b));
+  --b: calc(2px + var(--c));
+  --c: calc(3px + var(--d));
+  --d: 4px;
+}
+p {
+  margin: var(--a);
+}
+```
+
+JavaScript:
+
+```javascript
+cssVars({
+  fixNestedCalc: true // default
+});
+```
+
+Output when `fixNestedCalc: true`
+
+```css
+p {
+  margin: calc(1px + (2px + (3px + 4)));
+}
+```
+
+Output when `fixNestedCalc: false`
+
+```css
+p {
+	margin: calc(1px + calc(2px + calc(3px + 4)));
+}
 ```
 
 ### options.onlyLegacy
