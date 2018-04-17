@@ -590,4 +590,6 @@ This ponyfill includes code based on the following projects. Many thanks to the 
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE) for details.
+This project is licensed under the MIT License. See the [MIT LICENSE](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE) for details.
+
+Copyright (c) 2018 John Hildenbiddle ([@jhildenbiddle](https://twitter.com/jhildenbiddle))
