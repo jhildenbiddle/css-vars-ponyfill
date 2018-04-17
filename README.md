@@ -184,14 +184,15 @@ Updated values are applied in both legacy and modern browsers:
 ```javascript
 // Default values shown
 cssVars({
-  include   : 'link[rel=stylesheet],style',
-  exclude   : '',
-  onlyLegacy: true,
-  onlyVars  : true,
-  preserve  : false,
-  silent    : false,
-  updateDOM : true,
-  variables : {
+  include      : 'link[rel=stylesheet],style',
+  exclude      : '',
+  fixNestedCalc: true,
+  onlyLegacy   : true,
+  onlyVars     : true,
+  preserve     : false,
+  silent       : false,
+  updateDOM    : true,
+  variables    : {
     // ...
   },
   onSuccess(cssText) {
