@@ -102,6 +102,17 @@ describe('css-vars', function() {
                 }
             });
         });
+
+        it('handles no matching elements', function() {
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                onComplete(cssText, styleNode) {
+                    expect(cssText).to.equal('');
+                    expect(styleNode).to.equal(null);
+                }
+            });
+        });
     });
 
     // Tests: Options
@@ -140,6 +151,7 @@ describe('css-vars', function() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
+                    onlyVars  : true,
                     onComplete(cssText, styleNode) {
                         expect(cssText).to.equal(expectCss);
                     }
@@ -159,6 +171,27 @@ describe('css-vars', function() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
+                    onlyVars  : true,
+                    onComplete(cssText, styleNode) {
+                        expect(cssText).to.equal(expectCss);
+                    }
+                });
+            });
+
+            it('false - includes all CSS declarations', function() {
+                const styleCss = `
+                    :root {--color: red;}
+                    p { color: var(--color); }
+                    p { color: green; }
+                `;
+                const expectCss = 'p{color:red;}p{color:green;}';
+
+                createElmsWrap({ tag: 'style', text: styleCss });
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    onlyVars  : false,
                     onComplete(cssText, styleNode) {
                         expect(cssText).to.equal(expectCss);
                     }
@@ -201,11 +234,18 @@ describe('css-vars', function() {
         });
 
         describe('updateDOM', function() {
-            it('true (appends to <head>)', function() {
+            it('true (appends <style> after last processed element in <head>)', function() {
                 const elm = createElmsWrap({
                     tag     : 'style',
                     text    : ':root{--color:red;}p{color:var(--color);}',
                     appendTo: 'head'
+                })[0];
+
+                // Not processed by cssVars (used to test insert location)
+                const skipElm = createElms({
+                    tag     : 'style',
+                    text    : ':root{--skipped:true;}',
+                    appendTo: 'body'
                 })[0];
 
                 cssVars({
@@ -213,7 +253,47 @@ describe('css-vars', function() {
                     onlyLegacy: false,
                     updateDOM : true,
                     onComplete(cssText, styleNode) {
-                        expect(styleNode.parentNode).to.equal(elm.parentNode);
+                        const styleElms = Array.from(document.querySelectorAll('style'));
+                        const isAfterLastProcessedElm = elm.nextSibling === styleNode;
+                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm);
+
+                        expect(isAfterLastProcessedElm).to.be.true;
+                        expect(isBeforeSkipElm).to.be.true;
+
+                        // Remove skipElm
+                        skipElm.parentNode.removeChild(skipElm);
+                    }
+                });
+            });
+
+            it('true (appends <style> after last processed element in <body>)', function() {
+                const elm = createElmsWrap({
+                    tag     : 'style',
+                    text    : ':root{--color:red;}p{color:var(--color);}',
+                    appendTo: 'body'
+                })[0];
+
+                // Not processed by cssVars (used to test insert location)
+                const skipElm = createElms({
+                    tag     : 'style',
+                    text    : ':root{--skipped:true;}',
+                    appendTo: 'body'
+                })[0];
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateDOM : true,
+                    onComplete(cssText, styleNode) {
+                        const styleElms = Array.from(document.querySelectorAll('style'));
+                        const isAfterLastProcessedElm = elm.nextSibling === styleNode;
+                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm);
+
+                        expect(isAfterLastProcessedElm).to.be.true;
+                        expect(isBeforeSkipElm).to.be.true;
+
+                        // Remove skipElm
+                        skipElm.parentNode.removeChild(skipElm);
                     }
                 });
             });
@@ -425,42 +505,48 @@ describe('css-vars', function() {
             });
         });
 
-        it('updates <style> parent when called multiple times', function() {
-            const expectCss = [
-                'p{color:red;}',
-                'p{color:green;}',
-                'p{color:green;}div{color:green;}'
-            ];
+        it('updates inserted <style> location when called multiple times', function() {
+            const elm1 = createElmsWrap({ tag: 'style', text: ':root{--processed:true;}' })[0];
 
-            // Insert new <style>
-            createElmsWrap({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
+            // Not processed by cssVars (used to test insert location)
+            const skipElm1 = createElms({ tag : 'style', text: ':root{--skipped:true;}', appendTo: 'head' })[0];
 
-            // Insert ponyfill <style> BEFORE the first <style>
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
                 onComplete(cssText, styleNode) {
-                    const styleElms = document.querySelectorAll('style');
+                    const styleElms = Array.from(document.querySelectorAll('style'));
+                    const isAfterLastProcessedElm = elm1.nextSibling === styleNode;
+                    const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm1);
 
-                    expect(styleNode, 'inserted before first CSS source node').to.equal(styleElms[0]);
-                    expect(cssText).to.equal(expectCss[0]);
+                    expect(styleNode.parentNode, 'inserted into <head>').to.equals(document.head);
+                    expect(isAfterLastProcessedElm, 'inserted after last element processed').to.be.true;
+                    expect(isBeforeSkipElm, 'inserted before skipped element').to.be.true;
                 }
             });
 
-            // Insert new <style> BEFORE ponyfill <style>
-            createElmsWrap({ tag: 'style', text: ':root { --color: green; }', insertBefore: 'style' });
+            const elm2 = createElmsWrap({ tag: 'style', text: ':root{--processed:true;}', appendTo: 'body' })[0];
 
-            // Move ponyfill <style> BEFORE first <style>
+            // Not processed by cssVars (used to test insert location)
+            const skipElm2 = createElms({ tag : 'style', text: ':root{--skipped:true;}', appendTo: 'body' })[0];
+
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
                 onComplete(cssText, styleNode) {
-                    const styleElms = document.querySelectorAll('style');
+                    const styleElms = Array.from(document.querySelectorAll('style'));
+                    const isAfterLastProcessedElm = elm2.nextSibling === styleNode;
+                    const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm2);
 
-                    expect(styleNode, 're-inserted before first <style>').to.equal(styleElms[0]);
-                    expect(cssText).to.equal(expectCss[1]);
+                    expect(styleNode.parentNode, 'inserted into <body>').to.equals(document.body);
+                    expect(isAfterLastProcessedElm, 'inserted after last element processed').to.be.true;
+                    expect(isBeforeSkipElm, 'inserted before skipped element').to.be.true;
                 }
             });
+
+            // Remove skipElms
+            skipElm1.parentNode.removeChild(skipElm1);
+            skipElm2.parentNode.removeChild(skipElm2);
         });
 
         it('persists options.variables when called multiple times', function() {

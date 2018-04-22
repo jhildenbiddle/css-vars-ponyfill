@@ -7,7 +7,7 @@
  */
 /*!
  * get-css-data
- * v1.1.1
+ * v1.1.5
  * https://github.com/jhildenbiddle/get-css-data
  * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
@@ -859,7 +859,7 @@ var defaults = {
     exclude: "",
     fixNestedCalc: true,
     onlyLegacy: true,
-    onlyVars: true,
+    onlyVars: false,
     preserve: false,
     silent: false,
     updateDOM: true,
@@ -873,7 +873,11 @@ var defaults = {
 var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
 
 /**
- * Description
+ * Fetches, parses, and transforms CSS custom properties from specified
+ * <style> and <link> elements into static values, then appends a new <style>
+ * element with static values to the DOM to provide CSS custom property
+ * compatibility for legacy browsers. Also provides a single interface for
+ * live updates of runtime values in both modern and legacy browsers.
  *
  * @preserve
  * @param {object}   [options] Options object
@@ -888,7 +892,7 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
- * @param {boolean}  [options.onlyVars=true] Determines if CSS rulesets and
+ * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
  *                   declarations without a custom property value should be
  *                   removed from the ponyfill-generated CSS
  * @param {boolean}  [options.preserve=false] Determines if the original CSS
@@ -928,7 +932,7 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
  *     exclude      : '',
  *     fixNestedCalc: true,  // default
  *     onlyLegacy   : true,  // default
- *     onlyVars     : true,  // default
+ *     onlyVars     : false, // default
  *     preserve     : false, // default
  *     silent       : false, // default
  *     updateDOM    : true,  // default
@@ -984,14 +988,16 @@ var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)]
                         });
                         var returnVal = settings.onSuccess(cssText);
                         cssText = returnVal === false ? "" : returnVal || cssText;
-                        if (settings.updateDOM) {
-                            var insertBeforeNode = document.querySelector("head link[rel=stylesheet],head style, head :last-child");
+                        if (settings.updateDOM && nodeArray && nodeArray.length) {
+                            var lastNode = nodeArray[nodeArray.length - 1];
                             styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");
                             styleNode.setAttribute("id", styleNodeId);
                             if (styleNode.textContent !== cssText) {
                                 styleNode.textContent = cssText;
                             }
-                            document.head.insertBefore(styleNode, insertBeforeNode);
+                            if (lastNode.nextSibling !== styleNode) {
+                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                            }
                         }
                     } catch (err) {
                         var errorThrown = false;

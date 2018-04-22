@@ -49,24 +49,34 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 NPM:
 
-```shell
-npm i css-vars-ponyfill
+```bash
+npm install css-vars-ponyfill
+```
+
+```javascript
+// file.js
+import cssVars from 'css-vars-ponyfill';
+cssVars({
+  // ...
+});
 ```
 
 Git:
 
-```shell
+```bash
 git clone https://github.com/jhildenbiddle/css-vars-ponyfill.git
 ```
 
-CDN (minified UMD via [unpkg](https://unpkg.com/css-vars-ponyfill/dist/) or [jsdelivr](https://www.jsdelivr.com/package/npm/css-vars-ponyfill)):
+CDN ([unpkg.com](https://unpkg.com/) shown, also on [jsdelivr.net](https://www.jsdelivr.com/)):
 
 ```html
-<!-- Latest version -->
-<script src="https://unpkg.com/css-vars-ponyfill"></script>
-
-<!-- Latest v1.x.x -->
+<!-- file.html (latest v1.x.x) -->
 <script src="https://unpkg.com/css-vars-ponyfill@1"></script>
+<script>
+  cssVars({
+    // ...
+  });
+</script>
 ```
 
 ## Examples
@@ -120,7 +130,7 @@ cssVars({
 });
 ```
 
-CSS is fetched, parsed, transformed, and prepended to `<head>`:
+CSS is fetched, parsed, transformed, and appended:
 
 ```html
 <style id="css-vars-ponyfill">
@@ -145,7 +155,7 @@ cssVars({
 
 Updated values are applied in both legacy and modern browsers:
 
-- Legacy browsers will parse, transform, and prepend CSS to the `<head>` element once again.
+- Legacy browsers will parse, transform, and append CSS once again.
 
    ```html
    <style id="css-vars-ponyfill">
@@ -189,7 +199,7 @@ cssVars({
   exclude      : '',
   fixNestedCalc: true,
   onlyLegacy   : true,
-  onlyVars     : true,
+  onlyVars     : false,
   preserve     : false,
   silent       : false,
   updateDOM    : true,
@@ -290,7 +300,7 @@ Output when `fixNestedCalc: false`
 ```css
 p {
   /* Does not work in legacy browsers */
-	margin: calc(1px + calc(2px + calc(3px + 4)));
+  margin: calc(1px + calc(2px + calc(3px + 4)));
 }
 ```
 
@@ -314,11 +324,11 @@ cssVars({
 ### options.onlyVars
 
 - Type: `boolean`
-- Default: `true`
+- Default: `false`
 
 Determines if CSS rulesets and declarations without a custom property value should be removed from the transformed CSS.
 
-When `true`, rulesets and declarations without a custom property value will be removed from the generated CSS, reducing CSS output size. When `false`, all rulesets and declarations will be retained in the generated CSS.
+When `true`, rulesets and declarations without a custom property value will be removed from the generated CSS, reducing CSS output size. This can significantly reduce the amount of CSS processed and output by the ponyfill, but runs the risk of breaking the original cascade order once the transformed values are appended to the DOM. When `false`, all rulesets and declarations will be retained in the generated CSS. This means the ponyfill will process and output more CSS, but it ensures that the original cascade order is maintained after the transformed styles are appended to the DOM.
 
 **Note:** `@font-face` and `@keyframes` require all declarations to be retained if a CSS custom property is used anywhere within the ruleset.
 
@@ -467,7 +477,7 @@ Console:
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, legacy browsers will have a `<style>` node with transformed CSS prepended to the `<head>`, while browsers with native support will apply [options.variables](#optionsvariabls) custom properties using the native  [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
+When `true`, ponyfill updates will be applied to the DOM. For legacy browsers, this is accomplished by appending a `<style>` node with transformed CSS after the last `<link>` or `<style>` node processed. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
 
 **Example**
 
@@ -493,10 +503,10 @@ Result when `updateDOM: true`
 ```html
 <head>
   <title>Title</title>
+  <link rel="stylesheet" href="style.css">
   <style id="css-vars-ponyfill">
     /* Transformed CSS ... */
   </style>
-  <link rel="stylesheet" href="style.css">
 </head>
 ```
 

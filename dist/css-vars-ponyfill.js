@@ -10,12 +10,12 @@
 })(this, function() {
     "use strict";
     /*!
- * get-css-data
- * v1.1.1
- * https://github.com/jhildenbiddle/get-css-data
- * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
- * MIT license
- */    function getUrls(urls) {
+     * get-css-data
+     * v1.1.5
+     * https://github.com/jhildenbiddle/get-css-data
+     * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
+     * MIT license
+     */    function getUrls(urls) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var settings = {
             mimeType: options.mimeType || null,
@@ -83,45 +83,45 @@
         });
     }
     /**
- * Gets CSS data from <style> and <link> nodes (including @imports), then
- * returns data in order processed by DOM. Allows specifying nodes to
- * include/exclude and filtering CSS data using RegEx.
- *
- * @preserve
- * @param {object} [options={}] - The options object
- * @param {string} options.include - CSS selector matching <link> and <style>
- * nodes to include
- * @param {string} options.exclude - CSS selector matching <link> and <style>
- * nodes to exclude
- * @param {object} options.filter - Regular expression used to filter node CSS
- * data. Each block of CSS data is tested against the filter, and only matching
- * data is included.
- * @param {function} options.onComplete - Callback after all nodes have been
- * processed. Passes 1) concatenated CSS text, 2) an array of CSS text in DOM
- * order, and 3) an array of nodes in DOM order as arguments.
- * @param {function} options.onError - Callback on each error. Passes 1) the XHR
- * object for inspection, 2) soure node reference, and 3) the source URL that
- * failed (either a <link> href or an @import) as arguments
- * @param {function} options.onSuccess - Callback on each CSS node read. Passes
- * 1) CSS text, 2) source node reference, and 3) the source URL (either a <link>
- *    href or an import) as arguments.
- * @example
- *
- *   getCssData({
- *     include: 'style,link[rel="stylesheet"]', // default
- *     exclude: '[href="skip.css"]',
- *     filter : /red/,
- *     onComplete(cssText, cssArray) {
- *       // ...
- *     },
- *     onError(xhr, node, url) {
- *       // ...
- *     },
- *     onSuccess(cssText, node, url) {
- *       // ...
- *     }
- *   });
- */    function getCssData(options) {
+     * Gets CSS data from <style> and <link> nodes (including @imports), then
+     * returns data in order processed by DOM. Allows specifying nodes to
+     * include/exclude and filtering CSS data using RegEx.
+     *
+     * @preserve
+     * @param {object} [options={}] - The options object
+     * @param {string} options.include - CSS selector matching <link> and <style>
+     * nodes to include
+     * @param {string} options.exclude - CSS selector matching <link> and <style>
+     * nodes to exclude
+     * @param {object} options.filter - Regular expression used to filter node CSS
+     * data. Each block of CSS data is tested against the filter, and only matching
+     * data is included.
+     * @param {function} options.onComplete - Callback after all nodes have been
+     * processed. Passes 1) concatenated CSS text, 2) an array of CSS text in DOM
+     * order, and 3) an array of nodes in DOM order as arguments.
+     * @param {function} options.onError - Callback on each error. Passes 1) the XHR
+     * object for inspection, 2) soure node reference, and 3) the source URL that
+     * failed (either a <link> href or an @import) as arguments
+     * @param {function} options.onSuccess - Callback on each CSS node read. Passes
+     * 1) CSS text, 2) source node reference, and 3) the source URL (either a <link>
+     *    href or an import) as arguments.
+     * @example
+     *
+     *   getCssData({
+     *     include: 'style,link[rel="stylesheet"]', // default
+     *     exclude: '[href="skip.css"]',
+     *     filter : /red/,
+     *     onComplete(cssText, cssArray) {
+     *       // ...
+     *     },
+     *     onError(xhr, node, url) {
+     *       // ...
+     *     },
+     *     onSuccess(cssText, node, url) {
+     *       // ...
+     *     }
+     *   });
+     */    function getCssData(options) {
         var regex = {
             cssComments: /\/\*[\s\S]+?\*\//g,
             cssImports: /(?:@import\s*)(?:url\(\s*)?(?:['"])([^'"]*)(?:['"])(?:\s*\))?(?:[^;]*;)/g
@@ -841,7 +841,7 @@
         exclude: "",
         fixNestedCalc: true,
         onlyLegacy: true,
-        onlyVars: true,
+        onlyVars: false,
         preserve: false,
         silent: false,
         updateDOM: true,
@@ -853,82 +853,86 @@
     };
     var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
     /**
- * Description
- *
- * @preserve
- * @param {object}   [options] Options object
- * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
- *                   matching <link re="stylesheet"> and <style> nodes to
- *                   process
- * @param {string}   [options.exclude=""] CSS selector matching <link
- *                   rel="stylehseet"> and <style> nodes to exclude from those
- *                   matches by options.include
- * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
- *                   for legacy browser compatibility.
- * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
- *                   only generate legacy-compatible CSS in browsers that lack
- *                   native support (i.e., legacy browsers)
- * @param {boolean}  [options.onlyVars=true] Determines if CSS rulesets and
- *                   declarations without a custom property value should be
- *                   removed from the ponyfill-generated CSS
- * @param {boolean}  [options.preserve=false] Determines if the original CSS
- *                   custom property declaration will be retained in the
- *                   ponyfill-generated CSS.
- * @param {boolean}  [options.silent=false] Determines if warning and error
- *                   messages will be displayed on the console
- * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
- *                   update the DOM after processing CSS custom properties
- * @param {object}   [options.variables={}] A map of custom property name/value
- *                   pairs. Property names can omit or include the leading
- *                   double-hyphen (—), and values specified will override
- *                   previous values.
- * @param {function} [options.onSuccess] Callback after all CSS has been
- *                   processed and legacy-compatible CSS has been generated, but
- *                   before the legacy CSS has been appended to the DOM. Allows
- *                   modifying the CSS data by returning any string value (or
- *                   false to skip) before options.onComplete is triggered.
- *                   Passes 1) a CSS string with CSS variable values resolved as
- *                   an argument.
- * @param {function} [options.onError] Callback after a CSS parsing error has
- *                   occurred or an XHR request has failed. Passes 1) an error
- *                   message, and 2) source node reference, 3) xhr, and 4 url as
- *                   arguments.
- * @param {function} [options.onWarning] Callback after each CSS parsing warning
- *                   has occurred. Passes 1) a warning message as an argument.
- * @param {function} [options.onComplete] Callback after all CSS has been
- *                   processed, legacy-compatible CSS has been generated, and
- *                   (optionally) the DOM has been updated. Passes 1) a CSS
- *                   string with CSS variable values resolved, and 2) a
- *                   reference to the appended <style> node.
- *
- * @example
- *
- *   cssVars({
- *     include      : 'style,link[rel="stylesheet"]', // default
- *     exclude      : '',
- *     fixNestedCalc: true,  // default
- *     onlyLegacy   : true,  // default
- *     onlyVars     : true,  // default
- *     preserve     : false, // default
- *     silent       : false, // default
- *     updateDOM    : true,  // default
- *     variables    : {
- *       // ...
- *     },
- *     onError(message, node) {
- *       // ...
- *     },
- *     onWarning(message) {
- *       // ...
- *     },
- *     onSuccess(cssText) {
- *       // ...
- *     },
- *     onComplete(cssText, styleNode) {
- *       // ...
- *     }
- *   });
- */    function cssVars() {
+     * Fetches, parses, and transforms CSS custom properties from specified
+     * <style> and <link> elements into static values, then appends a new <style>
+     * element with static values to the DOM to provide CSS custom property
+     * compatibility for legacy browsers. Also provides a single interface for
+     * live updates of runtime values in both modern and legacy browsers.
+     *
+     * @preserve
+     * @param {object}   [options] Options object
+     * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
+     *                   matching <link re="stylesheet"> and <style> nodes to
+     *                   process
+     * @param {string}   [options.exclude=""] CSS selector matching <link
+     *                   rel="stylehseet"> and <style> nodes to exclude from those
+     *                   matches by options.include
+     * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
+     *                   for legacy browser compatibility.
+     * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
+     *                   only generate legacy-compatible CSS in browsers that lack
+     *                   native support (i.e., legacy browsers)
+     * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
+     *                   declarations without a custom property value should be
+     *                   removed from the ponyfill-generated CSS
+     * @param {boolean}  [options.preserve=false] Determines if the original CSS
+     *                   custom property declaration will be retained in the
+     *                   ponyfill-generated CSS.
+     * @param {boolean}  [options.silent=false] Determines if warning and error
+     *                   messages will be displayed on the console
+     * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
+     *                   update the DOM after processing CSS custom properties
+     * @param {object}   [options.variables={}] A map of custom property name/value
+     *                   pairs. Property names can omit or include the leading
+     *                   double-hyphen (—), and values specified will override
+     *                   previous values.
+     * @param {function} [options.onSuccess] Callback after all CSS has been
+     *                   processed and legacy-compatible CSS has been generated, but
+     *                   before the legacy CSS has been appended to the DOM. Allows
+     *                   modifying the CSS data by returning any string value (or
+     *                   false to skip) before options.onComplete is triggered.
+     *                   Passes 1) a CSS string with CSS variable values resolved as
+     *                   an argument.
+     * @param {function} [options.onError] Callback after a CSS parsing error has
+     *                   occurred or an XHR request has failed. Passes 1) an error
+     *                   message, and 2) source node reference, 3) xhr, and 4 url as
+     *                   arguments.
+     * @param {function} [options.onWarning] Callback after each CSS parsing warning
+     *                   has occurred. Passes 1) a warning message as an argument.
+     * @param {function} [options.onComplete] Callback after all CSS has been
+     *                   processed, legacy-compatible CSS has been generated, and
+     *                   (optionally) the DOM has been updated. Passes 1) a CSS
+     *                   string with CSS variable values resolved, and 2) a
+     *                   reference to the appended <style> node.
+     *
+     * @example
+     *
+     *   cssVars({
+     *     include      : 'style,link[rel="stylesheet"]', // default
+     *     exclude      : '',
+     *     fixNestedCalc: true,  // default
+     *     onlyLegacy   : true,  // default
+     *     onlyVars     : false, // default
+     *     preserve     : false, // default
+     *     silent       : false, // default
+     *     updateDOM    : true,  // default
+     *     variables    : {
+     *       // ...
+     *     },
+     *     onError(message, node) {
+     *       // ...
+     *     },
+     *     onWarning(message) {
+     *       // ...
+     *     },
+     *     onSuccess(cssText) {
+     *       // ...
+     *     },
+     *     onComplete(cssText, styleNode) {
+     *       // ...
+     *     }
+     *   });
+     */    function cssVars() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
         var settings = mergeDeep(defaults, options);
         function handleError(message, sourceNode, xhr, url) {
@@ -964,14 +968,16 @@
                             });
                             var returnVal = settings.onSuccess(cssText);
                             cssText = returnVal === false ? "" : returnVal || cssText;
-                            if (settings.updateDOM) {
-                                var insertBeforeNode = document.querySelector("head link[rel=stylesheet],head style, head :last-child");
+                            if (settings.updateDOM && nodeArray && nodeArray.length) {
+                                var lastNode = nodeArray[nodeArray.length - 1];
                                 styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");
                                 styleNode.setAttribute("id", styleNodeId);
                                 if (styleNode.textContent !== cssText) {
                                     styleNode.textContent = cssText;
                                 }
-                                document.head.insertBefore(styleNode, insertBeforeNode);
+                                if (lastNode.nextSibling !== styleNode) {
+                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                }
                             }
                         } catch (err) {
                             var errorThrown = false;

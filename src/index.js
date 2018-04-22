@@ -15,7 +15,7 @@ const defaults = {
     // Options
     fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
-    onlyVars     : true,  // cssVars, transformCss
+    onlyVars     : false, // cssVars, transformCss
     preserve     : false, // transformCss
     silent       : false, // cssVars
     updateDOM    : true,  // cssVars
@@ -33,7 +33,11 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
 // Functions
 // =============================================================================
 /**
- * Description
+ * Fetches, parses, and transforms CSS custom properties from specified
+ * <style> and <link> elements into static values, then appends a new <style>
+ * element with static values to the DOM to provide CSS custom property
+ * compatibility for legacy browsers. Also provides a single interface for
+ * live updates of runtime values in both modern and legacy browsers.
  *
  * @preserve
  * @param {object}   [options] Options object
@@ -48,7 +52,7 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
- * @param {boolean}  [options.onlyVars=true] Determines if CSS rulesets and
+ * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
  *                   declarations without a custom property value should be
  *                   removed from the ponyfill-generated CSS
  * @param {boolean}  [options.preserve=false] Determines if the original CSS
@@ -88,7 +92,7 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *     exclude      : '',
  *     fixNestedCalc: true,  // default
  *     onlyLegacy   : true,  // default
- *     onlyVars     : true,  // default
+ *     onlyVars     : false, // default
  *     preserve     : false, // default
  *     silent       : false, // default
  *     updateDOM    : true,  // default
@@ -171,8 +175,8 @@ function cssVars(options = {}) {
                         // Set cssText to return value (if provided)
                         cssText = returnVal === false ? '' : returnVal || cssText;
 
-                        if (settings.updateDOM) {
-                            const insertBeforeNode = document.querySelector('head link[rel=stylesheet],head style, head :last-child');
+                        if (settings.updateDOM && nodeArray && nodeArray.length) {
+                            const lastNode = nodeArray[nodeArray.length - 1];
 
                             styleNode = document.querySelector(`#${styleNodeId}`) || document.createElement('style');
                             styleNode.setAttribute('id', styleNodeId);
@@ -181,9 +185,10 @@ function cssVars(options = {}) {
                                 styleNode.textContent = cssText;
                             }
 
-                            // Insert <style> before other source elements to
-                            // maintain cascade order
-                            document.head.insertBefore(styleNode, insertBeforeNode);
+                            // Insert <style> element after last nodeArray item
+                            if (lastNode.nextSibling !== styleNode) {
+                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                            }
                         }
                     }
                     catch(err) {
