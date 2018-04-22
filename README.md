@@ -233,7 +233,7 @@ CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to process. 
 ```javascript
 cssVars({
   // Include only <link rel="stylesheet"> nodes
-  // with an href that does not contains "bootstrap"
+  // with an href that does not contain "bootstrap"
   include: 'link[rel=stylesheet]:not([href*=bootstrap])'
 });
 ```
