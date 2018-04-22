@@ -33,8 +33,9 @@ const localConfig = {
     frameworks: ['mocha', 'chai'],
     reporters : ['mocha', 'coverage'],
     webpack   : {
+        mode   : 'development',
         devtool: 'inline-source-map',
-        module: {
+        module : {
             rules: [{
                 test   : /\.js$/,
                 exclude: [/node_modules/],
@@ -62,12 +63,8 @@ const localConfig = {
         }
     },
     webpackMiddleware: {
-        // From the docs:
-        // "With noInfo enabled, messages like the webpack bundle information
-        // that is shown when starting up and after each save, will be hidden.
-        // Errors and warnings will still be shown."
-        // https://webpack.js.org/configuration/dev-server/#devserver-noinfo-
-        noInfo: true
+        // https://webpack.js.org/configuration/stats/
+        stats: 'minimal'
     },
     // Code coverage
     // https://www.npmjs.com/package/karma-coverage
