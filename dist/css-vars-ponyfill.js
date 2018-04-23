@@ -11,7 +11,7 @@
     "use strict";
     /*!
      * get-css-data
-     * v1.1.5
+     * v1.2.0
      * https://github.com/jhildenbiddle/get-css-data
      * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
      * MIT license
@@ -147,42 +147,52 @@
                 settings.onComplete(cssText, cssArray, sourceNodes);
             }
         }
-        function handleError(xhr, node, url, cssIndex) {
-            var cssText = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
-            cssArray[cssIndex] = cssText;
-            settings.onError(xhr, node, url);
-            handleComplete();
-        }
-        function handleSuccess(cssText, cssIndex, node, sourceUrl, importUrl) {
-            if (!settings.filter || settings.filter.test(cssText)) {
-                var returnVal = settings.onSuccess(cssText, node, importUrl || sourceUrl);
-                cssText = returnVal === false ? "" : returnVal || cssText;
-                var importRules = cssText.replace(regex.cssComments, "").match(regex.cssImports);
-                if (importRules) {
-                    var importUrls = importRules.map(function(decl) {
-                        return decl.replace(regex.cssImports, "$1");
+        function handleSuccess(cssText, cssIndex, node, sourceUrl) {
+            resolveImports(cssText, sourceUrl, function(resolvedCssText, errorData) {
+                if (cssArray[cssIndex] === null) {
+                    errorData.forEach(function(data) {
+                        return settings.onError(data.xhr, node, data.url);
                     });
-                    importUrls = importUrls.map(function(url) {
-                        return getFullUrl(url, sourceUrl);
-                    });
-                    getUrls(importUrls, {
-                        onError: function onError(xhr, url, urlIndex) {
-                            handleError(xhr, node, url, cssIndex, cssText);
-                        },
-                        onSuccess: function onSuccess(importText, url, urlIndex) {
-                            var importDecl = importRules[urlIndex];
-                            var importUrl = importUrls[urlIndex];
-                            var newCssText = cssText.replace(importDecl, importText);
-                            handleSuccess(newCssText, cssIndex, node, url, importUrl);
-                        }
-                    });
-                } else {
-                    cssArray[cssIndex] = cssText;
+                    if (!settings.filter || settings.filter.test(resolvedCssText)) {
+                        var returnVal = settings.onSuccess(resolvedCssText, node, sourceUrl);
+                        cssArray[cssIndex] = returnVal === false ? "" : returnVal || resolvedCssText;
+                    } else {
+                        cssArray[cssIndex] = "";
+                    }
                     handleComplete();
                 }
+            });
+        }
+        function resolveImports(cssText, baseUrl, callbackFn) {
+            var __errorData = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+            var __errorRules = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
+            var importRules = cssText.replace(regex.cssComments, "").match(regex.cssImports);
+            importRules = (importRules || []).filter(function(rule) {
+                return __errorRules.indexOf(rule) === -1;
+            });
+            if (importRules.length) {
+                var importUrls = importRules.map(function(decl) {
+                    return decl.replace(regex.cssImports, "$1");
+                }).map(function(url) {
+                    return getFullUrl(url, baseUrl);
+                });
+                getUrls(importUrls, {
+                    onError: function onError(xhr, url, urlIndex) {
+                        __errorData.push({
+                            xhr: xhr,
+                            url: url
+                        });
+                        __errorRules.push(importRules[urlIndex]);
+                        resolveImports(cssText, baseUrl, callbackFn, __errorData, __errorRules);
+                    },
+                    onSuccess: function onSuccess(importText, url, urlIndex) {
+                        var importDecl = importRules[urlIndex];
+                        var newCssText = cssText.replace(importDecl, importText);
+                        resolveImports(newCssText, url, callbackFn, __errorData, __errorRules);
+                    }
+                });
             } else {
-                cssArray[cssIndex] = "";
-                handleComplete();
+                callbackFn(cssText, __errorData);
             }
         }
         if (sourceNodes.length) {
@@ -195,7 +205,9 @@
                     getUrls(linkHref, {
                         mimeType: "text/css",
                         onError: function onError(xhr, url, urlIndex) {
-                            handleError(xhr, node, url, i);
+                            cssArray[i] = "";
+                            settings.onError(xhr, node, url);
+                            handleComplete();
                         },
                         onSuccess: function onSuccess(cssText, url, urlIndex) {
                             var sourceUrl = getFullUrl(linkHref, location.href);
