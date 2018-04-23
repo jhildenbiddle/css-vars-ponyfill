@@ -1,14 +1,10 @@
 # Change Log
 
-## 1.5.0
+## 1.4.0
 
 *2018-04-23*
 
 - Updated `get-css-data` dependency to 1.2.0 to resolve a callback related bug.
-
-## 1.4.0
-
-*2018-04-21*
 
 - Updated logic for inserting generated `<style>` element. Element is now
   inserted after the last `<style>` or `<link>` node processed. This
