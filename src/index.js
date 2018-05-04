@@ -138,7 +138,10 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        const hasNativeSupport = window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
+        // fix issues in edge 15 by updating permission check in native support
+        // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/11495448/
+        const hasNativeSupport = window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)') &&
+            window.navigator.userAgent.indexOf('Edge/15') === -1; 
 
         // Lacks native support or onlyLegacy 'false'
         if (!hasNativeSupport || !settings.onlyLegacy) {
