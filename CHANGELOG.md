@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.5.0
+
+*2018-05-15*
+
+- Changed `options.onSuccess` callback so that it is called after CSS data has
+  been collected from each node before CSS custom properties have been
+  transformed.
+
 ## 1.4.0
 
 *2018-04-23*

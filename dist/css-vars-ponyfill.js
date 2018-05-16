@@ -967,6 +967,11 @@
                     include: settings.include,
                     exclude: "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : ""),
                     filter: settings.onlyVars ? reCssVars : null,
+                    onSuccess: function onSuccess(cssText, node, url) {
+                        var returnVal = settings.onSuccess(cssText, node, url);
+                        cssText = returnVal === false ? "" : returnVal || cssText;
+                        return cssText;
+                    },
                     onComplete: function onComplete(cssText, cssArray, nodeArray) {
                         var styleNode = null;
                         try {
@@ -978,8 +983,6 @@
                                 variables: settings.variables,
                                 onWarning: handleWarning
                             });
-                            var returnVal = settings.onSuccess(cssText);
-                            cssText = returnVal === false ? "" : returnVal || cssText;
                             if (settings.updateDOM && nodeArray && nodeArray.length) {
                                 var lastNode = nodeArray[nodeArray.length - 1];
                                 styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");

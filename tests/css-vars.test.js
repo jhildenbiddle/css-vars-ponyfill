@@ -371,10 +371,10 @@ describe('css-vars', function() {
     // Tests: Callbacks
     // -------------------------------------------------------------------------
     describe('Callbacks', function() {
-        it('triggers onError callback with proper arguments', function(done) {
-            const linkUrl  = '/base/tests/fixtures/test-onerror.css';
-            const styleCss = ':root { --error: red;';
-            const elms     = createElmsWrap([
+        it('triggers onError callback on each error with proper arguments', function(done) {
+            const linkUrl   = '/base/tests/fixtures/test-onerror.css';
+            const styleCss  = ':root { --error: red;';
+            const styleElms = createElmsWrap([
                 { tag: 'link', attr: { rel: 'stylesheet', href: 'fail.css' } },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } },
                 { tag: 'style', text: styleCss }
@@ -401,9 +401,9 @@ describe('css-vars', function() {
                     }
                 },
                 onComplete(cssText, styleNode) {
-                    expect(onErrorCount, 'onError count').to.equal(elms.length);
-                    expect(onErrorMsgs.filter(msg => msg.toLowerCase().indexOf('error') > -1), 'onError message').to.have.length(elms.length);
-                    expect(onErrorNodes, 'onError nodes').to.include.members(elms);
+                    expect(onErrorCount, 'onError count').to.equal(styleElms.length);
+                    expect(onErrorMsgs.filter(msg => msg.toLowerCase().indexOf('error') > -1), 'onError message').to.have.length(styleElms.length);
+                    expect(onErrorNodes, 'onError nodes').to.include.members(styleElms);
                     expect(onErrorXHR.status, 'onError XHR').to.equal(404);
                     expect(onErrorURL, 'onError URL').to.include('fail.css');
                     done();
@@ -411,29 +411,50 @@ describe('css-vars', function() {
             });
         });
 
-        it('triggers onSuccess callback with proper arguments', function(done) {
-            const styleCss  = ':root { --color: red; } p { color: var(--color); }';
-            const expectCss = 'p{color:red;}';
+        it('triggers onSuccess callback on each success with proper arguments', function(done) {
+            const linkUrl   = '/base/tests/fixtures/test-value.css';
+            const styleElms = createElmsWrap([
+                { tag: 'style', text: '/* SKIP */' },
+                { tag: 'style', text: ':root { --color: red; }' },
+                { tag: 'style', text: 'p { color: var(--color); }' },
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } }
+            ]);
 
-            let onSuccessCssText;
+            const expectCss = 'p{color:red;}'.repeat(2);
 
-            createElmsWrap({ tag: 'style', text: styleCss });
+            let onSuccessCount = 0;
 
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
                 updateDOM : false,
-                onSuccess(cssText) {
-                    onSuccessCssText = cssText;
+                onSuccess(cssText, node, url) {
+                    expect(node, 'onSuccess node').to.equal(styleElms[onSuccessCount]);
+
+                    // Link
+                    if (node.tagName.toLowerCase() === 'link') {
+                        expect(cssText.replace(/\n|\s/g, ''), 'onSuccess cssText').to.equal('p{color:var(--color);}');
+                        expect(url, 'onSuccess url').to.include(linkUrl);
+                    }
+                    // Style
+                    else {
+                        expect(cssText, 'onSuccess cssText').to.equal(styleElms[onSuccessCount].textContent);
+                        expect(url, 'onSuccess url').to.equal(window.location.href);
+                    }
+
+                    onSuccessCount++;
+
+                    return /SKIP/.test(cssText) ? false : cssText;
                 },
                 onComplete(cssText, styleNode) {
-                    expect(onSuccessCssText).to.equal(expectCss);
+                    expect(onSuccessCount, 'onSuccess count').to.equal(styleElms.length);
+                    expect(cssText).to.equal(expectCss);
                     done();
                 }
             });
         });
 
-        it('triggers onWarning callback with proper arguments', function(done) {
+        it('triggers onWarning callback on each warning with proper arguments', function(done) {
             const styleElms = createElmsWrap([
                 { tag: 'style', text: 'p { color: var(--fail); }' }
             ]);

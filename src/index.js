@@ -44,7 +44,7 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
  *                   matching <link re="stylesheet"> and <style> nodes to
  *                   process
- * @param {string}   [options.exclude=""] CSS selector matching <link
+ * @param {string}   [options.exclude] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
@@ -62,23 +62,22 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *                   messages will be displayed on the console
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
- * @param {object}   [options.variables={}] A map of custom property name/value
+ * @param {object}   [options.variables] A map of custom property name/value
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values.
- * @param {function} [options.onSuccess] Callback after all CSS has been
- *                   processed and legacy-compatible CSS has been generated, but
- *                   before the legacy CSS has been appended to the DOM. Allows
- *                   modifying the CSS data by returning any string value (or
- *                   false to skip) before options.onComplete is triggered.
- *                   Passes 1) a CSS string with CSS variable values resolved as
- *                   an argument.
+ * @param {function} [options.onSuccess] Callback after CSS data has been
+ *                   collected from each node and before CSS custom properties
+ *                   have been transformed. Allows modifying the CSS data before
+ *                   it is transformed by returning any string value (or false
+ *                   to skip). Passes 1) CSS text, 2) source node reference, and
+ *                   3) the source URL as arguments.
+ * @param {function} [options.onWarning] Callback after each CSS parsing warning
+ *                   has occurred. Passes 1) a warning message as an argument.
  * @param {function} [options.onError] Callback after a CSS parsing error has
  *                   occurred or an XHR request has failed. Passes 1) an error
  *                   message, and 2) source node reference, 3) xhr, and 4 url as
  *                   arguments.
- * @param {function} [options.onWarning] Callback after each CSS parsing warning
- *                   has occurred. Passes 1) a warning message as an argument.
  * @param {function} [options.onComplete] Callback after all CSS has been
  *                   processed, legacy-compatible CSS has been generated, and
  *                   (optionally) the DOM has been updated. Passes 1) a CSS
@@ -99,13 +98,13 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *     variables    : {
  *       // ...
  *     },
- *     onError(message, node) {
+ *     onSuccess(cssText) {
  *       // ...
  *     },
  *     onWarning(message) {
  *       // ...
  *     },
- *     onSuccess(cssText) {
+ *     onError(message, node) {
  *       // ...
  *     },
  *     onComplete(cssText, styleNode) {
@@ -153,6 +152,16 @@ function cssVars(options = {}) {
                 // filter is used in the parser to remove individual
                 // declarations.
                 filter : settings.onlyVars ? reCssVars : null,
+                onSuccess(cssText, node, url) {
+                    // Store the onSuccess return value, which allows modifying
+                    // cssText before adding it to the cssArray.
+                    const returnVal = settings.onSuccess(cssText, node, url);
+
+                    // Set cssText to return value (if provided)
+                    cssText = returnVal === false ? '' : returnVal || cssText;
+
+                    return cssText;
+                },
                 onComplete(cssText, cssArray, nodeArray) {
                     let styleNode = null;
 
@@ -165,15 +174,6 @@ function cssVars(options = {}) {
                             variables    : settings.variables,
                             onWarning    : handleWarning
                         });
-
-                        // Success if an error was not been throw during
-                        // transformation. Store the onSuccess return value,
-                        // which allows modifying cssText before passing to
-                        // onComplete and/or appending to new <style> node.
-                        const returnVal = settings.onSuccess(cssText);
-
-                        // Set cssText to return value (if provided)
-                        cssText = returnVal === false ? '' : returnVal || cssText;
 
                         if (settings.updateDOM && nodeArray && nodeArray.length) {
                             const lastNode = nodeArray[nodeArray.length - 1];

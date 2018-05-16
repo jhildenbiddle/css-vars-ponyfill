@@ -5,11 +5,11 @@
 [![Codacy grade](https://img.shields.io/codacy/grade/5d967da1e518489aac42d99b87088671.svg?style=flat-square)](https://www.codacy.com/app/jhildenbiddle/css-vars-ponyfill?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jhildenbiddle/css-vars-ponyfill&amp;utm_campaign=Badge_Grade)
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
-[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Client-side%20legacy%20support%20for%20CSS%20custom%20properties%20(%22CSS%20variables%22)&url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript)
+[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript)
 
 A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) (aka "CSS variables") in legacy browsers.
 
-- [Demo / Playground](https://codepen.io/jhildenbiddle/pen/ZxYJrR/) (CodePen)
+- [Demo](https://codepen.io/jhildenbiddle/pen/ZxYJrR/) (CodePen)
 
 ------
 
@@ -186,8 +186,8 @@ Updated values are applied in both legacy and modern browsers:
 - [updateDOM](#optionsupdatedom)
 - [variables](#optionsvariables)
 - [onSuccess](#optionsonsuccess)
-- [onError](#optionsonerror)
 - [onWarning](#optionsonwarning)
+- [onError](#optionsonerror)
 - [onComplete](#optionsoncomplete)
 
 **Example**
@@ -206,7 +206,7 @@ cssVars({
   variables    : {
     // ...
   },
-  onSuccess(cssText) {
+  onSuccess(cssText, node, url) {
     // ...
   },
   onError(message, node) {
@@ -535,8 +535,12 @@ cssVars({
 - Type: `function`
 - Arguments:
   1. **cssText**: A `string` of CSS text from `node` and `url`
+  1. **node**: The source node `object` reference
+  1. **url**: The source URL `string` (`<link>` href or page url for `<style>` data)
 
-Callback after all CSS has been processed and legacy-compatible CSS has been generated, but *before* the legacy CSS has been appended to the DOM. Allows modifying the CSS data by returning any `string` value (or `false` to skip) before [options.onComplete](#optionsoncomplete) is triggered.
+Callback after CSS data has been collected from each node and *before* CSS custom properties have been transformed. Allows modifying the CSS data before it is transformed by returning any `string` value (or `false` to skip).
+
+Note that the order in which CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed when `<link>` nodes or `@import` rules are being processed as this data is collected asynchronously.
 
 **Example**
 
@@ -549,45 +553,6 @@ cssVars({
     return beautifyCss(cssText);
   }
 });
-```
-
-### options.onError
-
-- Type: `function`
-- Arguments:
-  1. **message**: The error message
-  2. **node**: The source node `object` reference
-  3. **xhr**: The XHR `object` containing details of the failed request
-  4. **url**: The source URL `string` (`<link>` href or `@import` url)
-
-Callback after a CSS parsing error has occurred or an XHR request has failed.
-
-**Example**
-
-HTML:
-
-```css
-<link rel="stylesheet" href="path/to/fail.css">
-```
-
-JavaScript:
-
-```javascript
-cssVars({
-  onError(message, node, xhr) {
-    console.log(message); // 1
-    console.log(node); // 2
-    console.log(xhr.status); // 3
-    console.log(xhr.statusText); // 4
-    console.log(url); // 5
-  }
-});
-
-// 1 => 'CSS XHR error: "fail.css" 404 (Not Found)'
-// 2 => <link rel="stylesheet" href="path/to/fail.css">
-// 3 => '404'
-// 4 => 'Not Found'
-// 5 => 'path/to/fail.css'
 ```
 
 ### options.onWarning
@@ -620,12 +585,51 @@ cssVars({
 // 1 => 'CSS transform warning: variable "--fail" is undefined'
 ```
 
+### options.onError
+
+- Type: `function`
+- Arguments:
+  1. **message**: The error message
+  1. **node**: The source node `object` reference
+  1. **xhr**: The XHR `object` containing details of the failed request
+  1. **url**: The source URL `string` (`<link>` href or `@import` url)
+
+Callback after a CSS parsing error has occurred or an XHR request has failed.
+
+**Example**
+
+HTML:
+
+```css
+<link rel="stylesheet" href="path/to/fail.css">
+```
+
+JavaScript:
+
+```javascript
+cssVars({
+  onError(message, node, xhr) {
+    console.log(message); // 1
+    console.log(node); // 2
+    console.log(xhr.status); // 3
+    console.log(xhr.statusText); // 4
+    console.log(url); // 5
+  }
+});
+
+// 1 => 'CSS XHR error: "fail.css" 404 (Not Found)'
+// 2 => <link rel="stylesheet" href="path/to/fail.css">
+// 3 => '404'
+// 4 => 'Not Found'
+// 5 => 'path/to/fail.css'
+```
+
 ### options.onComplete
 
 - Type: `function`
 - Arguments:
   1. **cssText**: A `string` of concatenated CSS text from all nodes in DOM order
-  2. **styleNode**: An `object` reference to the appended `<style>` node
+  1. **styleNode**: An `object` reference to the appended `<style>` node
 
 Callback after all CSS has been processed, legacy-compatible CSS has been generated, and (optionally) the DOM has been updated.
 
@@ -651,7 +655,7 @@ This ponyfill includes code based on the following projects. Many thanks to the 
 
 - Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports, feature requests, or questions
 - Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for announcements
-- Add a [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or [tweet](https://twitter.com/intent/tweet?text=Client-side%20legacy%20support%20for%20CSS%20custom%20properties%20(%22CSS%20variables%22)&url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
+- Add a [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or [tweet](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
 
 ## License
 
