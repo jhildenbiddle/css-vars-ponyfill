@@ -371,41 +371,24 @@ describe('css-vars', function() {
     // Tests: Callbacks
     // -------------------------------------------------------------------------
     describe('Callbacks', function() {
-        it('triggers onError callback on each error with proper arguments', function(done) {
-            const linkUrl   = '/base/tests/fixtures/test-onerror.css';
-            const styleCss  = ':root { --error: red;';
-            const styleElms = createElmsWrap([
-                { tag: 'link', attr: { rel: 'stylesheet', href: 'fail.css' } },
-                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } },
-                { tag: 'style', text: styleCss }
-            ]);
+        it('triggers onBeforeSend callback on each request with proper arguments', function(done) {
+            let onBeforeSendCount = 0;
 
-            const onErrorMsgs  = [];
-            const onErrorNodes = [];
-            let   onErrorCount = 0;
-            let   onErrorXHR;
-            let   onErrorURL;
+            createElmsWrap({
+                tag : 'style',
+                text: '@import "/base/tests/fixtures/test-declaration.css";@import "/base/tests/fixtures/test-value.css";'
+            });
 
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
-                silent    : true, // remove to display console error messages
-                onError(errorMsg, node, xhr, url) {
-                    onErrorCount++;
-                    onErrorMsgs.push(errorMsg);
-                    onErrorNodes.push(node);
-
-                    if (xhr) {
-                        onErrorXHR = xhr;
-                        onErrorURL = url;
-                    }
+                updateDOM : false,
+                onBeforeSend(xhr, node, url) {
+                    xhr.setRequestHeader('css-vars-ponyfill', true);
+                    onBeforeSendCount++;
                 },
                 onComplete(cssText, styleNode) {
-                    expect(onErrorCount, 'onError count').to.equal(styleElms.length);
-                    expect(onErrorMsgs.filter(msg => msg.toLowerCase().indexOf('error') > -1), 'onError message').to.have.length(styleElms.length);
-                    expect(onErrorNodes, 'onError nodes').to.include.members(styleElms);
-                    expect(onErrorXHR.status, 'onError XHR').to.equal(404);
-                    expect(onErrorURL, 'onError URL').to.include('fail.css');
+                    expect(onBeforeSendCount).to.equal(2);
                     done();
                 }
             });
@@ -473,6 +456,46 @@ describe('css-vars', function() {
                 onComplete(cssText, styleNode) {
                     expect(onWarningCount, 'onWarning count').to.equal(styleElms.length);
                     expect(onWarningMsg.toLowerCase().indexOf('warning') > -1, 'onWarning message').to.be.true;
+                    done();
+                }
+            });
+        });
+
+        it('triggers onError callback on each error with proper arguments', function(done) {
+            const linkUrl   = '/base/tests/fixtures/test-onerror.css';
+            const styleCss  = ':root { --error: red;';
+            const styleElms = createElmsWrap([
+                { tag: 'link', attr: { rel: 'stylesheet', href: 'fail.css' } },
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } },
+                { tag: 'style', text: styleCss }
+            ]);
+
+            const onErrorMsgs  = [];
+            const onErrorNodes = [];
+            let   onErrorCount = 0;
+            let   onErrorXHR;
+            let   onErrorURL;
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true, // remove to display console error messages
+                onError(errorMsg, node, xhr, url) {
+                    onErrorCount++;
+                    onErrorMsgs.push(errorMsg);
+                    onErrorNodes.push(node);
+
+                    if (xhr) {
+                        onErrorXHR = xhr;
+                        onErrorURL = url;
+                    }
+                },
+                onComplete(cssText, styleNode) {
+                    expect(onErrorCount, 'onError count').to.equal(styleElms.length);
+                    expect(onErrorMsgs.filter(msg => msg.toLowerCase().indexOf('error') > -1), 'onError message').to.have.length(styleElms.length);
+                    expect(onErrorNodes, 'onError nodes').to.include.members(styleElms);
+                    expect(onErrorXHR.status, 'onError XHR').to.equal(404);
+                    expect(onErrorURL, 'onError URL').to.include('fail.css');
                     done();
                 }
             });

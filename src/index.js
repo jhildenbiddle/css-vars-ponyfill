@@ -21,10 +21,11 @@ const defaults = {
     updateDOM    : true,  // cssVars
     variables    : {},    // transformCss
     // Callbacks
-    onSuccess() {},     // cssVars
-    onError() {},       // cssVars
-    onWarning() {},     // transformCss
-    onComplete() {}     // cssVars
+    onBeforeSend() {},    // cssVars
+    onSuccess() {},       // cssVars
+    onWarning() {},       // transformCss
+    onError() {},         // cssVars
+    onComplete() {}       // cssVars
 };
 // Regex: CSS variable :root declarations and var() function values
 const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
@@ -66,6 +67,9 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values.
+ * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
+ *                   1) the XHR object, 2) source node reference, and 3) the
+ *                   source URL as arguments.
  * @param {function} [options.onSuccess] Callback after CSS data has been
  *                   collected from each node and before CSS custom properties
  *                   have been transformed. Allows modifying the CSS data before
@@ -98,7 +102,10 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *     variables    : {
  *       // ...
  *     },
- *     onSuccess(cssText) {
+ *     onBeforeSend(xhr, node, url) {
+ *       // ...
+ *     }
+ *     onSuccess(cssText, node, url) {
  *       // ...
  *     },
  *     onWarning(message) {
@@ -152,6 +159,7 @@ function cssVars(options = {}) {
                 // filter is used in the parser to remove individual
                 // declarations.
                 filter : settings.onlyVars ? reCssVars : null,
+                onBeforeSend: settings.onBeforeSend,
                 onSuccess(cssText, node, url) {
                     // Store the onSuccess return value, which allows modifying
                     // cssText before adding it to the cssArray.
@@ -161,6 +169,11 @@ function cssVars(options = {}) {
                     cssText = returnVal === false ? '' : returnVal || cssText;
 
                     return cssText;
+                },
+                onError(xhr, node, url) {
+                    const errorMsg = `CSS XHR error: "${xhr.responseURL}" ${xhr.status}` + (xhr.statusText ? ` (${xhr.statusText})` : '');
+
+                    handleError(errorMsg, node, xhr, url);
                 },
                 onComplete(cssText, cssArray, nodeArray) {
                     let styleNode = null;
@@ -217,11 +230,6 @@ function cssVars(options = {}) {
                     }
 
                     settings.onComplete(cssText, styleNode);
-                },
-                onError(xhr, node, url) {
-                    const errorMsg = `CSS XHR error: "${xhr.responseURL}" ${xhr.status}` + (xhr.statusText ? ` (${xhr.statusText})` : '');
-
-                    handleError(errorMsg, node, xhr, url);
                 }
             });
         }

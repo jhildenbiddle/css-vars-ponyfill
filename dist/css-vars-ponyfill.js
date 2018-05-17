@@ -11,7 +11,7 @@
     "use strict";
     /*!
      * get-css-data
-     * v1.2.0
+     * v1.3.1
      * https://github.com/jhildenbiddle/get-css-data
      * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
      * MIT license
@@ -19,9 +19,10 @@
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var settings = {
             mimeType: options.mimeType || null,
-            onComplete: options.onComplete || Function.prototype,
+            onBeforeSend: options.onBeforeSend || Function.prototype,
+            onSuccess: options.onSuccess || Function.prototype,
             onError: options.onError || Function.prototype,
-            onSuccess: options.onSuccess || Function.prototype
+            onComplete: options.onComplete || Function.prototype
         };
         var urlArray = Array.isArray(urls) ? urls : [ urls ];
         var urlQueue = Array.apply(null, Array(urlArray.length)).map(function(x) {
@@ -69,6 +70,7 @@
                 if (settings.mimeType && xhr.overrideMimeType) {
                     xhr.overrideMimeType(settings.mimeType);
                 }
+                settings.onBeforeSend(xhr, url, i);
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
@@ -88,38 +90,47 @@
      * include/exclude and filtering CSS data using RegEx.
      *
      * @preserve
-     * @param {object} [options={}] - The options object
-     * @param {string} options.include - CSS selector matching <link> and <style>
-     * nodes to include
-     * @param {string} options.exclude - CSS selector matching <link> and <style>
-     * nodes to exclude
-     * @param {object} options.filter - Regular expression used to filter node CSS
-     * data. Each block of CSS data is tested against the filter, and only matching
-     * data is included.
-     * @param {function} options.onComplete - Callback after all nodes have been
-     * processed. Passes 1) concatenated CSS text, 2) an array of CSS text in DOM
-     * order, and 3) an array of nodes in DOM order as arguments.
-     * @param {function} options.onError - Callback on each error. Passes 1) the XHR
-     * object for inspection, 2) soure node reference, and 3) the source URL that
-     * failed (either a <link> href or an @import) as arguments
-     * @param {function} options.onSuccess - Callback on each CSS node read. Passes
-     * 1) CSS text, 2) source node reference, and 3) the source URL (either a <link>
-     *    href or an import) as arguments.
+     * @param {object}   [options] The options object
+     * @param {string}   [options.include] CSS selector matching <link> and <style>
+     *                   nodes to include
+     * @param {string}   [options.exclude] CSS selector matching <link> and <style>
+     *                   nodes to exclude
+     * @param {object}   [options.filter] Regular expression used to filter node CSS
+     *                   data. Each block of CSS data is tested against the filter,
+     *                   and only matching data is included.
+     * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
+     *                   1) the XHR object, 2) source node reference, and 3) the
+     *                   source URL as arguments.
+     * @param {function} [options.onSuccess] Callback on each CSS node read. Passes
+     *                   1) CSS text, 2) source node reference, and 3) the source
+     *                   URL as arguments.
+     * @param {function} [options.onError] Callback on each error. Passes 1) the XHR
+     *                   object for inspection, 2) soure node reference, and 3) the
+     *                   source URL that failed (either a <link> href or an @import)
+     *                   as arguments
+     * @param {function} [options.onComplete] Callback after all nodes have been
+     *                   processed. Passes 1) concatenated CSS text, 2) an array of
+     *                   CSS text in DOM order, and 3) an array of nodes in DOM
+     *                   order as arguments.
+     *
      * @example
      *
      *   getCssData({
      *     include: 'style,link[rel="stylesheet"]', // default
      *     exclude: '[href="skip.css"]',
      *     filter : /red/,
-     *     onComplete(cssText, cssArray) {
+     *     onBeforeSend(xhr, node, url) {
      *       // ...
-     *     },
-     *     onError(xhr, node, url) {
-     *       // ...
-     *     },
+     *     }
      *     onSuccess(cssText, node, url) {
      *       // ...
      *     }
+     *     onError(xhr, node, url) {
+     *       // ...
+     *     },
+     *     onComplete(cssText, cssArray) {
+     *       // ...
+     *     },
      *   });
      */    function getCssData(options) {
         var regex = {
@@ -130,9 +141,10 @@
             include: options.include || 'style,link[rel="stylesheet"]',
             exclude: options.exclude || null,
             filter: options.filter || null,
-            onComplete: options.onComplete || Function.prototype,
+            onBeforeSend: options.onBeforeSend || Function.prototype,
+            onSuccess: options.onSuccess || Function.prototype,
             onError: options.onError || Function.prototype,
-            onSuccess: options.onSuccess || Function.prototype
+            onComplete: options.onComplete || Function.prototype
         };
         var sourceNodes = Array.apply(null, document.querySelectorAll(settings.include)).filter(function(node) {
             return !matchesSelector(node, settings.exclude);
@@ -148,7 +160,7 @@
             }
         }
         function handleSuccess(cssText, cssIndex, node, sourceUrl) {
-            resolveImports(cssText, sourceUrl, function(resolvedCssText, errorData) {
+            resolveImports(cssText, node, sourceUrl, function(resolvedCssText, errorData) {
                 if (cssArray[cssIndex] === null) {
                     errorData.forEach(function(data) {
                         return settings.onError(data.xhr, node, data.url);
@@ -163,32 +175,51 @@
                 }
             });
         }
-        function resolveImports(cssText, baseUrl, callbackFn) {
-            var __errorData = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-            var __errorRules = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
-            var importRules = cssText.replace(regex.cssComments, "").match(regex.cssImports);
-            importRules = (importRules || []).filter(function(rule) {
-                return __errorRules.indexOf(rule) === -1;
+        function parseImportData(cssText, baseUrl) {
+            var ignoreRules = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+            var importData = {};
+            importData.rules = (cssText.replace(regex.cssComments, "").match(regex.cssImports) || []).filter(function(rule) {
+                return ignoreRules.indexOf(rule) === -1;
             });
-            if (importRules.length) {
-                var importUrls = importRules.map(function(decl) {
-                    return decl.replace(regex.cssImports, "$1");
-                }).map(function(url) {
-                    return getFullUrl(url, baseUrl);
-                });
-                getUrls(importUrls, {
+            importData.urls = importData.rules.map(function(rule) {
+                return rule.replace(regex.cssImports, "$1");
+            });
+            importData.absoluteUrls = importData.urls.map(function(url) {
+                return getFullUrl(url, baseUrl);
+            });
+            importData.absoluteRules = importData.rules.map(function(rule, i) {
+                var oldUrl = importData.urls[i];
+                var newUrl = getFullUrl(importData.absoluteUrls[i], baseUrl);
+                return rule.replace(oldUrl, newUrl);
+            });
+            return importData;
+        }
+        function resolveImports(cssText, node, baseUrl, callbackFn) {
+            var __errorData = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
+            var __errorRules = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : [];
+            var importData = parseImportData(cssText, baseUrl, __errorRules);
+            if (importData.rules.length) {
+                getUrls(importData.absoluteUrls, {
+                    onBeforeSend: function onBeforeSend(xhr, url, urlIndex) {
+                        settings.onBeforeSend(xhr, node, url);
+                    },
                     onError: function onError(xhr, url, urlIndex) {
                         __errorData.push({
                             xhr: xhr,
                             url: url
                         });
-                        __errorRules.push(importRules[urlIndex]);
-                        resolveImports(cssText, baseUrl, callbackFn, __errorData, __errorRules);
+                        __errorRules.push(importData.rules[urlIndex]);
+                        resolveImports(cssText, node, baseUrl, callbackFn, __errorData, __errorRules);
                     },
-                    onSuccess: function onSuccess(importText, url, urlIndex) {
-                        var importDecl = importRules[urlIndex];
-                        var newCssText = cssText.replace(importDecl, importText);
-                        resolveImports(newCssText, url, callbackFn, __errorData, __errorRules);
+                    onComplete: function onComplete(responseArray) {
+                        responseArray.forEach(function(importText, i) {
+                            var responseImportData = parseImportData(importText, importData.absoluteUrls[i], __errorRules);
+                            responseImportData.rules.forEach(function(rule, i) {
+                                importText = importText.replace(rule, responseImportData.absoluteRules[i]);
+                            });
+                            cssText = cssText.replace(importData.rules[i], importText);
+                        });
+                        resolveImports(cssText, node, baseUrl, callbackFn, __errorData, __errorRules);
                     }
                 });
             } else {
@@ -204,14 +235,17 @@
                 if (isLink) {
                     getUrls(linkHref, {
                         mimeType: "text/css",
-                        onError: function onError(xhr, url, urlIndex) {
-                            cssArray[i] = "";
-                            settings.onError(xhr, node, url);
-                            handleComplete();
+                        onBeforeSend: function onBeforeSend(xhr, url, urlIndex) {
+                            settings.onBeforeSend(xhr, node, url);
                         },
                         onSuccess: function onSuccess(cssText, url, urlIndex) {
                             var sourceUrl = getFullUrl(linkHref, location.href);
                             handleSuccess(cssText, i, node, sourceUrl);
+                        },
+                        onError: function onError(xhr, url, urlIndex) {
+                            cssArray[i] = "";
+                            settings.onError(xhr, node, url);
+                            handleComplete();
                         }
                     });
                 } else if (isStyle) {
@@ -858,9 +892,10 @@
         silent: false,
         updateDOM: true,
         variables: {},
+        onBeforeSend: function onBeforeSend() {},
         onSuccess: function onSuccess() {},
-        onError: function onError() {},
         onWarning: function onWarning() {},
+        onError: function onError() {},
         onComplete: function onComplete() {}
     };
     var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
@@ -876,7 +911,7 @@
      * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
      *                   matching <link re="stylesheet"> and <style> nodes to
      *                   process
-     * @param {string}   [options.exclude=""] CSS selector matching <link
+     * @param {string}   [options.exclude] CSS selector matching <link
      *                   rel="stylehseet"> and <style> nodes to exclude from those
      *                   matches by options.include
      * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
@@ -894,23 +929,25 @@
      *                   messages will be displayed on the console
      * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
      *                   update the DOM after processing CSS custom properties
-     * @param {object}   [options.variables={}] A map of custom property name/value
+     * @param {object}   [options.variables] A map of custom property name/value
      *                   pairs. Property names can omit or include the leading
      *                   double-hyphen (—), and values specified will override
      *                   previous values.
-     * @param {function} [options.onSuccess] Callback after all CSS has been
-     *                   processed and legacy-compatible CSS has been generated, but
-     *                   before the legacy CSS has been appended to the DOM. Allows
-     *                   modifying the CSS data by returning any string value (or
-     *                   false to skip) before options.onComplete is triggered.
-     *                   Passes 1) a CSS string with CSS variable values resolved as
-     *                   an argument.
+     * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
+     *                   1) the XHR object, 2) source node reference, and 3) the
+     *                   source URL as arguments.
+     * @param {function} [options.onSuccess] Callback after CSS data has been
+     *                   collected from each node and before CSS custom properties
+     *                   have been transformed. Allows modifying the CSS data before
+     *                   it is transformed by returning any string value (or false
+     *                   to skip). Passes 1) CSS text, 2) source node reference, and
+     *                   3) the source URL as arguments.
+     * @param {function} [options.onWarning] Callback after each CSS parsing warning
+     *                   has occurred. Passes 1) a warning message as an argument.
      * @param {function} [options.onError] Callback after a CSS parsing error has
      *                   occurred or an XHR request has failed. Passes 1) an error
      *                   message, and 2) source node reference, 3) xhr, and 4 url as
      *                   arguments.
-     * @param {function} [options.onWarning] Callback after each CSS parsing warning
-     *                   has occurred. Passes 1) a warning message as an argument.
      * @param {function} [options.onComplete] Callback after all CSS has been
      *                   processed, legacy-compatible CSS has been generated, and
      *                   (optionally) the DOM has been updated. Passes 1) a CSS
@@ -931,13 +968,16 @@
      *     variables    : {
      *       // ...
      *     },
-     *     onError(message, node) {
+     *     onBeforeSend(xhr, node, url) {
+     *       // ...
+     *     }
+     *     onSuccess(cssText, node, url) {
      *       // ...
      *     },
      *     onWarning(message) {
      *       // ...
      *     },
-     *     onSuccess(cssText) {
+     *     onError(message, node) {
      *       // ...
      *     },
      *     onComplete(cssText, styleNode) {
@@ -967,10 +1007,15 @@
                     include: settings.include,
                     exclude: "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : ""),
                     filter: settings.onlyVars ? reCssVars : null,
+                    onBeforeSend: settings.onBeforeSend,
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
                         cssText = returnVal === false ? "" : returnVal || cssText;
                         return cssText;
+                    },
+                    onError: function onError(xhr, node, url) {
+                        var errorMsg = 'CSS XHR error: "' + xhr.responseURL + '" ' + xhr.status + (xhr.statusText ? " (" + xhr.statusText + ")" : "");
+                        handleError(errorMsg, node, xhr, url);
                     },
                     onComplete: function onComplete(cssText, cssArray, nodeArray) {
                         var styleNode = null;
@@ -1010,10 +1055,6 @@
                             }
                         }
                         settings.onComplete(cssText, styleNode);
-                    },
-                    onError: function onError(xhr, node, url) {
-                        var errorMsg = 'CSS XHR error: "' + xhr.responseURL + '" ' + xhr.status + (xhr.statusText ? " (" + xhr.statusText + ")" : "");
-                        handleError(errorMsg, node, xhr, url);
                     }
                 });
             } else if (hasNativeSupport && settings.updateDOM) {

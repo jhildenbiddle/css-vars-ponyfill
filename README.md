@@ -185,6 +185,7 @@ Updated values are applied in both legacy and modern browsers:
 - [silent](#optionssilent)
 - [updateDOM](#optionsupdatedom)
 - [variables](#optionsvariables)
+- [onBeforeSend](#optionsonbeforesend)
 - [onSuccess](#optionsonsuccess)
 - [onWarning](#optionsonwarning)
 - [onError](#optionsonerror)
@@ -206,13 +207,16 @@ cssVars({
   variables    : {
     // ...
   },
+  onBeforeSend(xhr, node, url) {
+    // ...
+  },
   onSuccess(cssText, node, url) {
     // ...
   },
-  onError(message, node) {
+  onWarning(message) {
     // ...
   },
-  onWarning(message) {
+  onError(message, node) {
     // ...
   },
   onComplete(cssText, styleNode) {
@@ -526,6 +530,31 @@ cssVars({
   variables: {
     color1    : 'red',
     '--color2': 'green'
+  }
+});
+```
+
+### options.onBeforeSend
+
+- Type: `function`
+- Arguments:
+  1. **xhr**: The XHR `object` containing details of the failed request
+  1. **node**: The source node `object` reference
+  1. **url**: The source URL `string` (`<link>` href or `@import` url)
+
+Callback before each [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) (XHR) is sent. Allows modifying the XML object by setting properties, calling methods, or adding event handlers.
+
+**Example**
+
+```javascript
+cssVars({
+  onBeforeSend(xhr, node, url) {
+    // Domain-specific XHR settings
+    if (/some-domain.com/.test(url)) {
+      xhr.withCredentials = true;
+      xhr.setRequestHeader("foo", "1");
+      xhr.setRequestHeader("bar", "2");
+    }
   }
 });
 ```

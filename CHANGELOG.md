@@ -2,7 +2,9 @@
 
 ## 1.5.0
 
-*2018-05-15*
+*2018-05-16*
+
+- Added `options.onBeforeSend` callback.
 
 - Changed `options.onSuccess` callback so that it is called after CSS data has
   been collected from each node before CSS custom properties have been
