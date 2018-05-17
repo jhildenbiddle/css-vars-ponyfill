@@ -11,7 +11,7 @@
     "use strict";
     /*!
      * get-css-data
-     * v1.3.1
+     * v1.3.2
      * https://github.com/jhildenbiddle/get-css-data
      * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
      * MIT license
@@ -32,8 +32,9 @@
             settings.onError(xhr, urlArray[urlIndex], urlIndex);
         }
         function onSuccess(responseText, urlIndex) {
+            var returnVal = settings.onSuccess(responseText, urlArray[urlIndex], urlIndex);
+            responseText = returnVal === false ? "" : returnVal || responseText;
             urlQueue[urlIndex] = responseText;
-            settings.onSuccess(responseText, urlArray[urlIndex], urlIndex);
             if (urlQueue.indexOf(null) === -1) {
                 settings.onComplete(urlQueue);
             }
@@ -160,14 +161,15 @@
             }
         }
         function handleSuccess(cssText, cssIndex, node, sourceUrl) {
+            var returnVal = settings.onSuccess(cssText, node, sourceUrl);
+            cssText = returnVal === false ? "" : returnVal || cssText;
             resolveImports(cssText, node, sourceUrl, function(resolvedCssText, errorData) {
                 if (cssArray[cssIndex] === null) {
                     errorData.forEach(function(data) {
                         return settings.onError(data.xhr, node, data.url);
                     });
                     if (!settings.filter || settings.filter.test(resolvedCssText)) {
-                        var returnVal = settings.onSuccess(resolvedCssText, node, sourceUrl);
-                        cssArray[cssIndex] = returnVal === false ? "" : returnVal || resolvedCssText;
+                        cssArray[cssIndex] = resolvedCssText;
                     } else {
                         cssArray[cssIndex] = "";
                     }
@@ -203,6 +205,15 @@
                     onBeforeSend: function onBeforeSend(xhr, url, urlIndex) {
                         settings.onBeforeSend(xhr, node, url);
                     },
+                    onSuccess: function onSuccess(cssText, url, urlIndex) {
+                        var returnVal = settings.onSuccess(cssText, node, url);
+                        cssText = returnVal === false ? "" : returnVal || cssText;
+                        var responseImportData = parseImportData(cssText, url, __errorRules);
+                        responseImportData.rules.forEach(function(rule, i) {
+                            cssText = cssText.replace(rule, responseImportData.absoluteRules[i]);
+                        });
+                        return cssText;
+                    },
                     onError: function onError(xhr, url, urlIndex) {
                         __errorData.push({
                             xhr: xhr,
@@ -213,10 +224,6 @@
                     },
                     onComplete: function onComplete(responseArray) {
                         responseArray.forEach(function(importText, i) {
-                            var responseImportData = parseImportData(importText, importData.absoluteUrls[i], __errorRules);
-                            responseImportData.rules.forEach(function(rule, i) {
-                                importText = importText.replace(rule, responseImportData.absoluteRules[i]);
-                            });
                             cssText = cssText.replace(importData.rules[i], importText);
                         });
                         resolveImports(cssText, node, baseUrl, callbackFn, __errorData, __errorRules);
@@ -891,6 +898,7 @@
         preserve: false,
         silent: false,
         updateDOM: true,
+        updateURLs: true,
         variables: {},
         onBeforeSend: function onBeforeSend() {},
         onSuccess: function onSuccess() {},
@@ -898,7 +906,11 @@
         onError: function onError() {},
         onComplete: function onComplete() {}
     };
-    var reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
+    var regex = {
+        cssComments: /\/\*[\s\S]+?\*\//g,
+        cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
+        cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
+    };
     /**
      * Fetches, parses, and transforms CSS custom properties from specified
      * <style> and <link> elements into static values, then appends a new <style>
@@ -929,6 +941,8 @@
      *                   messages will be displayed on the console
      * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
      *                   update the DOM after processing CSS custom properties
+     * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
+     *                   convert relative url() paths to absolute urls.
      * @param {object}   [options.variables] A map of custom property name/value
      *                   pairs. Property names can omit or include the leading
      *                   double-hyphen (—), and values specified will override
@@ -965,6 +979,7 @@
      *     preserve     : false, // default
      *     silent       : false, // default
      *     updateDOM    : true,  // default
+     *     updateURLs   : true,  // default
      *     variables    : {
      *       // ...
      *     },
@@ -1006,11 +1021,19 @@
                 getCssData({
                     include: settings.include,
                     exclude: "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : ""),
-                    filter: settings.onlyVars ? reCssVars : null,
+                    filter: settings.onlyVars ? regex.cssVars : null,
                     onBeforeSend: settings.onBeforeSend,
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
                         cssText = returnVal === false ? "" : returnVal || cssText;
+                        if (settings.updateURLs) {
+                            var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
+                            cssUrls.forEach(function(cssUrl) {
+                                var oldUrl = cssUrl.replace(regex.cssUrls, "$1");
+                                var newUrl = getFullUrl$1(oldUrl, url);
+                                cssText = cssText.replace(cssUrl, cssUrl.replace(oldUrl, newUrl));
+                            });
+                        }
                         return cssText;
                     },
                     onError: function onError(xhr, node, url) {
@@ -1070,6 +1093,17 @@
                 document.removeEventListener("DOMContentLoaded", init);
             });
         }
+    }
+    function getFullUrl$1(url) {
+        var base = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : location.href;
+        var d = document.implementation.createHTMLDocument("");
+        var b = d.createElement("base");
+        var a = d.createElement("a");
+        d.head.appendChild(b);
+        d.body.appendChild(a);
+        b.href = base;
+        a.href = url;
+        return a.href;
     }
     return cssVars;
 });

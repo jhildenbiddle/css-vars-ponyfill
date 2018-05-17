@@ -316,6 +316,59 @@ describe('css-vars', function() {
             });
         });
 
+        describe('updateURLs', function() {
+            it('true - updates relative url(...) paths to absolute URLs', function(done) {
+                const baseUrl   = location.href.replace(/\/context.html/, '');
+                const styleCss  = '@import "/base/tests/fixtures/test-urls.css";';
+                const expectCss = `
+                    p {
+                        background: url(${baseUrl}/base/tests/fixtures/a/image.jpg);
+                    }
+
+                    p {
+                        background: url(${baseUrl}/base/tests/fixtures/a/b/image.jpg);
+                    }
+
+                    p {
+                        color: red;
+                        background: url(${baseUrl}/base/tests/fixtures/image.jpg);
+                        background: url('${baseUrl}/base/tests/fixtures/image.jpg');
+                        background: url("${baseUrl}/base/tests/fixtures/image.jpg");
+                        background: url(${baseUrl}/base/tests/fixtures/image1.jpg) url('${baseUrl}/base/tests/fixtures/image2.jpg') url("${baseUrl}/base/tests/fixtures/image3.jpg");
+                        background: url(data:image/gif;base64,IMAGEDATA);
+                    }
+                `.replace(/\n|\s/g, '');
+
+                createElmsWrap({ tag: 'style', text: styleCss });
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateURLs: true,
+                    onComplete(cssText, styleNode) {
+                        expect(cssText.replace(/\n|\s/g, '')).to.equal(expectCss);
+                        done();
+                    }
+                });
+            });
+
+            it('false - does not update relative url(...) paths', function() {
+                const styleCss  = 'p{background:url(image.png);}';
+                const expectCss = styleCss;
+
+                createElmsWrap({ tag: 'style', text: styleCss });
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateURLs: false,
+                    onComplete(cssText, styleNode) {
+                        expect(cssText).to.equal(expectCss);
+                    }
+                });
+            });
+        });
+
         describe('variables', function() {
             it('updates values via generated CSS (passed to transform-css)', function() {
                 const styleCss  = `
@@ -374,10 +427,10 @@ describe('css-vars', function() {
         it('triggers onBeforeSend callback on each request with proper arguments', function(done) {
             let onBeforeSendCount = 0;
 
-            createElmsWrap({
-                tag : 'style',
-                text: '@import "/base/tests/fixtures/test-declaration.css";@import "/base/tests/fixtures/test-value.css";'
-            });
+            createElmsWrap([
+                { tag: 'link', attr: { rel: 'stylesheet', href: '/base/tests/fixtures/test-value.css' } },
+                { tag: 'style', text: '@import "/base/tests/fixtures/test-declaration.css";@import "/base/tests/fixtures/test-value.css";' }
+            ]);
 
             cssVars({
                 include   : '[data-test]',
@@ -388,7 +441,7 @@ describe('css-vars', function() {
                     onBeforeSendCount++;
                 },
                 onComplete(cssText, styleNode) {
-                    expect(onBeforeSendCount).to.equal(2);
+                    expect(onBeforeSendCount).to.equal(3);
                     done();
                 }
             });

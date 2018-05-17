@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.6.0
+
+*2018-05-17*
+
+- Added `options.updateURLs` for converting relative `url()` paths to absolute
+  urls.
+
 ## 1.5.0
 
 *2018-05-16*

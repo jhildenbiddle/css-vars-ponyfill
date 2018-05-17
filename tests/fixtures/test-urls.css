@@ -1,0 +1,15 @@
+@import "a/test-url.css";
+@import "a/b/test-url.css";
+
+:root {
+    --color: red;
+}
+
+p {
+    color: var(--color);
+    background: url(image.jpg);
+    background: url('image.jpg');
+    background: url("image.jpg");
+    background: url(image1.jpg) url('image2.jpg') url("image3.jpg");
+    background: url(data:image/gif;base64,IMAGEDATA);
+}

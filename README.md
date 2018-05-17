@@ -27,12 +27,13 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 - Client-side transformation of CSS custom properties to static values
 - Live updates of runtime values in both modern and legacy browsers
-- Transforms `<style>`,  `<link>`, and `@import` CSS
+- Transforms `<style>`, `<link>`, and `@import` CSS
+- Transforms relative `url()` paths to absolute URLs
 - Supports chained custom property references
 - Supports complex values
 - Supports fallback values
 - UMD and ES6 module available
-- Lightweight (less than 5k min+gzip) and dependency-free
+- Lightweight (5k min+gzip) and dependency-free
 
 **Limitations**
 
@@ -130,7 +131,12 @@ cssVars({
 });
 ```
 
-CSS is fetched, parsed, transformed, and appended:
+The ponyfill will:
+
+1. Fetch all CSS
+1. Parse the CSS
+1. Transform CSS custom properties to static values
+1. Append legacy-compatible CSS to the DOM
 
 ```html
 <style id="css-vars-ponyfill">
@@ -153,9 +159,10 @@ cssVars({
 });
 ```
 
-Updated values are applied in both legacy and modern browsers:
+Values will be updated in both legacy and modern browsers:
 
-- Legacy browsers will parse, transform, and append CSS once again.
+- In legacy browsers, the ponyfill will fetch, parse, transform, and append
+  legacy-compatible CSS to the DOM once again.
 
    ```html
    <style id="css-vars-ponyfill">
@@ -167,7 +174,7 @@ Updated values are applied in both legacy and modern browsers:
    </style>
    ```
 
-- Modern browsers with native custom property support will update using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
+- In modern browsers with native custom property support, the ponyfill will update values using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
 
    ```javascript
    document.documentElement.style.setProperty('--color', 'red');
@@ -184,6 +191,7 @@ Updated values are applied in both legacy and modern browsers:
 - [preserve](#optionspreserve)
 - [silent](#optionssilent)
 - [updateDOM](#optionsupdatedom)
+- [updateURLs](#optionsupdateurls)
 - [variables](#optionsvariables)
 - [onBeforeSend](#optionsonbeforesend)
 - [onSuccess](#optionsonsuccess)
@@ -204,6 +212,7 @@ cssVars({
   preserve     : false,
   silent       : false,
   updateDOM    : true,
+  updateURLs   : true,
   variables    : {
     // ...
   },
@@ -481,7 +490,7 @@ Console:
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, ponyfill updates will be applied to the DOM. For legacy browsers, this is accomplished by appending a `<style>` node with transformed CSS after the last `<link>` or `<style>` node processed. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
+When `true`, the ponyfill updates will be applied to the DOM. For legacy browsers, this is accomplished by appending a `<style>` node with transformed CSS after the last `<link>` or `<style>` node processed. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
 
 **Example**
 
@@ -512,6 +521,51 @@ Result when `updateDOM: true`
     /* Transformed CSS ... */
   </style>
 </head>
+```
+
+### options.updateURLs
+
+- Type: `boolean`
+- Default: `true`
+
+Determines if the ponyfill will convert relative `url()` paths to absolute urls.
+
+When `true`, the ponyfill will parse each block of external CSS for relative `url()` paths and convert them to absolute URLs. This allows resources (images, fonts, etc.) referenced using paths relative to an external stylesheet to load properly when legacy-compatible CSS is generated and appended to the DOM by the ponyfill. When `false`, the ponyfill will not modify relative `url()` paths.
+
+**Example**
+
+CSS:
+
+```css
+/* http://mydomain.com/path/to/style.css */
+
+div {
+  background-image: url(image.jpg);
+}
+```
+
+JavaScript:
+
+```javascript
+cssVars({
+  updateURLs: true // default
+});
+```
+
+Output when `updateURLs: true`
+
+```css
+div {
+  background-image: url(http://mydomain.com/path/to/image.jpg);
+}
+```
+
+Output when `updateURLs: false`
+
+```css
+div {
+  background-image: url(image.jpg);
+}
 ```
 
 ### options.variables
@@ -565,21 +619,21 @@ cssVars({
 - Arguments:
   1. **cssText**: A `string` of CSS text from `node` and `url`
   1. **node**: The source node `object` reference
-  1. **url**: The source URL `string` (`<link>` href or page url for `<style>` data)
+  1. **url**: The source URL `string` (`<link>` href, `@import` url, or page url for `<style>` data)
 
 Callback after CSS data has been collected from each node and *before* CSS custom properties have been transformed. Allows modifying the CSS data before it is transformed by returning any `string` value (or `false` to skip).
 
-Note that the order in which CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed when `<link>` nodes or `@import` rules are being processed as this data is collected asynchronously.
+Note that the order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
 
 **Example**
 
 ```javascript
-const beautifyCss = require('js-beautify').css;
-
 cssVars({
   onSuccess(cssText, node, url) {
-    // Beautify CSS
-    return beautifyCss(cssText);
+    // Replace all instances of "color: red" with "color: blue"
+    const newCssText = cssText.replace(/color:\s*red\s;/g, 'color: blue;');
+
+    return newCssText;
   }
 });
 ```

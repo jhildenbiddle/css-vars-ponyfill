@@ -19,6 +19,7 @@ const defaults = {
     preserve     : false, // transformCss
     silent       : false, // cssVars
     updateDOM    : true,  // cssVars
+    updateURLs   : true,  // cssVars
     variables    : {},    // transformCss
     // Callbacks
     onBeforeSend() {},    // cssVars
@@ -27,8 +28,14 @@ const defaults = {
     onError() {},         // cssVars
     onComplete() {}       // cssVars
 };
-// Regex: CSS variable :root declarations and var() function values
-const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/;
+const regex = {
+    // CSS comments
+    cssComments: /\/\*[\s\S]+?\*\//g,
+    // CSS url(...) values
+    cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
+    // CSS variable :root declarations and var() function values
+    cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
+};
 
 
 // Functions
@@ -63,6 +70,8 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *                   messages will be displayed on the console
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
+ * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
+ *                   convert relative url() paths to absolute urls.
  * @param {object}   [options.variables] A map of custom property name/value
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
@@ -99,6 +108,7 @@ const reCssVars = /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:
  *     preserve     : false, // default
  *     silent       : false, // default
  *     updateDOM    : true,  // default
+ *     updateURLs   : true,  // default
  *     variables    : {
  *       // ...
  *     },
@@ -158,15 +168,28 @@ function cssVars(options = {}) {
                 // This filter does a test on each block of CSS. An additional
                 // filter is used in the parser to remove individual
                 // declarations.
-                filter : settings.onlyVars ? reCssVars : null,
+                filter : settings.onlyVars ? regex.cssVars : null,
                 onBeforeSend: settings.onBeforeSend,
                 onSuccess(cssText, node, url) {
-                    // Store the onSuccess return value, which allows modifying
-                    // cssText before adding it to the cssArray.
                     const returnVal = settings.onSuccess(cssText, node, url);
 
-                    // Set cssText to return value (if provided)
                     cssText = returnVal === false ? '' : returnVal || cssText;
+
+                    // Convert relative url(...) values to absolute
+                    if (settings.updateURLs) {
+                        const cssUrls = cssText
+                            // Remove comments to avoid processing @import in comments
+                            .replace(regex.cssComments, '')
+                            // Match url(...) values
+                            .match(regex.cssUrls) || [];
+
+                        cssUrls.forEach(cssUrl => {
+                            const oldUrl = cssUrl.replace(regex.cssUrls, '$1');
+                            const newUrl = getFullUrl(oldUrl, url);
+
+                            cssText = cssText.replace(cssUrl, cssUrl.replace(oldUrl, newUrl));
+                        });
+                    }
 
                     return cssText;
                 },
@@ -254,6 +277,29 @@ function cssVars(options = {}) {
             document.removeEventListener('DOMContentLoaded', init);
         });
     }
+}
+
+
+// Functions (Private)
+// =============================================================================
+/**
+ * Returns fully qualified URL from relative URL and (optional) base URL
+ *
+ * @param {any} url
+ * @param {any} [base=location.href]
+ * @returns
+ */
+function getFullUrl(url, base = location.href) {
+    const d = document.implementation.createHTMLDocument('');
+    const b = d.createElement('base');
+    const a = d.createElement('a');
+
+    d.head.appendChild(b);
+    d.body.appendChild(a);
+    b.href = base;
+    a.href = url;
+
+    return a.href;
 }
 
 
