@@ -98,7 +98,7 @@ const config = {
 const esm = merge({}, config, {
     output: {
         file  : config.output.file.replace(/\.js$/, '.esm.js'),
-        format: 'es'
+        format: 'esm'
     },
     plugins: [
         uglify(pluginSettings.uglify.beautify)
