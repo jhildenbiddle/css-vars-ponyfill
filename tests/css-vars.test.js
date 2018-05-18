@@ -318,7 +318,7 @@ describe('css-vars', function() {
 
         describe('updateURLs', function() {
             it('true - updates relative url(...) paths to absolute URLs', function(done) {
-                const baseUrl   = location.href.replace(/\/context.html/, '');
+                const baseUrl   = location.href.replace(/\/(?:context|debug).html/, '');
                 const styleCss  = '@import "/base/tests/fixtures/test-urls.css";';
                 const expectCss = `
                     p {
