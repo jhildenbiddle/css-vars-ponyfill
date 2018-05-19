@@ -38,29 +38,29 @@ describe('transform-css', function() {
 
         it('transforms :root variable with comments', function() {
             const cssIn = `
-                /* Comment */
+                /* 1 */
                 :root {
-                    /* Comment */
-                    --color: /* Comment */ red /* Comment */; /* Comment */
-                    /* Comment */
+                    /* 2 */
+                    --color: /* 3 */ red /* 4 */; /* 5 */
+                    /* 6 */
                 }
-                /* Comment */
+                /* 7 */
                 p {
-                    /* Comment */
-                    color: /* Comment */ var(--color) /* Comment */; /* Comment */
-                    /* Comment */
+                    /* 8 */
+                    color: /* 9 */ var(--color) /* 10 */; /* 11 */
+                    /* 12 */
                 }
-                /* Comment */
+                /* 13 */
                 @media {
-                    /* Comment */
+                    /* 14 */
                     p {
-                        /* Comment */
-                        color: /* Comment */ black /* Comment */; /* Comment */
-                        /* Comment */
+                        /* 15 */
+                        color: /* 16 */ black /* 17 */; /* 18 */
+                        /* 19 */
                     }
-                    /* Comment */
+                    /* 20 */
                 }
-                /* Comment */
+                /* 21 */
             `;
             const cssOut    = transformCss(cssIn);
             const expectCss = 'p{color:red;}';

@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.7.0
+
+*2018-05-18*
+
+- Improved performance when processing `<link>` and `<style>` data that does not
+  contain a CSS custom property declaration or function.
+
 ## 1.6.0
 
 *2018-05-17*

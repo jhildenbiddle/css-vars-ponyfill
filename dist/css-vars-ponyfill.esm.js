@@ -625,7 +625,7 @@ function stringifyCss(tree) {
             return "@charset " + node.name + ";";
         },
         comment: function comment(node) {
-            return "";
+            return node.comment.indexOf("__CSSVARSPONYFILL") === 0 ? "/*" + node.comment + "*/" : "";
         },
         "custom-media": function customMedia(node) {
             return "@custom-media " + node.name + " " + node.media + ";";
@@ -1061,7 +1061,11 @@ var regex = {
                     handleError(errorMsg, node, xhr, url);
                 },
                 onComplete: function onComplete(cssText, cssArray, nodeArray) {
+                    var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                     var styleNode = null;
+                    cssText = cssArray.map(function(css, i) {
+                        return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-" + i + "__*/";
+                    }).join("");
                     try {
                         cssText = transformVars(cssText, {
                             fixNestedCalc: settings.fixNestedCalc,
@@ -1071,6 +1075,13 @@ var regex = {
                             variables: settings.variables,
                             onWarning: handleWarning
                         });
+                        var cssMarkerMatch = cssMarker.exec(cssText);
+                        while (cssMarkerMatch !== null) {
+                            var matchedText = cssMarkerMatch[0];
+                            var cssArrayIndex = cssMarkerMatch[1];
+                            cssText = cssText.replace(matchedText, cssArray[cssArrayIndex]);
+                            cssMarkerMatch = cssMarker.exec(cssText);
+                        }
                         if (settings.updateDOM && nodeArray && nodeArray.length) {
                             var lastNode = nodeArray[nodeArray.length - 1];
                             styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");

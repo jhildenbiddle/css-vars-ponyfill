@@ -450,7 +450,6 @@ describe('css-vars', function() {
         it('triggers onSuccess callback on each success with proper arguments', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-value.css';
             const styleElms = createElmsWrap([
-                { tag: 'style', text: '/* SKIP */' },
                 { tag: 'style', text: ':root { --color: red; }' },
                 { tag: 'style', text: 'p { color: var(--color); }' },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } }

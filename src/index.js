@@ -199,7 +199,16 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, url);
                 },
                 onComplete(cssText, cssArray, nodeArray) {
-                    let styleNode = null;
+                    const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                    let   styleNode = null;
+
+                    // Concatenate cssArray items, replacing those that do not
+                    // contain a CSS custom property declaraion or function with
+                    // a temporary marker . After the CSS is transformed, the
+                    // markers will be replaced with the matching cssArray item.
+                    // This optimization is done to avoid processing CSS that
+                    // will not change as a results of the ponyfill.
+                    cssText = cssArray.map((css, i) => regex.cssVars.test(css) ? css : `/*__CSSVARSPONYFILL-${i}__*/`).join('');
 
                     try {
                         cssText = transformCss(cssText, {
@@ -210,6 +219,17 @@ function cssVars(options = {}) {
                             variables    : settings.variables,
                             onWarning    : handleWarning
                         });
+
+                        let cssMarkerMatch = cssMarker.exec(cssText);
+
+                        // Replace markers with appropriate cssArray item
+                        while (cssMarkerMatch !== null) {
+                            const matchedText   = cssMarkerMatch[0];
+                            const cssArrayIndex = cssMarkerMatch[1];
+
+                            cssText = cssText.replace(matchedText, cssArray[cssArrayIndex]);
+                            cssMarkerMatch = cssMarker.exec(cssText);
+                        }
 
                         if (settings.updateDOM && nodeArray && nodeArray.length) {
                             const lastNode = nodeArray[nodeArray.length - 1];

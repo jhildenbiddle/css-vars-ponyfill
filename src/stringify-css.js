@@ -20,7 +20,8 @@ function stringifyCss(tree, delim = '', cb) {
             return '@charset ' + node.name + ';';
         },
         comment(node) {
-            return '';
+            // Preserve ponyfill marker comments
+            return node.comment.indexOf('__CSSVARSPONYFILL') === 0 ? '/*' + node.comment + '*/' : '';
         },
         'custom-media'(node) {
             return '@custom-media ' + node.name + ' ' + node.media + ';';
