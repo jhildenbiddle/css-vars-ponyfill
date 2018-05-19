@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.7.1
+
+*2018-05-19*
+
+- Fixed XHR error message sent to console so that a URL is included when the
+  status code is `0`. Also added a hint that these errors are possibly related
+  to CORS restrictions to assist debugging efforts.
+
+- Updated README with performance tips and better examples for `options.include`
+  and `options.exclude`.
+
 ## 1.7.0
 
 *2018-05-18*

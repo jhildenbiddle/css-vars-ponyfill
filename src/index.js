@@ -10,7 +10,7 @@ import { name as pkgName } from '../package.json';
 // =============================================================================
 const defaults = {
     // Sources
-    include      : 'style,link[rel = stylesheet]',
+    include      : 'style,link[rel=stylesheet]',
     exclude      : '',
     // Options
     fixNestedCalc: true,  // transformCss
@@ -194,7 +194,9 @@ function cssVars(options = {}) {
                     return cssText;
                 },
                 onError(xhr, node, url) {
-                    const errorMsg = `CSS XHR error: "${xhr.responseURL}" ${xhr.status}` + (xhr.statusText ? ` (${xhr.statusText})` : '');
+                    const responseUrl = xhr.responseURL || getFullUrl(url, location.href);
+                    const statusText  = xhr.statusText ? `(${xhr.statusText})` : 'Unspecified Error' + (xhr.status === 0 ? ' (possibly CORS related)' : '');
+                    const errorMsg    = `CSS XHR Error: ${responseUrl} ${xhr.status} ${statusText}`;
 
                     handleError(errorMsg, node, xhr, url);
                 },

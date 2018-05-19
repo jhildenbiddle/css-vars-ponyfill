@@ -908,7 +908,7 @@ function resolveValue(value, map, settings) {
 var name = "css-vars-ponyfill";
 
 var defaults = {
-    include: "style,link[rel = stylesheet]",
+    include: "style,link[rel=stylesheet]",
     exclude: "",
     fixNestedCalc: true,
     onlyLegacy: true,
@@ -1057,7 +1057,9 @@ var regex = {
                     return cssText;
                 },
                 onError: function onError(xhr, node, url) {
-                    var errorMsg = 'CSS XHR error: "' + xhr.responseURL + '" ' + xhr.status + (xhr.statusText ? " (" + xhr.statusText + ")" : "");
+                    var responseUrl = xhr.responseURL || getFullUrl$1(url, location.href);
+                    var statusText = xhr.statusText ? "(" + xhr.statusText + ")" : "Unspecified Error" + (xhr.status === 0 ? " (possibly CORS related)" : "");
+                    var errorMsg = "CSS XHR Error: " + responseUrl + " " + xhr.status + " " + statusText;
                     handleError(errorMsg, node, xhr, url);
                 },
                 onComplete: function onComplete(cssText, cssArray, nodeArray) {

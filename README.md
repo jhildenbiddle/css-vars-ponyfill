@@ -241,13 +241,25 @@ cssVars({
 
 CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to process. The default value includes all style and link nodes.
 
+**Tip:** The default value is the *safest* setting, but it is not necessarily the fastest. For the best performance, avoid unnecessary CSS processing by including only CSS that needs to be ponyfilled. See [options.exclude](#optionsexclude) for an alternate approach.
+
 **Example**
 
 ```javascript
+// Example 1: Include local CSS only
 cssVars({
-  // Include only <link rel="stylesheet"> nodes
-  // with an href that does not contain "bootstrap"
-  include: 'link[rel=stylesheet]:not([href*=bootstrap])'
+  // Include only CSS from <style> nodes and <link> nodes
+  // with an href that does not contain "//"
+  include: 'style,link[rel="stylesheet"]:not([href*="//"])'
+});
+
+// Example 2: Include via data attribute
+cssVars({
+  // Include ony CSS from <link> and <style> nodes with
+  // a "data-cssvarsponyfill" attribute set to "true"
+  // Ex: <link data-cssvarsponyfill="true" rel="stylesheet" href="...">
+  // Ex: <style data-cssvarsponyfill="true">...</style>
+  include: '[data-cssvarsponyfill="true"]'
 });
 ```
 
@@ -258,14 +270,27 @@ cssVars({
 
 CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to exclude from those matched by [options.include](#optionsinclude).
 
+**Tip:** The default value is the *safest* setting, but it is not necessarily the fastest. For the best performance, avoid unnecessary CSS processing by excluding CSS that does not need to be ponyfilled. See [options.include](#optionsinclude) for an alternate approach.
+
 **Example**
 
 ```javascript
+// Example 1: Exclude based on <link> href
 cssVars({
-  // Of matched 'include' nodes, exclude any node
+  // Of the matched 'include' nodes, exclude any node
   // with an href that contains "bootstrap"
   exclude: '[href*=bootstrap]'
 });
+
+// Example 2: Exclude via data attribute
+cssVars({
+  // Of the matched 'include' nodes, exclude any node
+  // with a "data-cssvarsponyfill" attribute set to "false"
+  // Ex: <link data-cssvarsponyfill="false" rel="stylesheet" href="...">
+  // Ex: <style data-cssvarsponyfill="false">...</style>
+  include: '[data-cssvarsponyfill="false"]'
+});
+
 ```
 
 ### options.fixNestedCalc
