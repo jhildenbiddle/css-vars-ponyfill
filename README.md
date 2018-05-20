@@ -133,9 +133,11 @@ cssVars({
 
 The ponyfill will:
 
-1. Fetch all CSS
-1. Parse the CSS
+1. Get the `<link>`, `<style>`, and `@import` CSS
+1. Parse the CSS and convert it to an abstract syntax tree
 1. Transform CSS custom properties to static values
+1. Transforms relative `url()` paths to absolute URLs
+1. Convert the AST back to CSS
 1. Append legacy-compatible CSS to the DOM
 
 ```html
@@ -161,7 +163,7 @@ cssVars({
 
 Values will be updated in both legacy and modern browsers:
 
-- In legacy browsers, the ponyfill will fetch, parse, transform, and append
+- In legacy browsers, the ponyfill will get, parse, transform, and append
   legacy-compatible CSS to the DOM once again.
 
    ```html
@@ -174,7 +176,7 @@ Values will be updated in both legacy and modern browsers:
    </style>
    ```
 
-- In modern browsers with native custom property support, the ponyfill will update values using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
+- In modern browsers with native support for CSS custom properties, the ponyfill will update values using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
 
    ```javascript
    document.documentElement.style.setProperty('--color', 'red');
@@ -225,7 +227,7 @@ cssVars({
   onWarning(message) {
     // ...
   },
-  onError(message, node) {
+  onError(message, node, xhr, url) {
     // ...
   },
   onComplete(cssText, styleNode) {
@@ -716,7 +718,7 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onError(message, node, xhr) {
+  onError(message, node, xhr, url) {
     console.log(message); // 1
     console.log(node); // 2
     console.log(xhr.status); // 3
@@ -725,11 +727,11 @@ cssVars({
   }
 });
 
-// 1 => 'CSS XHR error: "fail.css" 404 (Not Found)'
+// 1 => 'CSS XHR error: "http://domain.com/path/to/fail.css" 404 (Not Found)'
 // 2 => <link rel="stylesheet" href="path/to/fail.css">
 // 3 => '404'
 // 4 => 'Not Found'
-// 5 => 'path/to/fail.css'
+// 5 => 'http://domain.com/path/to/fail.css'
 ```
 
 ### options.onComplete

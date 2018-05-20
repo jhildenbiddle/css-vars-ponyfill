@@ -1040,7 +1040,7 @@
                         var responseUrl = xhr.responseURL || getFullUrl$1(url, location.href);
                         var statusText = xhr.statusText ? "(" + xhr.statusText + ")" : "Unspecified Error" + (xhr.status === 0 ? " (possibly CORS related)" : "");
                         var errorMsg = "CSS XHR Error: " + responseUrl + " " + xhr.status + " " + statusText;
-                        handleError(errorMsg, node, xhr, url);
+                        handleError(errorMsg, node, xhr, responseUrl);
                     },
                     onComplete: function onComplete(cssText, cssArray, nodeArray) {
                         var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;

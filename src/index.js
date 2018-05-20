@@ -198,7 +198,7 @@ function cssVars(options = {}) {
                     const statusText  = xhr.statusText ? `(${xhr.statusText})` : 'Unspecified Error' + (xhr.status === 0 ? ' (possibly CORS related)' : '');
                     const errorMsg    = `CSS XHR Error: ${responseUrl} ${xhr.status} ${statusText}`;
 
-                    handleError(errorMsg, node, xhr, url);
+                    handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray) {
                     const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;

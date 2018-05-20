@@ -1,12 +1,21 @@
 # Change Log
 
+## 1.7.2
+
+*2018-05-20*
+
+- Updated `options.onError` callback `url` argument so that it always returns an
+  absolute URL.
+
+- Updated README with `options.onError` fixes and a few other minor tweaks.
+
 ## 1.7.1
 
 *2018-05-19*
 
-- Fixed XHR error message sent to console so that a URL is included when the
-  status code is `0`. Also added a hint that these errors are possibly related
-  to CORS restrictions to assist debugging efforts.
+- Fixed `options.onError` message sent to console so that a URL is included when
+  the status code is `0`. Also added a hint that these errors are possibly
+  related to CORS restrictions to assist debugging efforts.
 
 - Updated README with performance tips and better examples for `options.include`
   and `options.exclude`.
