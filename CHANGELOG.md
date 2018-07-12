@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.8.0
+
+*2018-07-12*
+
+- Fixed inaccurate “variable is undefined” console warning when a custom
+  property value is `0` or `false`.
+
 ## 1.7.2
 
 *2018-05-20*

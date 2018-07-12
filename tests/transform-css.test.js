@@ -324,6 +324,21 @@ describe('transform-css', function() {
                 expect(cssOut).to.equal(expectCss);
             });
 
+            it('Handle false(y) values', function() {
+                const cssIn     = ':root{--var1:true;--var2:true;--var3:true;--var4:true}p{var1:var(--var1);var2:var(--var2);var3:var(--var3);var4:var(--fail, false);}';
+                const cssOut    = transformCss(cssIn, {
+                    variables: {
+                        '--var1': 0,
+                        '--var2': '0',
+                        '--var3': false,
+                        '--var4': 'false'
+                    }
+                }).replace(/\n/g, '');
+                const expectCss = 'p{var1:0;var2:0;var3:false;var4:false;}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+
             it('Override existing variable', function() {
                 const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
                 const cssOut    = transformCss(cssIn, {

@@ -890,10 +890,12 @@ function resolveValue(value, map, settings) {
     var varFunc = VAR_FUNC_IDENTIFIER + "(" + varRef + ")";
     var varResult = varRef.replace(RE_VAR, function(_, name, fallback) {
         var replacement = map[name];
-        if (!replacement && !fallback) {
+        var hasReplacement = replacement !== undefined;
+        var hasFallback = fallback !== undefined;
+        if (!hasReplacement && !hasFallback) {
             settings.onWarning(warningIntro + ' variable "' + name + '" is undefined');
         }
-        if (!replacement && fallback) {
+        if (!hasReplacement && hasFallback) {
             return fallback;
         }
         return replacement;
