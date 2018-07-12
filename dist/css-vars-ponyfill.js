@@ -908,8 +908,10 @@
         onError: function onError() {},
         onComplete: function onComplete() {}
     };
+    var hasNativeSupport = window && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
     var regex = {
         cssComments: /\/\*[\s\S]+?\*\//g,
+        cssKeyframes: /@(-.*-)?keyframes/,
         cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
         cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
@@ -1017,7 +1019,6 @@
             settings.onWarning(message);
         }
         if (document.readyState !== "loading") {
-            var hasNativeSupport = window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
             if (!hasNativeSupport || !settings.onlyLegacy) {
                 var styleNodeId = name;
                 getCssData({
@@ -1059,6 +1060,7 @@
                                 variables: settings.variables,
                                 onWarning: handleWarning
                             });
+                            var hasKeyframes = regex.cssKeyframes.test(cssText);
                             var cssMarkerMatch = cssMarker.exec(cssText);
                             while (cssMarkerMatch !== null) {
                                 var matchedText = cssMarkerMatch[0];
@@ -1075,6 +1077,9 @@
                                 }
                                 if (lastNode.nextSibling !== styleNode) {
                                     lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                }
+                                if (hasKeyframes) {
+                                    fixKeyframes();
                                 }
                             }
                         } catch (err) {
@@ -1107,6 +1112,15 @@
                 cssVars(options);
                 document.removeEventListener("DOMContentLoaded", init);
             });
+        }
+    }
+    function fixKeyframes() {
+        var nameMarker = "__css-vars-keyframe__";
+        var nodes = document.getElementsByTagName("*");
+        for (var i = 0, len = nodes.length; i < len; i++) {
+            nodes[i].style.animationName += nameMarker;
+            void document.body.offsetHeight;
+            nodes[i].style.animationName = nodes[i].style.animationName.replace(nameMarker, "");
         }
     }
     function getFullUrl$1(url) {

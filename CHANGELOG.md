@@ -4,6 +4,10 @@
 
 *2018-07-12*
 
+- Added fix for browser-related bugs that prevents keyframe animations being
+  applied when values are initially set using custom properties or updated using
+  the `variables` ponyfill option.
+
 - Fixed inaccurate “variable is undefined” console warning when a custom
   property value is `0` or `false`.
 

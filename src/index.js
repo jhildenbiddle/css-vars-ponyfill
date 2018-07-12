@@ -28,9 +28,12 @@ const defaults = {
     onError() {},         // cssVars
     onComplete() {}       // cssVars
 };
+const hasNativeSupport = window && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 const regex = {
     // CSS comments
     cssComments: /\/\*[\s\S]+?\*\//g,
+    // CSS keyframes (@keyframes & @-VENDOR-keyframes)
+    cssKeyframes: /@(-.*-)?keyframes/,
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable :root declarations and var() function values
@@ -154,8 +157,6 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        const hasNativeSupport = window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
-
         // Lacks native support or onlyLegacy 'false'
         if (!hasNativeSupport || !settings.onlyLegacy) {
             const styleNodeId = pkgName;
@@ -222,7 +223,8 @@ function cssVars(options = {}) {
                             onWarning    : handleWarning
                         });
 
-                        let cssMarkerMatch = cssMarker.exec(cssText);
+                        const hasKeyframes   = regex.cssKeyframes.test(cssText);
+                        let   cssMarkerMatch = cssMarker.exec(cssText);
 
                         // Replace markers with appropriate cssArray item
                         while (cssMarkerMatch !== null) {
@@ -246,6 +248,10 @@ function cssVars(options = {}) {
                             // Insert <style> element after last nodeArray item
                             if (lastNode.nextSibling !== styleNode) {
                                 lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                            }
+
+                            if (hasKeyframes) {
+                                fixKeyframes();
                             }
                         }
                     }
@@ -304,6 +310,26 @@ function cssVars(options = {}) {
 
 // Functions (Private)
 // =============================================================================
+/**
+ * Fixes issue keyframe properties set using CSS custom property not being
+ * applied properly in some legacy (IE) and modern (Safari) browsers.
+ */
+function fixKeyframes() {
+    const nameMarker = '__css-vars-keyframe__';
+    const nodes      = document.getElementsByTagName('*');
+
+    for (let i = 0, len = nodes.length; i < len; i++) {
+        // Modify animation name
+        nodes[i].style.animationName += nameMarker;
+
+        // Force reflow
+        void document.body.offsetHeight;
+
+        // Restore animation name
+        nodes[i].style.animationName = nodes[i].style.animationName.replace(nameMarker, '');
+    }
+}
+
 /**
  * Returns fully qualified URL from relative URL and (optional) base URL
  *
