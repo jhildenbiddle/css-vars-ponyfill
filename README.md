@@ -2,7 +2,7 @@
 
 [![NPM](https://img.shields.io/npm/v/css-vars-ponyfill.svg?style=flat-square)](https://www.npmjs.com/package/css-vars-ponyfill)
 [![Build Status](https://img.shields.io/travis/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://travis-ci.org/jhildenbiddle/css-vars-ponyfill)
-[![Codacy grade](https://img.shields.io/codacy/grade/5d967da1e518489aac42d99b87088671.svg?style=flat-square)](https://www.codacy.com/app/jhildenbiddle/css-vars-ponyfill?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jhildenbiddle/css-vars-ponyfill&amp;utm_campaign=Badge_Grade)
+[![Codacy](https://img.shields.io/codacy/grade/5d967da1e518489aac42d99b87088671.svg?style=flat-square)](https://www.codacy.com/app/jhildenbiddle/css-vars-ponyfill?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jhildenbiddle/css-vars-ponyfill&amp;utm_campaign=Badge_Grade)
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript)
@@ -27,7 +27,8 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 - Client-side transformation of CSS custom properties to static values
 - Live updates of runtime values in both modern and legacy browsers
-- Transforms `<style>`, `<link>`, and `@import` CSS
+- Watch option auto-updates on `<link>` and `<style>` mutations
+- Transforms `<link>`, `<style>`, and `@import` CSS
 - Transforms relative `url()` paths to absolute URLs
 - Supports chained custom property references
 - Supports complex values
@@ -195,6 +196,7 @@ Values will be updated in both legacy and modern browsers:
 - [updateDOM](#optionsupdatedom)
 - [updateURLs](#optionsupdateurls)
 - [variables](#optionsvariables)
+- [watch](#optionswatch)
 - [onBeforeSend](#optionsonbeforesend)
 - [onSuccess](#optionsonsuccess)
 - [onWarning](#optionsonwarning)
@@ -615,6 +617,25 @@ cssVars({
 });
 ```
 
+### options.watch
+
+- Type: `boolean`
+- Default: `false`
+
+Determines if a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) will be created to watch for `<link>` and `<style>` DOM mutations.
+
+When `true`, the ponyfill will call itself when a `<link>` or `<style>` node is added, removed, or has its `disabled` or `href` attribute modified. The settings used will be the same as those passed to the ponyfill the first time `options.watch` was set to `true`.
+
+Note that this feature requires either [native support for MutationObserver](https://caniuse.com/#feat=mutationobserver) or a [polyfill](https://polyfill.io/v2/docs/) for legacy browsers.
+
+**Example**
+
+```javascript
+cssVars({
+  watch: false // default
+});
+```
+
 ### options.onBeforeSend
 
 - Type: `function`
@@ -765,7 +786,7 @@ This ponyfill includes code based on the following projects. Many thanks to the 
 
 - Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports, feature requests, or questions
 - Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for announcements
-- Add a [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or [tweet](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
+- Add a ⭐️ [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or ❤️ [tweet](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
 
 ## License
 
