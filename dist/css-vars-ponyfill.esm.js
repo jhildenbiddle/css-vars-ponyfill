@@ -411,7 +411,7 @@ function cssParse(css) {
         }
         var m = match(/^(("(?:\\"|[^"])*"|'(?:\\'|[^'])*'|[^{])+)/);
         if (m) {
-            return m[0].trim().replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, "").replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, function(m) {
+            return m[0].trim().replace(/\/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*\/+/g, "").replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, function(m) {
                 return m.replace(/,/g, "‌");
             }).split(/\s*(?![^(]*\)),\s*/).map(function(s) {
                 return s.replace(/\u200C/g, ",");
@@ -420,8 +420,8 @@ function cssParse(css) {
     }
     function declaration() {
         match(/^([;\s]*)+/);
-        var comment_regexp = /\/\*[^*]*\*+([^/*][^*]*\*+)*\//g;
-        var prop = match(/^(\*?[-#/*\\\w]+(\[[0-9a-z_-]+\])?)\s*/);
+        var comment_regexp = /\/\*[^*]*\*+([^\/*][^*]*\*+)*\//g;
+        var prop = match(/^(\*?[-#\/*\\\w]+(\[[0-9a-z_-]+\])?)\s*/);
         if (!prop) {
             return;
         }
