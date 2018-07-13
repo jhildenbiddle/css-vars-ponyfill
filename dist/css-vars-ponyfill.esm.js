@@ -920,6 +920,7 @@ var defaults = {
     updateDOM: true,
     updateURLs: true,
     variables: {},
+    watch: false,
     onBeforeSend: function onBeforeSend() {},
     onSuccess: function onSuccess() {},
     onWarning: function onWarning() {},
@@ -935,6 +936,8 @@ var regex = {
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
+
+var cssVarsObserver = null;
 
 /**
  * Fetches, parses, and transforms CSS custom properties from specified
@@ -972,6 +975,9 @@ var regex = {
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values.
+ * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
+ *                   be created that will execute the ponyfill when a <link> or
+ *                   <style> DOM mutation is observed.
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
  *                   source URL as arguments.
@@ -1042,6 +1048,9 @@ var regex = {
     if (document.readyState !== "loading") {
         if (!hasNativeSupport || !settings.onlyLegacy) {
             var styleNodeId = name;
+            if (settings.watch) {
+                addMutationObserver(settings, styleNodeId);
+            }
             getCssData({
                 include: settings.include,
                 exclude: "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : ""),
@@ -1132,6 +1141,42 @@ var regex = {
         document.addEventListener("DOMContentLoaded", function init(evt) {
             cssVars(options);
             document.removeEventListener("DOMContentLoaded", init);
+        });
+    }
+}
+
+function addMutationObserver(settings, ignoreId) {
+    if (window.MutationObserver && !cssVarsObserver) {
+        var isLink = function isLink(node) {
+            return node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
+        };
+        var isStyle = function isStyle(node) {
+            return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
+        };
+        cssVarsObserver = new MutationObserver(function(mutations) {
+            var isUpdateMutation = false;
+            mutations.forEach(function(mutation) {
+                if (mutation.type === "attributes") {
+                    isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
+                } else if (mutation.type === "childList") {
+                    var addedNodes = Array.apply(null, mutation.addedNodes);
+                    var removedNodes = Array.apply(null, mutation.removedNodes);
+                    isUpdateMutation = [].concat(addedNodes, removedNodes).some(function(node) {
+                        var isValidLink = isLink(node) && !node.disabled;
+                        var isValidStyle = isStyle(node) && !node.disabled && regex.cssVars.test(node.textContent);
+                        return isValidLink || isValidStyle;
+                    });
+                }
+                if (isUpdateMutation) {
+                    cssVars(settings);
+                }
+            });
+        });
+        cssVarsObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: [ "disabled", "href" ],
+            childList: true,
+            subtree: true
         });
     }
 }

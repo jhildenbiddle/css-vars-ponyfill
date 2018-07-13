@@ -21,6 +21,7 @@ const defaults = {
     updateDOM    : true,  // cssVars
     updateURLs   : true,  // cssVars
     variables    : {},    // transformCss
+    watch        : false, // cssVars
     // Callbacks
     onBeforeSend() {},    // cssVars
     onSuccess() {},       // cssVars
@@ -39,6 +40,7 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
+let cssVarsObserver = null;
 
 
 // Functions
@@ -79,6 +81,9 @@ const regex = {
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values.
+ * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
+ *                   be created that will execute the ponyfill when a <link> or
+ *                   <style> DOM mutation is observed.
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
  *                   source URL as arguments.
@@ -160,6 +165,10 @@ function cssVars(options = {}) {
         // Lacks native support or onlyLegacy 'false'
         if (!hasNativeSupport || !settings.onlyLegacy) {
             const styleNodeId = pkgName;
+
+            if (settings.watch) {
+                addMutationObserver(settings, styleNodeId);
+            }
 
             getCssData({
                 include: settings.include,
@@ -310,6 +319,52 @@ function cssVars(options = {}) {
 
 // Functions (Private)
 // =============================================================================
+/**
+ * Creates mutation observer that executes the ponyfill when a <link> or <style>
+ * DOM mutation is observed.
+ *
+ * @param {object} settings
+ * @param {string} ignoreId
+ */
+function addMutationObserver(settings, ignoreId) {
+    if (window.MutationObserver && !cssVarsObserver) {
+        const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
+        const isStyle = node => node.tagName === 'STYLE' && (ignoreId ? node.id !== ignoreId : true);
+
+        cssVarsObserver = new MutationObserver(function(mutations) {
+            let isUpdateMutation = false;
+
+            mutations.forEach(mutation => {
+                if (mutation.type === 'attributes') {
+                    isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
+                }
+                else if (mutation.type === 'childList') {
+                    const addedNodes   = Array.apply(null, mutation.addedNodes);
+                    const removedNodes = Array.apply(null, mutation.removedNodes);
+
+                    isUpdateMutation = [].concat(addedNodes, removedNodes).some(node => {
+                        const isValidLink  = isLink(node) && !node.disabled;
+                        const isValidStyle = isStyle(node) && !node.disabled && regex.cssVars.test(node.textContent);
+
+                        return (isValidLink || isValidStyle);
+                    });
+                }
+
+                if (isUpdateMutation) {
+                    cssVars(settings);
+                }
+            });
+        });
+
+        cssVarsObserver.observe(document.documentElement, {
+            attributes     : true,
+            attributeFilter: ['disabled', 'href'],
+            childList      : true,
+            subtree        : true
+        });
+    }
+}
+
 /**
  * Fixes issue keyframe properties set using CSS custom property not being
  * applied properly in some legacy (IE) and modern (Safari) browsers.

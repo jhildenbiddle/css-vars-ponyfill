@@ -4,7 +4,10 @@
 
 *2018-07-12*
 
-- Added fix for browser-related bugs that prevents keyframe animations being
+- Added `options.watch` feature which creates a MutationObserver that will
+  execute the ponyfill when a `<link>` or `<style>` DOM mutation is observed.
+
+- Added fix for browser-related bugs that prevent keyframe animations from being
   applied when values are initially set using custom properties or updated using
   the `variables` ponyfill option.
 
