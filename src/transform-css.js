@@ -328,8 +328,8 @@ function resolveValue(value, map, settings) {
     const varFunc   = VAR_FUNC_IDENTIFIER + '(' + varRef + ')';
     const varResult = varRef.replace(RE_VAR, function(_, name, fallback) {
         const replacement    = map[name];
-        const hasReplacement = replacement !== undefined;
-        const hasFallback    = fallback !== undefined;
+        const hasReplacement = replacement !== undefined && replacement !== '';
+        const hasFallback    = fallback !== undefined && fallback !== '';
 
         if (!hasReplacement && !hasFallback) {
             settings.onWarning(`${warningIntro} variable "${name}" is undefined`);
