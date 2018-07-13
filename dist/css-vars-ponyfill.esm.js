@@ -1153,6 +1153,7 @@ function addMutationObserver(settings, ignoreId) {
         var isStyle = function isStyle(node) {
             return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
         };
+        var debounceTimer = null;
         cssVarsObserver = new MutationObserver(function(mutations) {
             var isUpdateMutation = false;
             mutations.forEach(function(mutation) {
@@ -1168,7 +1169,10 @@ function addMutationObserver(settings, ignoreId) {
                     });
                 }
                 if (isUpdateMutation) {
-                    cssVars(settings);
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(function() {
+                        cssVars(settings);
+                    }, 1);
                 }
             });
         });

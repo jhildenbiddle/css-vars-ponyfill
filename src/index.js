@@ -331,6 +331,8 @@ function addMutationObserver(settings, ignoreId) {
         const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
         const isStyle = node => node.tagName === 'STYLE' && (ignoreId ? node.id !== ignoreId : true);
 
+        let debounceTimer = null;
+
         cssVarsObserver = new MutationObserver(function(mutations) {
             let isUpdateMutation = false;
 
@@ -351,7 +353,11 @@ function addMutationObserver(settings, ignoreId) {
                 }
 
                 if (isUpdateMutation) {
-                    cssVars(settings);
+                    clearTimeout(debounceTimer);
+
+                    debounceTimer = setTimeout(function() {
+                        cssVars(settings);
+                    }, 1);
                 }
             });
         });
