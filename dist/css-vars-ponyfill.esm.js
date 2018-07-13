@@ -932,7 +932,7 @@ var hasNativeSupport = window && window.CSS && window.CSS.supports && window.CSS
 
 var regex = {
     cssComments: /\/\*[\s\S]+?\*\//g,
-    cssKeyframes: /@(-.*-)?keyframes/,
+    cssKeyframes: /@(?:-\w*-)?keyframes/,
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
@@ -1182,12 +1182,21 @@ function addMutationObserver(settings, ignoreId) {
 }
 
 function fixKeyframes() {
+    var allNodes = document.body.getElementsByTagName("*");
+    var keyframeNodes = [];
     var nameMarker = "__css-vars-keyframe__";
-    var nodes = document.getElementsByTagName("*");
-    for (var i = 0, len = nodes.length; i < len; i++) {
-        nodes[i].style.animationName += nameMarker;
-        void document.body.offsetHeight;
-        nodes[i].style.animationName = nodes[i].style.animationName.replace(nameMarker, "");
+    for (var i = 0, len = allNodes.length; i < len; i++) {
+        var node = allNodes[i];
+        var animationName = window.getComputedStyle(node).animationName;
+        if (animationName !== "none") {
+            node.style.animationName += nameMarker;
+            keyframeNodes.push(node);
+        }
+    }
+    void document.body.offsetHeight;
+    for (var _i = 0, _len = keyframeNodes.length; _i < _len; _i++) {
+        var nodeStyle = keyframeNodes[_i].style;
+        nodeStyle.animationName = nodeStyle.animationName.replace(nameMarker, "");
     }
 }
 

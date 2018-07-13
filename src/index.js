@@ -34,7 +34,7 @@ const regex = {
     // CSS comments
     cssComments: /\/\*[\s\S]+?\*\//g,
     // CSS keyframes (@keyframes & @-VENDOR-keyframes)
-    cssKeyframes: /@(-.*-)?keyframes/,
+    cssKeyframes: /@(?:-\w*-)?keyframes/,
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable :root declarations and var() function values
@@ -370,18 +370,29 @@ function addMutationObserver(settings, ignoreId) {
  * applied properly in some legacy (IE) and modern (Safari) browsers.
  */
 function fixKeyframes() {
-    const nameMarker = '__css-vars-keyframe__';
-    const nodes      = document.getElementsByTagName('*');
+    const allNodes      = document.body.getElementsByTagName('*');
+    const keyframeNodes = [];
+    const nameMarker    = '__css-vars-keyframe__';
 
-    for (let i = 0, len = nodes.length; i < len; i++) {
-        // Modify animation name
-        nodes[i].style.animationName += nameMarker;
+    // Modify animation name
+    for (let i = 0, len = allNodes.length; i < len; i++) {
+        const node = allNodes[i];
+        const animationName = window.getComputedStyle(node).animationName;
 
-        // Force reflow
-        void document.body.offsetHeight;
+        if (animationName !== 'none') {
+            node.style.animationName += nameMarker;
+            keyframeNodes.push(node);
+        }
+    }
 
-        // Restore animation name
-        nodes[i].style.animationName = nodes[i].style.animationName.replace(nameMarker, '');
+    // Force reflow
+    void document.body.offsetHeight;
+
+    // Restore animation name
+    for (let i = 0, len = keyframeNodes.length; i < len; i++) {
+        const nodeStyle = keyframeNodes[i].style;
+
+        nodeStyle.animationName = nodeStyle.animationName.replace(nameMarker, '');
     }
 }
 
