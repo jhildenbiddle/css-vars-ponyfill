@@ -419,6 +419,27 @@ describe('css-vars', function() {
                 });
             }
         });
+
+        if ('MutationObserver' in window) {
+            describe('watch', function() {
+                it('true', function(done) {
+                    const styleCss  = ':root{--color:red;}body{color:var(--color);}';
+
+                    cssVars({
+                        include   : '[data-test]',
+                        onlyLegacy: true,
+                        watch     : true
+                    });
+
+                    createElmsWrap({ tag: 'style', text: styleCss });
+
+                    setTimeout(function() {
+                        expect(window.getComputedStyle(document.body).color).to.equal('rgb(255, 0, 0)');
+                        done();
+                    }, 100);
+                });
+            });
+        }
     });
 
     // Tests: Callbacks
