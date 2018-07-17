@@ -27,7 +27,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 - Client-side transformation of CSS custom properties to static values
 - Live updates of runtime values in both modern and legacy browsers
-- Watch option auto-updates on `<link>` and `<style>` mutations
+- Auto-updates on `<link>` and `<style>` changes
 - Transforms `<link>`, `<style>`, and `@import` CSS
 - Transforms relative `url()` paths to absolute URLs
 - Supports chained custom property references
@@ -220,6 +220,7 @@ cssVars({
   variables    : {
     // ...
   },
+  watch        : false,
   onBeforeSend(xhr, node, url) {
     // ...
   },
