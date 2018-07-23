@@ -928,7 +928,7 @@ var defaults = {
     onComplete: function onComplete() {}
 };
 
-var hasNativeSupport = window && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
+var hasNativeSupport = typeof window !== "undefined" && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
 
 var regex = {
     cssComments: /\/\*[\s\S]+?\*\//g,
