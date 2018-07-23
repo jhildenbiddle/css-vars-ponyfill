@@ -57,7 +57,9 @@ npm install css-vars-ponyfill
 
 ```javascript
 // file.js
+
 import cssVars from 'css-vars-ponyfill';
+
 cssVars({
   // ...
 });
@@ -73,6 +75,7 @@ CDN ([unpkg.com](https://unpkg.com/) shown, also on [jsdelivr.net](https://www.j
 
 ```html
 <!-- file.html (latest v1.x.x) -->
+
 <script src="https://unpkg.com/css-vars-ponyfill@1"></script>
 <script>
   cssVars({
@@ -126,7 +129,7 @@ import cssVars from 'css-vars-ponyfill';
 // Call using defaults
 cssVars();
 
-// Or call with options
+// Call with options
 cssVars({
   // ...
 });
