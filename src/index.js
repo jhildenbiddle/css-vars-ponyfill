@@ -29,7 +29,8 @@ const defaults = {
     onError() {},         // cssVars
     onComplete() {}       // cssVars
 };
-const hasNativeSupport = typeof window !== 'undefined' && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
+const isBrowser        = typeof window !== 'undefined';
+const hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 const regex = {
     // CSS comments
     cssComments: /\/\*[\s\S]+?\*\//g,
@@ -159,6 +160,11 @@ function cssVars(options = {}) {
         }
 
         settings.onWarning(message);
+    }
+
+    // Exit if non-browser environment (e.g. Node)
+    if (!isBrowser) {
+        return;
     }
 
     // Verify readyState to ensure all <link> and <style> nodes are available

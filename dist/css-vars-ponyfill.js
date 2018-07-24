@@ -909,7 +909,8 @@
         onError: function onError() {},
         onComplete: function onComplete() {}
     };
-    var hasNativeSupport = typeof window !== "undefined" && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
+    var isBrowser = typeof window !== "undefined";
+    var hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
     var regex = {
         cssComments: /\/\*[\s\S]+?\*\//g,
         cssKeyframes: /@(?:-\w*-)?keyframes/,
@@ -1023,6 +1024,9 @@
                 console.warn(message);
             }
             settings.onWarning(message);
+        }
+        if (!isBrowser) {
+            return;
         }
         if (document.readyState !== "loading") {
             if (!hasNativeSupport || !settings.onlyLegacy) {
