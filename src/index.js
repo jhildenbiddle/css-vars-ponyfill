@@ -120,6 +120,7 @@ let cssVarsObserver = null;
  *     variables    : {
  *       // ...
  *     },
+ *     watch        : false, // default
  *     onBeforeSend(xhr, node, url) {
  *       // ...
  *     }
@@ -232,17 +233,10 @@ function cssVars(options = {}) {
                             onWarning    : handleWarning
                         });
 
-                        const hasKeyframes   = regex.cssKeyframes.test(cssText);
-                        let   cssMarkerMatch = cssMarker.exec(cssText);
+                        const hasKeyframes = regex.cssKeyframes.test(cssText);
 
                         // Replace markers with appropriate cssArray item
-                        while (cssMarkerMatch !== null) {
-                            const matchedText   = cssMarkerMatch[0];
-                            const cssArrayIndex = cssMarkerMatch[1];
-
-                            cssText = cssText.replace(matchedText, cssArray[cssArrayIndex]);
-                            cssMarkerMatch = cssMarker.exec(cssText);
-                        }
+                        cssText = cssText.replace(cssMarker, (match, group1) => cssArray[group1]);
 
                         if (settings.updateDOM && nodeArray && nodeArray.length) {
                             const lastNode = nodeArray[nodeArray.length - 1];

@@ -103,6 +103,31 @@ describe('css-vars', function() {
             });
         });
 
+        it('handles replacement of CSS placeholders', function() {
+            const styleCss = `
+                :root { --color: red; }
+                p { color: var(--color); }
+            `;
+            const expectCss = `p{color:red;}${'p{color:blue;}'.repeat(5)}`;
+
+            createElmsWrap([
+                { tag: 'style', text: styleCss },
+                { tag: 'style', text: 'p { color: blue; }' },
+                { tag: 'style', text: 'p { color: blue; }' },
+                { tag: 'style', text: 'p { color: blue; }' },
+                { tag: 'style', text: 'p { color: blue; }' },
+                { tag: 'style', text: 'p { color: blue; }' }
+            ]);
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                onComplete(cssText, styleNode) {
+                    expect(cssText.replace(/\s/g,'')).to.equal(expectCss);
+                }
+            });
+        });
+
         it('handles no matching elements', function() {
             cssVars({
                 include   : '[data-test]',

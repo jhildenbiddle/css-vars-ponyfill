@@ -992,6 +992,7 @@
      *     variables    : {
      *       // ...
      *     },
+     *     watch        : false, // default
      *     onBeforeSend(xhr, node, url) {
      *       // ...
      *     }
@@ -1069,13 +1070,9 @@
                                 onWarning: handleWarning
                             });
                             var hasKeyframes = regex.cssKeyframes.test(cssText);
-                            var cssMarkerMatch = cssMarker.exec(cssText);
-                            while (cssMarkerMatch !== null) {
-                                var matchedText = cssMarkerMatch[0];
-                                var cssArrayIndex = cssMarkerMatch[1];
-                                cssText = cssText.replace(matchedText, cssArray[cssArrayIndex]);
-                                cssMarkerMatch = cssMarker.exec(cssText);
-                            }
+                            cssText = cssText.replace(cssMarker, function(match, group1) {
+                                return cssArray[group1];
+                            });
                             if (settings.updateDOM && nodeArray && nodeArray.length) {
                                 var lastNode = nodeArray[nodeArray.length - 1];
                                 styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");
