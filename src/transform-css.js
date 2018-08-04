@@ -173,7 +173,7 @@ function transformVars(cssText, options = {}) {
 
             resolvedValue = resolveValue(value, map, settings);
 
-            if (resolvedValue !== 'undefined') {
+            if (resolvedValue !== decl.value) {
                 if (!settings.preserve) {
                     decl.value = resolvedValue;
                 }
@@ -294,63 +294,82 @@ function fixNestedCalc(rules) {
 }
 
 /**
- * Resolve CSS variables in a value
+ * Resolves CSS var() function(s) with `map` data or fallback value(s). Returns
+ * original `value` if unable to resolve.
  *
- * The second argument to a CSS variable function, if provided, is a fallback
- * value, which is used as the substitution value when the referenced variable
- * is invalid.
- *
- * var(name[, fallback])
- *
- * @param {string} value A property value containing a CSS variable function
- * @param {object} map A map of variable names and values
+ * @param {string} value String containing CSS var() functions to resolve
+ * @param {object} map CSS custom property key/values
  * @param {object} settings Settings object passed from transformVars()
- * @return {string} A new value with CSS variables substituted or using fallback
+ * @param {string} [__recursiveFallback] Fallback when unable to resolve CSS
+ *                 var() function to a map or fallback value. Allows restoring
+ *                 original var() function from recursive resolveValue() calls.
+ * @return {string} CSS value with var() function(s) resolved to map or fallback
+ *                  value.
+ *
+ * @example
+ *
+ *   resolveValue('10px var(--x) 30px', {'--x':'20px'}, {...settings});
+ *   // => '10px 20px 30px'
+ *
+ *   resolveValue('10px', {}, {...settings});
+ *   // => '10px'
  */
-function resolveValue(value, map, settings) {
-    // matches `name[, fallback]`, captures 'name' and 'fallback'
-    const RE_VAR = /([\w-]+)(?:\s*,\s*)?(.*)?/;
-    const balancedParens = balanced('(', ')', value);
-    const varStartIndex  = value.indexOf('var(');
-    const varRef         = balanced('(', ')', value.substring(varStartIndex)).body;
-    const warningIntro   = 'CSS transform warning:';
+function resolveValue(value, map, settings = {}, __recursiveFallback) {
+    const varFuncData  = balanced('var(', ')', value);
+    const warningIntro = 'CSS transform warning:';
 
-    /* istanbul ignore next */
-    if (!balancedParens) {
-        settings.onWarning(`${warningIntro} missing closing ")" in the value "${value}"`);
-    }
+    /**
+     * Resolves contents of CSS custom property function
+     *
+     * @param {string} value String containing contents of CSS var() function
+     * @returns {string}
+     *
+     * @example
+     *
+     *   resolveFunc('--x, var(--y, green)')
+     *   // => map['--x'] or map['--y'] or 'green'
+     *
+     *   resolveFunc('--fail')
+     *   // => 'var(--fail)' when map['--fail'] does not exist
+     */
+    function resolveFunc(value) {
+        const name               = value.split(',')[0];
+        const fallback           = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
+        const match              = map.hasOwnProperty(name) ? String(map[name]) : undefined;
+        const replacement        = match || (fallback ? String(fallback) : undefined);
+        const unresolvedFallback = __recursiveFallback || value;
 
-    /* istanbul ignore next */
-    if (varRef === '') {
-        settings.onWarning(`${warningIntro} var() must contain a non-whitespace string`);
-    }
-
-    const varFunc   = VAR_FUNC_IDENTIFIER + '(' + varRef + ')';
-    const varResult = varRef.replace(RE_VAR, function(_, name, fallback) {
-        const replacement    = map[name];
-        const hasReplacement = replacement !== undefined && replacement !== '';
-        const hasFallback    = fallback !== undefined && fallback !== '';
-
-        if (!hasReplacement && !hasFallback) {
+        if (!match) {
             settings.onWarning(`${warningIntro} variable "${name}" is undefined`);
         }
 
-        if (!hasReplacement && hasFallback) {
-            return fallback;
+        if (replacement && replacement !== 'undefined' && replacement.length > 0) {
+            return resolveValue(replacement, map, settings, unresolvedFallback);
         }
-
-        return replacement;
-    });
-
-    // resolve the variable
-    value = value.split(varFunc).join(varResult);
-
-    // recursively resolve any remaining variables in the value
-    if (value.indexOf(VAR_FUNC_IDENTIFIER + '(') !== -1) {
-        value = resolveValue(value, map, settings);
+        else {
+            return `var(${unresolvedFallback})`;
+        }
     }
 
-    return value;
+    if (!varFuncData) {
+        if (value.indexOf('var(') !== -1) {
+            settings.onWarning(`${warningIntro} missing closing ")" in the value "${value}"`);
+        }
+
+        return value;
+    }
+    else if (varFuncData.body.trim().length === 0) {
+        settings.onWarning(`${warningIntro} var() must contain a non-whitespace string`);
+
+        return value;
+    }
+    else {
+        return (
+            varFuncData.pre
+            + resolveFunc(varFuncData.body)
+            + resolveValue(varFuncData.post, map, settings)
+        );
+    }
 }
 
 

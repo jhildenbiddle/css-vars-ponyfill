@@ -102,10 +102,65 @@ describe('transform-css', function() {
             expect(cssOut).to.equal(expectCss);
         });
 
+        it('transforms variable function in calc function', function() {
+            const cssIn = `
+                :root { --margin: 20px; }
+                p { margin: calc(var(--margin) * 2); }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{margin:calc(20px * 2);}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
         it('transforms variable function fallback', function() {
             const cssIn     = 'p { color: var(--fail, red); }';
             const cssOut    = transformCss(cssIn);
             const expectCss = 'p{color:red;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
+        it('transforms variable function with nested fallbacks', function() {
+            const cssIn     = 'p { color: var(--fail1, var(--fail2, red)); }';
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{color:red;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+    });
+
+    // Tests: Undefined
+    // -------------------------------------------------------------------------
+    describe('Undefined', function() {
+        it('retains undefined custom properties', function() {
+            const cssIn     = 'p { color: var(--fail); }';
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{color:var(--fail);}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
+        it('retains undefined custom properties with nested fallbacks', function() {
+            const cssIn     = 'p { color: var(--fail1, var(--fail2, var(--fail3))); }';
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{color:var(--fail1, var(--fail2, var(--fail3)));}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
+        it('retains undefined custom properties in mixed property value', function() {
+            const cssIn     = 'p { margin: 10px var(--fail1) var(--fail2) 20px; }';
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{margin:10px var(--fail1) var(--fail2) 20px;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
+        it('handles undefined custom properties in calc function', function() {
+            const cssIn     = 'p { margin: calc(var(--fail) * 2); }';
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{margin:calc(var(--fail) * 2);}';
 
             expect(cssOut).to.equal(expectCss);
         });

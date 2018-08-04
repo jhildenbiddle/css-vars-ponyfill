@@ -789,7 +789,7 @@
                     continue;
                 }
                 resolvedValue = resolveValue(value, map, settings);
-                if (resolvedValue !== "undefined") {
+                if (resolvedValue !== decl.value) {
                     if (!settings.preserve) {
                         decl.value = resolvedValue;
                     } else {
@@ -859,36 +859,37 @@
             }
         });
     }
-    function resolveValue(value, map, settings) {
-        var RE_VAR = /([\w-]+)(?:\s*,\s*)?(.*)?/;
-        var balancedParens = balancedMatch("(", ")", value);
-        var varStartIndex = value.indexOf("var(");
-        var varRef = balancedMatch("(", ")", value.substring(varStartIndex)).body;
+    function resolveValue(value, map) {
+        var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+        var __recursiveFallback = arguments[3];
+        var varFuncData = balancedMatch("var(", ")", value);
         var warningIntro = "CSS transform warning:";
-        if (!balancedParens) {
-            settings.onWarning(warningIntro + ' missing closing ")" in the value "' + value + '"');
-        }
-        if (varRef === "") {
-            settings.onWarning(warningIntro + " var() must contain a non-whitespace string");
-        }
-        var varFunc = VAR_FUNC_IDENTIFIER + "(" + varRef + ")";
-        var varResult = varRef.replace(RE_VAR, function(_, name, fallback) {
-            var replacement = map[name];
-            var hasReplacement = replacement !== undefined && replacement !== "";
-            var hasFallback = fallback !== undefined && fallback !== "";
-            if (!hasReplacement && !hasFallback) {
+        function resolveFunc(value) {
+            var name = value.split(",")[0];
+            var fallback = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
+            var match = map.hasOwnProperty(name) ? String(map[name]) : undefined;
+            var replacement = match || (fallback ? String(fallback) : undefined);
+            var unresolvedFallback = __recursiveFallback || value;
+            if (!match) {
                 settings.onWarning(warningIntro + ' variable "' + name + '" is undefined');
             }
-            if (!hasReplacement && hasFallback) {
-                return fallback;
+            if (replacement && replacement !== "undefined" && replacement.length > 0) {
+                return resolveValue(replacement, map, settings, unresolvedFallback);
+            } else {
+                return "var(" + unresolvedFallback + ")";
             }
-            return replacement;
-        });
-        value = value.split(varFunc).join(varResult);
-        if (value.indexOf(VAR_FUNC_IDENTIFIER + "(") !== -1) {
-            value = resolveValue(value, map, settings);
         }
-        return value;
+        if (!varFuncData) {
+            if (value.indexOf("var(") !== -1) {
+                settings.onWarning(warningIntro + ' missing closing ")" in the value "' + value + '"');
+            }
+            return value;
+        } else if (varFuncData.body.trim().length === 0) {
+            settings.onWarning(warningIntro + " var() must contain a non-whitespace string");
+            return value;
+        } else {
+            return varFuncData.pre + resolveFunc(varFuncData.body) + resolveValue(varFuncData.post, map, settings);
+        }
     }
     var name = "css-vars-ponyfill";
     var defaults = {
