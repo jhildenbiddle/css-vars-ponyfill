@@ -1,15 +1,28 @@
 # Change Log
 
+## 1.9.0
+
+*Unreleased*
+
+- Added check for non-browser environments to support Node+SSR. (#16)
+
+- Fixed internal placeholder comments appearing in CSS output instead of
+  stylesheet content. (#15)
+
+- Fixed multiple var() functions resolving to `undefined` when they do not
+  resolve to a custom property or fallback value. (#18)
+
 ## 1.8.0
 
 *2018-07-12*
 
 - Added `options.watch` feature which creates a MutationObserver that will
   execute the ponyfill when a `<link>` or `<style>` DOM mutation is observed.
+  (#8)
 
 - Added fix for browser-related bugs that prevent keyframe animations from being
   applied when values are initially set using custom properties or updated using
-  the `variables` ponyfill option.
+  the `variables` ponyfill option. (#13)
 
 - Fixed inaccurate “variable is undefined” console warning when a custom
   property value is `0` or `false`.
@@ -39,20 +52,20 @@
 *2018-05-18*
 
 - Improved performance when processing `<link>` and `<style>` data that does not
-  contain a CSS custom property declaration or function.
+  contain a CSS custom property declaration or function. (#9)
 
 ## 1.6.0
 
 *2018-05-17*
 
 - Added `options.updateURLs` for converting relative `url()` paths to absolute
-  urls.
+  urls. (#8)
 
 ## 1.5.0
 
 *2018-05-16*
 
-- Added `options.onBeforeSend` callback.
+- Added `options.onBeforeSend` callback. (#7)
 
 - Changed `options.onSuccess` callback so that it is called after CSS data has
   been collected from each node before CSS custom properties have been
@@ -97,7 +110,7 @@
 *2018-03-20*
 
 - Fixed "Cannot read property 'length' of undefined" bug triggered while
-  filtering comments that are a direct descendant of an at-rule.
+  filtering comments that are a direct descendant of an at-rule. (#1)
 
 ## 1.1.2
 
