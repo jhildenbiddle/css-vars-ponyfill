@@ -452,7 +452,7 @@ describe('css-vars', function() {
 
                     cssVars({
                         include   : '[data-test]',
-                        onlyLegacy: true,
+                        onlyLegacy: false,
                         watch     : true
                     });
 
