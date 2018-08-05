@@ -432,7 +432,19 @@ describe('transform-css', function() {
                 }
             });
 
-            expect(onWarningCount).to.equal(1);
+            transformCss('p { color: var(--fail; }', {
+                onWarning() {
+                    onWarningCount++;
+                }
+            });
+
+            transformCss('p { color: var(   ); }', {
+                onWarning() {
+                    onWarningCount++;
+                }
+            });
+
+            expect(onWarningCount).to.equal(3);
         });
     });
 });
