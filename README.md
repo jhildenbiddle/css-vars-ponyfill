@@ -355,9 +355,9 @@ p {
 - Type: `boolean`
 - Default: `true`
 
-Determines if the ponyfill will only generate legacy-compatible CSS in browsers that lack native support (i.e., legacy browsers).
+Determines if the ponyfill will ignore modern browsers with native CSS custom property support.
 
-When `true`, the ponyfill will only generate legacy-compatible CSS, trigger callbacks, and (optionally) update the DOM in browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
+When `true`, the ponyfill will only transform custom properties, generate CSS, and trigger callbacks in legacy browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
 
 **Example**
 
@@ -606,17 +606,19 @@ div {
 - Type: `object`
 - Default: `{}`
 
-A map of custom property name/value pairs. Property names can omit or include the leading double-hyphen (`--`), and values specified will override previous values.
+A map of custom property name/value pairs to apply to both legacy and modern browsers. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
 
-Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native custom property support will apply these values using the native [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
+Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
+
+**Note:** Although this option affects both legacy and modern browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#optionsonlylegacy) is `false`).
 
 **Example**
 
 ```javascript
 cssVars({
   variables: {
-    color1    : 'red',
-    '--color2': 'green'
+    '--color1': 'red',  // Leading -- included
+    'color2'  : 'green' // Leading -- omitted
   }
 });
 ```
@@ -630,7 +632,7 @@ Determines if a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/
 
 When `true`, the ponyfill will call itself when a `<link>` or `<style>` node is added, removed, or has its `disabled` or `href` attribute modified. The settings used will be the same as those passed to the ponyfill the first time `options.watch` was set to `true`.
 
-Note that this feature requires either [native support for MutationObserver](https://caniuse.com/#feat=mutationobserver) or a [polyfill](https://polyfill.io/v2/docs/) for legacy browsers.
+**Note:** This feature requires native [support for MutationObserver](https://caniuse.com/#feat=mutationobserver) or a [polyfill](https://polyfill.io/v2/docs/) for legacy browsers.
 
 **Example**
 
@@ -675,7 +677,7 @@ cssVars({
 
 Callback after CSS data has been collected from each node and *before* CSS custom properties have been transformed. Allows modifying the CSS data before it is transformed by returning any `string` value (or `false` to skip).
 
-Note that the order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
+**Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
 
 **Example**
 
