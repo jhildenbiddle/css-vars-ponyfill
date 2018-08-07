@@ -1,13 +1,18 @@
 // Dependencies
 // =============================================================================
+import chai       from 'chai';
 import createElms from 'create-elms';
 import cssVars    from '../src/index';
 import { expect } from 'chai';
 
+chai.use(require('chai-colors'));
+
 
 // Constants & Variables
 // =============================================================================
-const hasNativeSupport = window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
+const bodyComputedStyle        = getComputedStyle(document.body);
+const hasAnimationSupport      = bodyComputedStyle.animationName || bodyComputedStyle.mozAnimationName || bodyComputedStyle.webkitAnimationName;
+const hasCustomPropertySupport = window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 
 
 // Helpers
@@ -146,7 +151,7 @@ describe('css-vars', function() {
         describe('onlyLegacy', function() {
             it('true', function() {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';
-                const expectCss = hasNativeSupport ? '' : 'p{color:red;}';
+                const expectCss = hasCustomPropertySupport ? '' : 'p{color:red;}';
 
                 createElmsWrap({ tag: 'style', text: styleCss });
 
@@ -422,7 +427,7 @@ describe('css-vars', function() {
                 });
             });
 
-            if (hasNativeSupport) {
+            if (hasCustomPropertySupport) {
                 it('updates values via native setProperty() method', function() {
                     const testElms = createElmsWrap([
                         '<p style="color: var(--color1);"></p>',
@@ -438,9 +443,9 @@ describe('css-vars', function() {
                         }
                     });
 
-                    expect(window.getComputedStyle(testElms[0]).color.replace(/\s/g,'')).to.equal('rgb(255,0,0)');
-                    expect(window.getComputedStyle(testElms[1]).color.replace(/\s/g,'')).to.equal('rgb(0,128,0)');
-                    expect(window.getComputedStyle(testElms[2]).color.replace(/\s/g,'')).to.equal('rgb(0,0,255)');
+                    expect(getComputedStyle(testElms[0]).color).to.be.colored('red');
+                    expect(getComputedStyle(testElms[1]).color).to.be.colored('green');
+                    expect(getComputedStyle(testElms[2]).color).to.be.colored('blue');
                 });
             }
         });
@@ -459,7 +464,7 @@ describe('css-vars', function() {
                     createElmsWrap({ tag: 'style', text: styleCss });
 
                     setTimeout(function() {
-                        expect(window.getComputedStyle(document.body).color).to.equal('rgb(255, 0, 0)');
+                        expect(getComputedStyle(document.body).color).to.be.colored('red');
                         done();
                     }, 100);
                 });
@@ -741,5 +746,57 @@ describe('css-vars', function() {
                 }
             });
         });
+
+        // @keyframe support required
+        if (hasAnimationSupport) {
+            it('Fixes @keyframe bug in legacy (IE) and modern (Safari) browsers', function() {
+                const testElm = createElmsWrap({
+                    tag: 'p', text: 'Test Element', appendTo: 'body', attr: { class: 'test' }
+                })[0];
+
+                function getCurrentColor() {
+                    return getComputedStyle(testElm).color;
+                }
+
+                createElmsWrap({ tag: 'style', text: `
+                    :root {
+                        --color: red;
+                    }
+                    p.test {
+                        -webkit-animation: test 1ms forwards;
+                                animation: test 1ms forwards;
+                    }
+                    @-webkit-keyframes test {
+                        from, to {
+                            color: var(--color);
+                        }
+                    }
+                    @keyframes test {
+                        from, to {
+                            color: var(--color);
+                        }
+                    }
+                ` });
+
+                cssVars({
+                    include   : 'style[data-test]',
+                    onlyLegacy: false,
+                    onComplete(cssText, styleNode) {
+                        expect(getCurrentColor(), 'Initial @keyframes').to.be.colored('red');
+                    }
+                });
+
+                cssVars({
+                    include   : 'style[data-test]',
+                    onlyLegacy: false,
+                    variables : {
+                        color: 'blue'
+                    },
+                    onComplete(cssText, styleNode) {
+                        expect(getCurrentColor(), 'Updated @keyframes').to.be.colored('blue');
+                    }
+                });
+            });
+        }
     });
 });

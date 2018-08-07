@@ -6,6 +6,9 @@
 
 - Added check for non-browser environments to support Node+SSR. (#16)
 
+- Updated keyframe animation fix to support legacy browsers that require vendor
+  prefixes for `animation-name` and `@keyframes`.
+
 - Fixed internal placeholder comments appearing in CSS output instead of
   stylesheet content. (#15)
 

@@ -255,7 +255,7 @@ function cssVars(options = {}) {
                             }
 
                             // Insert <style> element after last nodeArray item
-                            if (lastNode.nextSibling !== styleNode) {
+                            if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
                                 lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                             }
 
@@ -376,29 +376,37 @@ function addMutationObserver(settings, ignoreId) {
  * applied properly in some legacy (IE) and modern (Safari) browsers.
  */
 function fixKeyframes() {
-    const allNodes      = document.body.getElementsByTagName('*');
-    const keyframeNodes = [];
-    const nameMarker    = '__css-vars-keyframe__';
+    const animationNameProp = [
+        'animation-name',
+        '-moz-animation-name',
+        '-webkit-animation-name'
+    ].filter(prop => getComputedStyle(document.body)[prop])[0];
 
-    // Modify animation name
-    for (let i = 0, len = allNodes.length; i < len; i++) {
-        const node = allNodes[i];
-        const animationName = window.getComputedStyle(node).animationName;
+    if (animationNameProp) {
+        const allNodes      = document.body.getElementsByTagName('*');
+        const keyframeNodes = [];
+        const nameMarker    = '__CSSVARSPONYFILL-KEYFRAMES__';
 
-        if (animationName !== 'none') {
-            node.style.animationName += nameMarker;
-            keyframeNodes.push(node);
+        // Modify animation name
+        for (let i = 0, len = allNodes.length; i < len; i++) {
+            const node          = allNodes[i];
+            const animationName = getComputedStyle(node)[animationNameProp];
+
+            if (animationName !== 'none') {
+                node.style[animationNameProp] += nameMarker;
+                keyframeNodes.push(node);
+            }
         }
-    }
 
-    // Force reflow
-    void document.body.offsetHeight;
+        // Force reflow
+        void document.body.offsetHeight;
 
-    // Restore animation name
-    for (let i = 0, len = keyframeNodes.length; i < len; i++) {
-        const nodeStyle = keyframeNodes[i].style;
+        // Restore animation name
+        for (let i = 0, len = keyframeNodes.length; i < len; i++) {
+            const nodeStyle = keyframeNodes[i].style;
 
-        nodeStyle.animationName = nodeStyle.animationName.replace(nameMarker, '');
+            nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, '');
+        }
     }
 }
 

@@ -1085,7 +1085,7 @@
                                 if (styleNode.textContent !== cssText) {
                                     styleNode.textContent = cssText;
                                 }
-                                if (lastNode.nextSibling !== styleNode) {
+                                if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
                                     lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                                 }
                                 if (hasKeyframes) {
@@ -1164,21 +1164,26 @@
         }
     }
     function fixKeyframes() {
-        var allNodes = document.body.getElementsByTagName("*");
-        var keyframeNodes = [];
-        var nameMarker = "__css-vars-keyframe__";
-        for (var i = 0, len = allNodes.length; i < len; i++) {
-            var node = allNodes[i];
-            var animationName = window.getComputedStyle(node).animationName;
-            if (animationName !== "none") {
-                node.style.animationName += nameMarker;
-                keyframeNodes.push(node);
+        var animationNameProp = [ "animation-name", "-moz-animation-name", "-webkit-animation-name" ].filter(function(prop) {
+            return getComputedStyle(document.body)[prop];
+        })[0];
+        if (animationNameProp) {
+            var allNodes = document.body.getElementsByTagName("*");
+            var keyframeNodes = [];
+            var nameMarker = "__CSSVARSPONYFILL-KEYFRAMES__";
+            for (var i = 0, len = allNodes.length; i < len; i++) {
+                var node = allNodes[i];
+                var animationName = getComputedStyle(node)[animationNameProp];
+                if (animationName !== "none") {
+                    node.style[animationNameProp] += nameMarker;
+                    keyframeNodes.push(node);
+                }
             }
-        }
-        void document.body.offsetHeight;
-        for (var _i = 0, _len = keyframeNodes.length; _i < _len; _i++) {
-            var nodeStyle = keyframeNodes[_i].style;
-            nodeStyle.animationName = nodeStyle.animationName.replace(nameMarker, "");
+            void document.body.offsetHeight;
+            for (var _i = 0, _len = keyframeNodes.length; _i < _len; _i++) {
+                var nodeStyle = keyframeNodes[_i].style;
+                nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, "");
+            }
         }
     }
     function getFullUrl$1(url) {
