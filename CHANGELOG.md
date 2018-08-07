@@ -2,7 +2,7 @@
 
 ## 1.9.0
 
-*Unreleased*
+*2018-08-07*
 
 - Added check for non-browser environments to support Node+SSR. (#16)
 
