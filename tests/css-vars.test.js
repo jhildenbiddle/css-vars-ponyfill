@@ -18,9 +18,11 @@ const hasCustomPropertySupport = window.CSS && window.CSS.supports && window.CSS
 // Helpers
 // =============================================================================
 function createElmsWrap(elmData, sharedOptions = {}) {
+    const isHeadElm = elmData.tag && ['link', 'style'].indexOf(elmData.tag) !== -1;
+
     sharedOptions = Object.assign({}, {
         attr    : Object.assign({ 'data-test': true }, sharedOptions.attr || {}),
-        appendTo: 'head'
+        appendTo: isHeadElm ? 'head' : 'body'
     }, sharedOptions);
 
     return createElms(elmData, sharedOptions);
@@ -37,11 +39,7 @@ class TestComponent extends HTMLElement {
 
     connectedCallback() {
         this.shadowRoot.innerHTML = `
-            <style>
-                :root {
-                    --test-component-background: green;
-                }
-
+            <style data-test-shadow>
                 .test-component {
                     background: red;
                     background: var(--test-component-background, red);
@@ -187,15 +185,19 @@ describe('css-vars', function() {
     // -------------------------------------------------------------------------
     describe('Options', function() {
         describe('rootElement', function() {
-            it('Shadow DOM', function() {
-                const customElm      = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
-                const shadowRoot     = customElm.shadowRoot;
-                const expectCss      = '.test-component{background:red;background:green;color:white;}';
+            it('handles Element.shadowRoot <style> elements', function() {
+                const customElm  = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                const shadowRoot = customElm.shadowRoot;
+                const expectCss  = '.test-component{background:red;background:green;color:white;}';
 
                 cssVars({
-                    include: 'style',
-                    onlyLegacy: false,
                     rootElement: shadowRoot,
+                    onlyLegacy : false,
+                    preserve   : false,
+                    updateDOM  : false,
+                    variables  : {
+                        '--test-component-background': 'green'
+                    },
                     onComplete(cssText, styleNode, variablesObject) {
                         expect(cssText).to.equal(expectCss);
                     }
@@ -313,6 +315,32 @@ describe('css-vars', function() {
                     preserve  : false,
                     onComplete(cssText, styleNode) {
                         expect(cssText).to.equal(expectCss);
+                    }
+                });
+            });
+        });
+
+        describe('shadowDOM', function() {
+            it('handles Element.shadowRoot <style> elements', function() {
+                const styleCss  = ':root { --test-component-background: green; }';
+                const expectCss = '.test-component{background:red;background:green;color:white;}';
+
+                createElmsWrap([
+                    { tag: 'style', text: styleCss },
+                    { tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } },
+                    { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' } },
+                ]);
+
+                cssVars({
+                    include   : '[data-test],[data-test-shadow]',
+                    onlyLegacy: false,
+                    shadowDOM : true,
+                    onComplete(cssText, styleNode, variablesObject) {
+                        // Test for cssText since test <style> elm with only
+                        // :root rule will also trigger callback
+                        if (cssText) {
+                            expect(cssText).to.equal(expectCss);
+                        }
                     }
                 });
             });

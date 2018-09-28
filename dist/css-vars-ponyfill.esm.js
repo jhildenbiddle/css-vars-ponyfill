@@ -933,13 +933,14 @@ function resolveValue(value, map) {
 var name = "css-vars-ponyfill";
 
 var defaults = {
+    rootElement: document,
     include: "style,link[rel=stylesheet]",
     exclude: "",
-    rootElement: document,
     fixNestedCalc: true,
     onlyLegacy: true,
     onlyVars: false,
     preserve: false,
+    shadowDOM: false,
     silent: false,
     updateDOM: true,
     updateURLs: true,
@@ -974,14 +975,14 @@ var cssVarsObserver = null;
  *
  * @preserve
  * @param {object}   [options] Options object
+ * @param {object}   [options.rootElement=document] Root element to traverse for
+ *                   <link> and <style> nodes.
  * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
  *                   matching <link re="stylesheet"> and <style> nodes to
  *                   process
  * @param {string}   [options.exclude] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
- * @param {object}   [options.rootElement=document] Root element to traverse for
- *                   <link> and <style> nodes.
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -993,6 +994,8 @@ var cssVarsObserver = null;
  * @param {boolean}  [options.preserve=false] Determines if the original CSS
  *                   custom property declaration will be retained in the
  *                   ponyfill-generated CSS.
+ * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
+ *                   and <style> nodes will be processed.
  * @param {boolean}  [options.silent=false] Determines if warning and error
  *                   messages will be displayed on the console
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
@@ -1030,20 +1033,21 @@ var cssVarsObserver = null;
  * @example
  *
  *   cssVars({
- *     include      : 'style,link[rel="stylesheet"]', // default
+ *     rootElement  : document,
+ *     include      : 'style,link[rel="stylesheet"]',
  *     exclude      : '',
- *     rootElement  : document, // default
- *     fixNestedCalc: true,     // default
- *     onlyLegacy   : true,     // default
- *     onlyVars     : false,    // default
- *     preserve     : false,    // default
- *     silent       : false,    // default
- *     updateDOM    : true,     // default
- *     updateURLs   : true,     // default
+ *     fixNestedCalc: true,
+ *     onlyLegacy   : true,
+ *     onlyVars     : false,
+ *     preserve     : false,
+ *     shadowDOM    : false,
+ *     silent       : false,
+ *     updateDOM    : true,
+ *     updateURLs   : true,
  *     variables    : {
  *       // ...
  *     },
- *     watch        : false,    // default
+ *     watch        : false,
  *     onBeforeSend(xhr, node, url) {
  *       // ...
  *     }
@@ -1155,6 +1159,18 @@ var cssVarsObserver = null;
                         });
                         if (!errorThrown) {
                             handleError(err.message || err);
+                        }
+                    }
+                    if (settings.shadowDOM) {
+                        var elms = settings.rootElement.querySelectorAll("*");
+                        for (var i = 0, elm; elm = elms[i]; ++i) {
+                            if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
+                                var shadowSettings = mergeDeep(settings, {
+                                    rootElement: elm.shadowRoot,
+                                    variables: variableStore.root
+                                });
+                                cssVars(shadowSettings);
+                            }
                         }
                     }
                     settings.onComplete(cssText, styleNode, variableStore.root);
