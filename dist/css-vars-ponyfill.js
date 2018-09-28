@@ -1,6 +1,6 @@
 /*!
  * css-vars-ponyfill
- * v1.9.0
+ * v1.10.0
  * https://github.com/jhildenbiddle/css-vars-ponyfill
  * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
@@ -11,7 +11,7 @@
     "use strict";
     /*!
      * get-css-data
-     * v1.3.2
+     * v1.4.0
      * https://github.com/jhildenbiddle/get-css-data
      * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
      * MIT license
@@ -92,6 +92,8 @@
      *
      * @preserve
      * @param {object}   [options] The options object
+     * @param {object}   [options.rootElement=document] Root element to traverse for
+     *                   <link> and <style> nodes.
      * @param {string}   [options.include] CSS selector matching <link> and <style>
      *                   nodes to include
      * @param {string}   [options.exclude] CSS selector matching <link> and <style>
@@ -99,8 +101,6 @@
      * @param {object}   [options.filter] Regular expression used to filter node CSS
      *                   data. Each block of CSS data is tested against the filter,
      *                   and only matching data is included.
-     * @param {object}   [options.rootElement=document] Root element to traverse for
-     *                   <link> and <style> nodes.
      * @param {object}   [options.useCSSOM=false] Determines if CSS data will be
      *                   collected from a stylesheet's runtime values instead of its
      *                   text content. This is required to get accurate CSS data
@@ -125,11 +125,11 @@
      * @example
      *
      *   getCssData({
-     *     include    : 'style,link[rel="stylesheet"]', // default
+     *     rootElement: document,
+     *     include    : 'style,link[rel="stylesheet"]',
      *     exclude    : '[href="skip.css"]',
      *     filter     : /red/,
-     *     useCSSOM   : false, // default
-     *     rootElement: document, //default
+     *     useCSSOM   : false,
      *     onBeforeSend(xhr, node, url) {
      *       // ...
      *     }
@@ -149,10 +149,10 @@
             cssImports: /(?:@import\s*)(?:url\(\s*)?(?:['"])([^'"]*)(?:['"])(?:\s*\))?(?:[^;]*;)/g
         };
         var settings = {
+            rootElement: options.rootElement || document,
             include: options.include || 'style,link[rel="stylesheet"]',
             exclude: options.exclude || null,
             filter: options.filter || null,
-            rootElement: options.rootElement || document,
             useCSSOM: options.useCSSOM || false,
             onBeforeSend: options.onBeforeSend || Function.prototype,
             onSuccess: options.onSuccess || Function.prototype,
@@ -1004,8 +1004,9 @@
      * @param {function} [options.onComplete] Callback after all CSS has been
      *                   processed, legacy-compatible CSS has been generated, and
      *                   (optionally) the DOM has been updated. Passes 1) a CSS
-     *                   string with CSS variable values resolved, and 2) a
-     *                   reference to the appended <style> node.
+     *                   string with CSS variable values resolved, 2) a reference to
+     *                   the appended <style> node, and 3) an object containing all
+     *                   custom properies names and values.
      *
      * @example
      *
