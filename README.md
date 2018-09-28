@@ -189,12 +189,14 @@ Values will be updated in both legacy and modern browsers:
 
 ## Options
 
+- [rootElement](#optionsrootelement)
 - [include](#optionsinclude)
 - [exclude](#optionsexclude)
 - [fixNestedCalc](#optionsfixnestedcalc)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
+- [shadowDOM](#optionsshadowdom)
 - [silent](#optionssilent)
 - [updateDOM](#optionsupdatedom)
 - [updateURLs](#optionsupdateurls)
@@ -211,6 +213,7 @@ Values will be updated in both legacy and modern browsers:
 ```javascript
 // Default values shown
 cssVars({
+  rootElement  : document,
   include      : 'link[rel=stylesheet],style',
   exclude      : '',
   fixNestedCalc: true,
@@ -239,6 +242,32 @@ cssVars({
   onComplete(cssText, styleNode) {
     // ...
   }
+});
+```
+
+### options.rootElement
+
+- Type: `object`
+- Default: `document`
+
+Root element to traverse for `<link>` and `<style>` nodes.
+
+**Examples**
+
+```javascript
+// Document
+cssVars({
+  rootElement: document // default
+});
+
+// Iframe (must be same domain with content loaded)
+cssVars({
+  rootElement: (myIframe.contentDocument || myIframe.contentWindow.document)
+});
+
+// Shadow DOM
+cssVars({
+  rootElement: myElement.shadowRoot
 });
 ```
 
@@ -473,6 +502,21 @@ p {
   color: red;
   color: var(--color);
 }
+```
+
+### options.shadowDOM
+
+- Type: `boolean`
+- Default: `false
+
+Determines if shadow DOM `<link>` and `<style>` nodes will be processed.
+
+**Example**
+
+```javascript
+cssVars({
+  shadowDOM: false // default
+});
 ```
 
 ### options.silent
@@ -767,6 +811,7 @@ cssVars({
 - Arguments:
   1. **cssText**: A `string` of concatenated CSS text from all nodes in DOM order
   1. **styleNode**: An `object` reference to the appended `<style>` node
+  1. **cssVariables**: An `object` containing CSS custom property names and values
 
 Callback after all CSS has been processed, legacy-compatible CSS has been generated, and (optionally) the DOM has been updated.
 
@@ -774,7 +819,7 @@ Callback after all CSS has been processed, legacy-compatible CSS has been genera
 
 ```javascript
 cssVars({
-  onComplete(cssText, styleNode) {
+  onComplete(cssText, styleNode, cssVariables) {
     // ...
   }
 });

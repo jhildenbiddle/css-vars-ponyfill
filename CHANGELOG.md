@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.10.0
+
+*2018-09-28*
+
+- Added `options.rootElement` for specifying the root element to traverse for
+  `<link>` and `<style>` nodes.
+
+- Added `options.shadowDOM` to determine if shadow DOM `<link>` and `<style>`
+  nodes should be processed.
+
+- Added `cssVariables` argument to `options.onComplete` callback.
+
 ## 1.9.0
 
 *2018-08-07*
