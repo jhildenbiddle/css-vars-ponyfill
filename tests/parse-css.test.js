@@ -25,7 +25,7 @@ describe('parse-css', function() {
         const css = fixtures['test-parse.css'];
         const ast = parseCss(css);
 
-        expect(ast).to.be.an('object');
+        expect(ast instanceof Object).to.be.true;
         expect(ast).to.have.property('type', 'stylesheet');
     });
 
