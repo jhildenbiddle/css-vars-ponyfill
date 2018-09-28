@@ -3,6 +3,7 @@
 import getCssData          from 'get-css-data';
 import mergeDeep           from './merge-deep';
 import transformCss        from './transform-css';
+import { variableStore }   from './transform-css';
 import { name as pkgName } from '../package.json';
 
 
@@ -12,6 +13,7 @@ const defaults = {
     // Sources
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
+    rootElement  : document,
     // Options
     fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
@@ -61,6 +63,8 @@ let cssVarsObserver = null;
  * @param {string}   [options.exclude] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
+ * @param {object}   [options.rootElement=document] Root element to traverse for
+ *                   <link> and <style> nodes.
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -111,17 +115,18 @@ let cssVarsObserver = null;
  *   cssVars({
  *     include      : 'style,link[rel="stylesheet"]', // default
  *     exclude      : '',
- *     fixNestedCalc: true,  // default
- *     onlyLegacy   : true,  // default
- *     onlyVars     : false, // default
- *     preserve     : false, // default
- *     silent       : false, // default
- *     updateDOM    : true,  // default
- *     updateURLs   : true,  // default
+ *     rootElement  : document, // default
+ *     fixNestedCalc: true,     // default
+ *     onlyLegacy   : true,     // default
+ *     onlyVars     : false,    // default
+ *     preserve     : false,    // default
+ *     silent       : false,    // default
+ *     updateDOM    : true,     // default
+ *     updateURLs   : true,     // default
  *     variables    : {
  *       // ...
  *     },
- *     watch        : false, // default
+ *     watch        : false,    // default
  *     onBeforeSend(xhr, node, url) {
  *       // ...
  *     }
@@ -185,7 +190,8 @@ function cssVars(options = {}) {
                 // This filter does a test on each block of CSS. An additional
                 // filter is used in the parser to remove individual
                 // declarations.
-                filter : settings.onlyVars ? regex.cssVars : null,
+                filter: settings.onlyVars ? regex.cssVars : null,
+                rootElement: settings.rootElement,
                 onBeforeSend: settings.onBeforeSend,
                 onSuccess(cssText, node, url) {
                     const returnVal = settings.onSuccess(cssText, node, url);
@@ -247,7 +253,7 @@ function cssVars(options = {}) {
                         if (settings.updateDOM && nodeArray && nodeArray.length) {
                             const lastNode = nodeArray[nodeArray.length - 1];
 
-                            styleNode = document.querySelector(`#${styleNodeId}`) || document.createElement('style');
+                            styleNode = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
                             styleNode.setAttribute('id', styleNodeId);
 
                             if (styleNode.textContent !== cssText) {
@@ -260,7 +266,7 @@ function cssVars(options = {}) {
                             }
 
                             if (hasKeyframes) {
-                                fixKeyframes();
+                                fixKeyframes(settings.rootElement);
                             }
                         }
                     }
@@ -289,7 +295,7 @@ function cssVars(options = {}) {
                         }
                     }
 
-                    settings.onComplete(cssText, styleNode);
+                    settings.onComplete(cssText, styleNode, variableStore.root);
                 }
             });
         }
@@ -375,7 +381,7 @@ function addMutationObserver(settings, ignoreId) {
  * Fixes issue keyframe properties set using CSS custom property not being
  * applied properly in some legacy (IE) and modern (Safari) browsers.
  */
-function fixKeyframes() {
+function fixKeyframes(rootElement) {
     const animationNameProp = [
         'animation-name',
         '-moz-animation-name',
@@ -383,7 +389,7 @@ function fixKeyframes() {
     ].filter(prop => getComputedStyle(document.body)[prop])[0];
 
     if (animationNameProp) {
-        const allNodes      = document.body.getElementsByTagName('*');
+        const allNodes      = rootElement.getElementsByTagName('*');
         const keyframeNodes = [];
         const nameMarker    = '__CSSVARSPONYFILL-KEYFRAMES__';
 

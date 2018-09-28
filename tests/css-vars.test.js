@@ -27,6 +27,44 @@ function createElmsWrap(elmData, sharedOptions = {}) {
 }
 
 
+// Component
+// =============================================================================
+class TestComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+    }
+
+    connectedCallback() {
+        this.shadowRoot.innerHTML = `
+            <style>
+                :root {
+                    --test-component-background: green;
+                }
+
+                .test-component {
+                    background: red;
+                    background: var(--test-component-background, red);
+                    color: white;
+                }
+            </style>
+
+            <p class="test-component">${this.getAttribute('data-text')}</p>
+        `;
+    }
+}
+
+if (window.customElements) {
+    window.customElements.define('test-component', TestComponent);
+
+    // createElms({ tag: 'style', text: ':root { --test-component-background: green; }', appendTo: 'head' });
+    // createElms([
+    //     { tag: 'test-component', attr: { 'data-text': 'Custom element' }},
+    //     { tag: 'p', text: 'Standard element' }
+    // ], { appendTo: 'body' });
+}
+
+
 // Suite
 // =============================================================================
 describe('css-vars', function() {
@@ -148,6 +186,23 @@ describe('css-vars', function() {
     // Tests: Options
     // -------------------------------------------------------------------------
     describe('Options', function() {
+        describe('rootElement', function() {
+            it('Shadow DOM', function() {
+                const customElm      = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                const shadowRoot     = customElm.shadowRoot;
+                const expectCss      = '.test-component{background:red;background:green;color:white;}';
+
+                cssVars({
+                    include: 'style',
+                    onlyLegacy: false,
+                    rootElement: shadowRoot,
+                    onComplete(cssText, styleNode, variablesObject) {
+                        expect(cssText).to.equal(expectCss);
+                    }
+                });
+            });
+        });
+
         describe('onlyLegacy', function() {
             it('true', function() {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';

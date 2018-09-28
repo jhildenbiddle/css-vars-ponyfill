@@ -42,7 +42,7 @@
         urlArray.forEach(function(url, i) {
             var parser = document.createElement("a");
             parser.setAttribute("href", url);
-            parser.href = parser.href;
+            parser.href = String(parser.href);
             var isCrossDomain = parser.host !== location.host;
             var isSameProtocol = parser.protocol === location.protocol;
             if (isCrossDomain && typeof XDomainRequest !== "undefined") {
@@ -99,6 +99,14 @@
      * @param {object}   [options.filter] Regular expression used to filter node CSS
      *                   data. Each block of CSS data is tested against the filter,
      *                   and only matching data is included.
+     * @param {object}   [options.rootElement=document] Root element to traverse for
+     *                   <link> and <style> nodes.
+     * @param {object}   [options.useCSSOM=false] Determines if CSS data will be
+     *                   collected from a stylesheet's runtime values instead of its
+     *                   text content. This is required to get accurate CSS data
+     *                   when a stylesheet has been modified using the deleteRule()
+     *                   or insertRule() methods because these modifications will
+     *                   not be reflected in the stylesheet's text content.
      * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
      *                   1) the XHR object, 2) source node reference, and 3) the
      *                   source URL as arguments.
@@ -117,9 +125,11 @@
      * @example
      *
      *   getCssData({
-     *     include: 'style,link[rel="stylesheet"]', // default
-     *     exclude: '[href="skip.css"]',
-     *     filter : /red/,
+     *     include    : 'style,link[rel="stylesheet"]', // default
+     *     exclude    : '[href="skip.css"]',
+     *     filter     : /red/,
+     *     useCSSOM   : false, // default
+     *     rootElement: document, //default
      *     onBeforeSend(xhr, node, url) {
      *       // ...
      *     }
@@ -129,9 +139,9 @@
      *     onError(xhr, node, url) {
      *       // ...
      *     },
-     *     onComplete(cssText, cssArray) {
+     *     onComplete(cssText, cssArray, nodeArray) {
      *       // ...
-     *     },
+     *     }
      *   });
      */    function getCssData(options) {
         var regex = {
@@ -142,12 +152,14 @@
             include: options.include || 'style,link[rel="stylesheet"]',
             exclude: options.exclude || null,
             filter: options.filter || null,
+            rootElement: options.rootElement || document,
+            useCSSOM: options.useCSSOM || false,
             onBeforeSend: options.onBeforeSend || Function.prototype,
             onSuccess: options.onSuccess || Function.prototype,
             onError: options.onError || Function.prototype,
             onComplete: options.onComplete || Function.prototype
         };
-        var sourceNodes = Array.apply(null, document.querySelectorAll(settings.include)).filter(function(node) {
+        var sourceNodes = Array.apply(null, settings.rootElement.querySelectorAll(settings.include)).filter(function(node) {
             return !matchesSelector(node, settings.exclude);
         });
         var cssArray = Array.apply(null, Array(sourceNodes.length)).map(function(x) {
@@ -256,7 +268,13 @@
                         }
                     });
                 } else if (isStyle) {
-                    handleSuccess(node.textContent, i, node, location.href);
+                    var cssText = node.textContent;
+                    if (settings.useCSSOM) {
+                        cssText = Array.apply(null, node.sheet.cssRules).map(function(rule) {
+                            return rule.cssText;
+                        }).join("");
+                    }
+                    handleSuccess(cssText, i, node, location.href);
                 } else {
                     cssArray[i] = "";
                     handleComplete();
@@ -701,9 +719,12 @@
             fn(rule.declarations, node);
         });
     }
-    var persistStore = {};
     var VAR_PROP_IDENTIFIER = "--";
     var VAR_FUNC_IDENTIFIER = "var";
+    var variableStore = {
+        root: {},
+        user: {}
+    };
     function transformVars(cssText) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
@@ -716,7 +737,7 @@
         };
         var map = {};
         var settings = mergeDeep(defaults, options);
-        var varSource = settings.persist ? persistStore : settings.variables;
+        var varSource = settings.persist ? variableStore.user : settings.variables;
         var cssTree = cssParse(cssText);
         if (settings.onlyVars) {
             cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
@@ -751,7 +772,7 @@
                 delete settings.variables[key];
             }
             if (settings.persist) {
-                persistStore[prop] = value;
+                variableStore.user[prop] = value;
             }
         });
         if (Object.keys(varSource).length) {
@@ -768,13 +789,14 @@
                     value: varSource[key]
                 });
                 if (settings.persist) {
-                    persistStore[key] = varSource[key];
+                    variableStore.user[key] = varSource[key];
                 }
             });
             if (settings.preserve) {
                 cssTree.stylesheet.rules.push(newRule);
             }
         }
+        variableStore.root = map;
         walkCss(cssTree.stylesheet, function(declarations, node) {
             var decl = void 0;
             var resolvedValue = void 0;
@@ -895,6 +917,7 @@
     var defaults = {
         include: "style,link[rel=stylesheet]",
         exclude: "",
+        rootElement: document,
         fixNestedCalc: true,
         onlyLegacy: true,
         onlyVars: false,
@@ -934,6 +957,8 @@
      * @param {string}   [options.exclude] CSS selector matching <link
      *                   rel="stylehseet"> and <style> nodes to exclude from those
      *                   matches by options.include
+     * @param {object}   [options.rootElement=document] Root element to traverse for
+     *                   <link> and <style> nodes.
      * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
      *                   for legacy browser compatibility.
      * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -984,17 +1009,18 @@
      *   cssVars({
      *     include      : 'style,link[rel="stylesheet"]', // default
      *     exclude      : '',
-     *     fixNestedCalc: true,  // default
-     *     onlyLegacy   : true,  // default
-     *     onlyVars     : false, // default
-     *     preserve     : false, // default
-     *     silent       : false, // default
-     *     updateDOM    : true,  // default
-     *     updateURLs   : true,  // default
+     *     rootElement  : document, // default
+     *     fixNestedCalc: true,     // default
+     *     onlyLegacy   : true,     // default
+     *     onlyVars     : false,    // default
+     *     preserve     : false,    // default
+     *     silent       : false,    // default
+     *     updateDOM    : true,     // default
+     *     updateURLs   : true,     // default
      *     variables    : {
      *       // ...
      *     },
-     *     watch        : false, // default
+     *     watch        : false,    // default
      *     onBeforeSend(xhr, node, url) {
      *       // ...
      *     }
@@ -1039,6 +1065,7 @@
                     include: settings.include,
                     exclude: "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : ""),
                     filter: settings.onlyVars ? regex.cssVars : null,
+                    rootElement: settings.rootElement,
                     onBeforeSend: settings.onBeforeSend,
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
@@ -1080,7 +1107,7 @@
                             });
                             if (settings.updateDOM && nodeArray && nodeArray.length) {
                                 var lastNode = nodeArray[nodeArray.length - 1];
-                                styleNode = document.querySelector("#" + styleNodeId) || document.createElement("style");
+                                styleNode = settings.rootElement.querySelector("#" + styleNodeId) || document.createElement("style");
                                 styleNode.setAttribute("id", styleNodeId);
                                 if (styleNode.textContent !== cssText) {
                                     styleNode.textContent = cssText;
@@ -1089,7 +1116,7 @@
                                     lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                                 }
                                 if (hasKeyframes) {
-                                    fixKeyframes();
+                                    fixKeyframes(settings.rootElement);
                                 }
                             }
                         } catch (err) {
@@ -1107,7 +1134,7 @@
                                 handleError(err.message || err);
                             }
                         }
-                        settings.onComplete(cssText, styleNode);
+                        settings.onComplete(cssText, styleNode, variableStore.root);
                     }
                 });
             } else if (hasNativeSupport && settings.updateDOM) {
@@ -1163,12 +1190,12 @@
             });
         }
     }
-    function fixKeyframes() {
+    function fixKeyframes(rootElement) {
         var animationNameProp = [ "animation-name", "-moz-animation-name", "-webkit-animation-name" ].filter(function(prop) {
             return getComputedStyle(document.body)[prop];
         })[0];
         if (animationNameProp) {
-            var allNodes = document.body.getElementsByTagName("*");
+            var allNodes = rootElement.getElementsByTagName("*");
             var keyframeNodes = [];
             var nameMarker = "__CSSVARSPONYFILL-KEYFRAMES__";
             for (var i = 0, len = allNodes.length; i < len; i++) {

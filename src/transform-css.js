@@ -15,9 +15,14 @@ import walkCss      from './walk-css';
 
 // Constants & Variables
 // =============================================================================
-const persistStore        = {};
 const VAR_PROP_IDENTIFIER = '--';
 const VAR_FUNC_IDENTIFIER = 'var';
+const variableStore = {
+    // Custom properties from: :root declarations
+    root: {},
+    // Custom properties from options.variables
+    user: {}
+};
 
 
 // Functions
@@ -59,7 +64,7 @@ function transformVars(cssText, options = {}) {
     };
     const map       = {};
     const settings  = mergeDeep(defaults, options);
-    const varSource = settings.persist ? persistStore : settings.variables;
+    const varSource = settings.persist ? variableStore.user : settings.variables;
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText);
@@ -117,7 +122,7 @@ function transformVars(cssText, options = {}) {
         // be set on each call thereafter (otherwise each call removes the
         // previously set variables).
         if (settings.persist) {
-            persistStore[prop] = value;
+            variableStore.user[prop] = value;
         }
     });
 
@@ -141,7 +146,7 @@ function transformVars(cssText, options = {}) {
 
             // Add to persistent storage
             if (settings.persist) {
-                persistStore[key] = varSource[key];
+                variableStore.user[key] = varSource[key];
             }
         });
 
@@ -150,6 +155,9 @@ function transformVars(cssText, options = {}) {
             cssTree.stylesheet.rules.push(newRule);
         }
     }
+
+    // Store custom property name:value pairs for export
+    variableStore.root = map;
 
     // Resolve variables
     walkCss(cssTree.stylesheet, function(declarations, node) {
@@ -376,3 +384,4 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
 // Exports
 // =============================================================================
 export default transformVars;
+export { variableStore };
