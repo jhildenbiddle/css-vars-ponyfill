@@ -20,8 +20,12 @@
     "csstext",
     "custom-properties",
     "custom",
+    "dom",
     "es6",
     "ie",
+    "ie9",
+    "ie10",
+    "ie11",
     "internet-explorer",
     "javascript",
     "js",
@@ -31,6 +35,7 @@
     "ponyfill",
     "properties",
     "runtime",
+    "shadow",
     "variables"
   ],
   "browserslist": [

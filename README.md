@@ -29,6 +29,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 - Live updates of runtime values in both modern and legacy browsers
 - Auto-updates on `<link>` and `<style>` changes
 - Transforms `<link>`, `<style>`, and `@import` CSS
+- Transforms shadow DOM `<link>` and `<style>` CSS
 - Transforms relative `url()` paths to absolute URLs
 - Supports chained custom property references
 - Supports complex values
