@@ -13,20 +13,22 @@
     "url": "https://github.com/jhildenbiddle/css-vars-ponyfill/issues"
   },
   "keywords": [
-    "client-side",
     "client",
+    "client side",
+    "component",
     "css",
     "cssom",
     "csstext",
-    "custom-properties",
+    "custom properties",
+    "custom property",
     "custom",
     "dom",
     "es6",
     "ie",
-    "ie9",
     "ie10",
     "ie11",
-    "internet-explorer",
+    "ie9",
+    "internet explorer",
     "javascript",
     "js",
     "legacy",
@@ -36,7 +38,13 @@
     "properties",
     "runtime",
     "shadow",
-    "variables"
+    "shadow dom",
+    "shadow root",
+    "shadowroot",
+    "variables",
+    "vars",
+    "web",
+    "web component"
   ],
   "browserslist": [
     "ie >= 9"
