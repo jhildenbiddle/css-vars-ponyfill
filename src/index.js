@@ -1,10 +1,10 @@
 // Dependencies
 // =============================================================================
-import getCssData          from 'get-css-data';
-import mergeDeep           from './merge-deep';
-import transformCss        from './transform-css';
-import { variableStore }   from './transform-css';
-import { name as pkgName } from '../package.json';
+import getCssData               from 'get-css-data';
+import mergeDeep                from './merge-deep';
+import transformCss             from './transform-css';
+import { variablePersistStore } from './transform-css';
+import { name as pkgName }      from '../package.json';
 
 
 // Constants & Variables
@@ -30,7 +30,9 @@ const defaults = {
     onSuccess() {},       // cssVars
     onWarning() {},       // transformCss
     onError() {},         // cssVars
-    onComplete() {}       // cssVars
+    onComplete() {},      // cssVars
+    // Private
+    __documentVariables: null
 };
 const isBrowser        = typeof window !== 'undefined';
 const hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
@@ -39,6 +41,8 @@ const regex = {
     cssComments: /\/\*[\s\S]+?\*\//g,
     // CSS keyframes (@keyframes & @-VENDOR-keyframes)
     cssKeyframes: /@(?:-\w*-)?keyframes/,
+    // CSS root vars
+    cssRootRules: /(?::root\s*{\s*[^}]*})/g,
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable :root declarations and var() function values
@@ -150,7 +154,12 @@ let cssVarsObserver = null;
  *   });
  */
 function cssVars(options = {}) {
-    const settings = mergeDeep(defaults, options);
+    const settings    = mergeDeep(defaults, options);
+    const styleNodeId = pkgName;
+
+    // Always exclude styleNodeId element, which is the generated <style> node
+    // containing previously transformed CSS.
+    settings.exclude = `#${styleNodeId}` + (settings.exclude ? `,${settings.exclude}` : '');
 
     function handleError(message, sourceNode, xhr, url) {
         /* istanbul ignore next */
@@ -179,24 +188,71 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        // Lacks native support or onlyLegacy 'false'
-        if (!hasNativeSupport || !settings.onlyLegacy) {
-            const styleNodeId = pkgName;
+        const isShadowRoot = settings.rootElement.shadowRoot || settings.rootElement.host;
 
+        // Native support
+        if (hasNativeSupport && settings.onlyLegacy) {
+            // Apply settings.variables
+            if (settings.updateDOM) {
+                // Set variables using native methods
+                Object.keys(settings.variables).forEach(key => {
+                    // Convert all property names to leading '--' style
+                    const prop  = `--${key.replace(/^-+/, '')}`;
+                    const value = settings.variables[key];
+
+                    document.documentElement.style.setProperty(prop, value);
+                });
+            }
+        }
+        // Ponyfill: Handle rootElement set to a shadow host or root
+        else if (isShadowRoot && !settings.__documentVariables) {
+            // Get all document-level CSS
+            getCssData({
+                rootElement: defaults.rootElement,
+                include: defaults.include,
+                exclude: settings.exclude,
+                onSuccess(cssText, node, url) {
+                    const cssRootDecls = (cssText.match(regex.cssRootRules) || []).join('');
+
+                    // Return only matching :root {...} blocks
+                    return cssRootDecls || false;
+                },
+                onComplete(cssText, cssArray, nodeArray) {
+                    // Transform CSS, which stores custom property values from
+                    // cssText in variablePersistStore. This step ensures that
+                    // variablePersistStore contains all document-level custom
+                    // property values for subsequent ponyfill calls.
+                    transformCss(cssText);
+
+                    // Store a reference to variablePersistStore in settings object
+                    settings.__documentVariables = variablePersistStore;
+
+                    // Call the ponyfill again to process the rootElement
+                    // initially specified. Values stored in variablePersistStore
+                    // will be used to transform values in shadow host/root
+                    // elements.
+                    cssVars(settings);
+                }
+            });
+        }
+        // Ponyfill: Process CSS
+        else {
             if (settings.watch) {
                 addMutationObserver(settings, styleNodeId);
             }
 
+            if (settings.__documentVariables) {
+                settings.variables = mergeDeep(settings.__documentVariables, settings.variables);
+            }
+
             getCssData({
+                rootElement: settings.rootElement,
                 include: settings.include,
-                // Always exclude styleNodeId element, which is the generated
-                // <style> node containing previously transformed CSS.
-                exclude: `#${styleNodeId}` + (settings.exclude ? `,${settings.exclude}` : ''),
+                exclude: settings.exclude,
                 // This filter does a test on each block of CSS. An additional
                 // filter is used in the parser to remove individual
                 // declarations.
                 filter: settings.onlyVars ? regex.cssVars : null,
-                rootElement: settings.rootElement,
                 onBeforeSend: settings.onBeforeSend,
                 onSuccess(cssText, node, url) {
                     const returnVal = settings.onSuccess(cssText, node, url);
@@ -302,7 +358,10 @@ function cssVars(options = {}) {
 
                     // Process shadow DOM
                     if (settings.shadowDOM) {
-                        const elms = settings.rootElement.querySelectorAll('*');
+                        const elms = [
+                            settings.rootElement,
+                            ...settings.rootElement.querySelectorAll('*')
+                        ];
 
                         // Iterates over all elements in rootElement and call
                         // cssVars on each element with a shadowRoot, passing
@@ -315,7 +374,7 @@ function cssVars(options = {}) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
                                 const shadowSettings = mergeDeep(settings, {
                                     rootElement: elm.shadowRoot,
-                                    variables  : variableStore.root
+                                    variables  : variablePersistStore
                                 });
 
                                 cssVars(shadowSettings);
@@ -323,21 +382,11 @@ function cssVars(options = {}) {
                         }
                     }
 
-                    settings.onComplete(cssText, styleNode, variableStore.root);
+                    settings.onComplete(cssText, styleNode, variablePersistStore);
                 }
             });
         }
-        // Has native support
-        else if (hasNativeSupport && settings.updateDOM) {
-            // Set variables using native methods
-            Object.keys(settings.variables).forEach(key => {
-                // Convert all property names to leading '--' style
-                const prop  = `--${key.replace(/^-+/, '')}`;
-                const value = settings.variables[key];
 
-                document.documentElement.style.setProperty(prop, value);
-            });
-        }
     }
     // Delay function until DOMContentLoaded event is fired
     /* istanbul ignore next */

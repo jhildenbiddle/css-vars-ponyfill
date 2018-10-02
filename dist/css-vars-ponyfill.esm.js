@@ -733,10 +733,7 @@ var VAR_PROP_IDENTIFIER = "--";
 
 var VAR_FUNC_IDENTIFIER = "var";
 
-var variableStore = {
-    root: {},
-    user: {}
-};
+var variablePersistStore = {};
 
 function transformVars(cssText) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -750,7 +747,7 @@ function transformVars(cssText) {
     };
     var map = {};
     var settings = mergeDeep(defaults, options);
-    var varSource = settings.persist ? variableStore.user : settings.variables;
+    var varSource = settings.persist ? variablePersistStore : settings.variables;
     var cssTree = cssParse(cssText);
     if (settings.onlyVars) {
         cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
@@ -768,6 +765,7 @@ function transformVars(cssText) {
             var value = decl.value;
             if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                 map[prop] = value;
+                variablePersistStore[prop] = value;
                 varNameIndices.push(i);
             }
         });
@@ -785,7 +783,7 @@ function transformVars(cssText) {
             delete settings.variables[key];
         }
         if (settings.persist) {
-            variableStore.user[prop] = value;
+            variablePersistStore[prop] = value;
         }
     });
     if (Object.keys(varSource).length) {
@@ -795,21 +793,19 @@ function transformVars(cssText) {
             type: "rule"
         };
         Object.keys(varSource).forEach(function(key) {
-            map[key] = varSource[key];
-            newRule.declarations.push({
-                type: "declaration",
-                property: key,
-                value: varSource[key]
-            });
-            if (settings.persist) {
-                variableStore.user[key] = varSource[key];
+            if (map[key] !== varSource[key]) {
+                map[key] = varSource[key];
+                newRule.declarations.push({
+                    type: "declaration",
+                    property: key,
+                    value: varSource[key]
+                });
             }
         });
-        if (settings.preserve) {
+        if (settings.preserve && newRule.declarations.length) {
             cssTree.stylesheet.rules.push(newRule);
         }
     }
-    variableStore.root = map;
     walkCss(cssTree.stylesheet, function(declarations, node) {
         var decl = void 0;
         var resolvedValue = void 0;
@@ -932,7 +928,16 @@ function resolveValue(value, map) {
 
 var name = "css-vars-ponyfill";
 
-var defaults = {
+var toConsumableArray = function(arr) {
+    if (Array.isArray(arr)) {
+        for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+        return arr2;
+    } else {
+        return Array.from(arr);
+    }
+};
+
+var defaults$1 = {
     rootElement: document,
     include: "style,link[rel=stylesheet]",
     exclude: "",
@@ -950,7 +955,8 @@ var defaults = {
     onSuccess: function onSuccess() {},
     onWarning: function onWarning() {},
     onError: function onError() {},
-    onComplete: function onComplete() {}
+    onComplete: function onComplete() {},
+    __documentVariables: null
 };
 
 var isBrowser = typeof window !== "undefined";
@@ -960,6 +966,7 @@ var hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.
 var regex = {
     cssComments: /\/\*[\s\S]+?\*\//g,
     cssKeyframes: /@(?:-\w*-)?keyframes/,
+    cssRootRules: /(?::root\s*{\s*[^}]*})/g,
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
@@ -1067,7 +1074,9 @@ var cssVarsObserver = null;
  *   });
  */ function cssVars() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var settings = mergeDeep(defaults, options);
+    var settings = mergeDeep(defaults$1, options);
+    var styleNodeId = name;
+    settings.exclude = "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : "");
     function handleError(message, sourceNode, xhr, url) {
         if (!settings.silent) {
             console.error(message + "\n", sourceNode);
@@ -1084,16 +1093,42 @@ var cssVarsObserver = null;
         return;
     }
     if (document.readyState !== "loading") {
-        if (!hasNativeSupport || !settings.onlyLegacy) {
-            var styleNodeId = name;
+        var isShadowRoot = settings.rootElement.shadowRoot || settings.rootElement.host;
+        if (hasNativeSupport && settings.onlyLegacy) {
+            if (settings.updateDOM) {
+                Object.keys(settings.variables).forEach(function(key) {
+                    var prop = "--" + key.replace(/^-+/, "");
+                    var value = settings.variables[key];
+                    document.documentElement.style.setProperty(prop, value);
+                });
+            }
+        } else if (isShadowRoot && !settings.__documentVariables) {
+            getCssData({
+                rootElement: defaults$1.rootElement,
+                include: defaults$1.include,
+                exclude: settings.exclude,
+                onSuccess: function onSuccess(cssText, node, url) {
+                    var cssRootDecls = (cssText.match(regex.cssRootRules) || []).join("");
+                    return cssRootDecls || false;
+                },
+                onComplete: function onComplete(cssText, cssArray, nodeArray) {
+                    transformVars(cssText);
+                    settings.__documentVariables = variablePersistStore;
+                    cssVars(settings);
+                }
+            });
+        } else {
             if (settings.watch) {
                 addMutationObserver(settings, styleNodeId);
             }
+            if (settings.__documentVariables) {
+                settings.variables = mergeDeep(settings.__documentVariables, settings.variables);
+            }
             getCssData({
-                include: settings.include,
-                exclude: "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : ""),
-                filter: settings.onlyVars ? regex.cssVars : null,
                 rootElement: settings.rootElement,
+                include: settings.include,
+                exclude: settings.exclude,
+                filter: settings.onlyVars ? regex.cssVars : null,
                 onBeforeSend: settings.onBeforeSend,
                 onSuccess: function onSuccess(cssText, node, url) {
                     var returnVal = settings.onSuccess(cssText, node, url);
@@ -1163,25 +1198,19 @@ var cssVarsObserver = null;
                         }
                     }
                     if (settings.shadowDOM) {
-                        var elms = settings.rootElement.querySelectorAll("*");
+                        var elms = [ settings.rootElement ].concat(toConsumableArray(settings.rootElement.querySelectorAll("*")));
                         for (var i = 0, elm; elm = elms[i]; ++i) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
                                 var shadowSettings = mergeDeep(settings, {
                                     rootElement: elm.shadowRoot,
-                                    variables: variableStore.root
+                                    variables: variablePersistStore
                                 });
                                 cssVars(shadowSettings);
                             }
                         }
                     }
-                    settings.onComplete(cssText, styleNode, variableStore.root);
+                    settings.onComplete(cssText, styleNode, variablePersistStore);
                 }
-            });
-        } else if (hasNativeSupport && settings.updateDOM) {
-            Object.keys(settings.variables).forEach(function(key) {
-                var prop = "--" + key.replace(/^-+/, "");
-                var value = settings.variables[key];
-                document.documentElement.style.setProperty(prop, value);
             });
         }
     } else {

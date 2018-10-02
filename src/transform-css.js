@@ -15,14 +15,9 @@ import walkCss      from './walk-css';
 
 // Constants & Variables
 // =============================================================================
-const VAR_PROP_IDENTIFIER = '--';
-const VAR_FUNC_IDENTIFIER = 'var';
-const variableStore = {
-    // Custom properties from: :root declarations
-    root: {},
-    // Custom properties from options.variables
-    user: {}
-};
+const VAR_PROP_IDENTIFIER  = '--';
+const VAR_FUNC_IDENTIFIER  = 'var';
+const variablePersistStore = {};
 
 
 // Functions
@@ -64,7 +59,7 @@ function transformVars(cssText, options = {}) {
     };
     const map       = {};
     const settings  = mergeDeep(defaults, options);
-    const varSource = settings.persist ? variableStore.user : settings.variables;
+    const varSource = settings.persist ? variablePersistStore : settings.variables;
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText);
@@ -93,6 +88,7 @@ function transformVars(cssText, options = {}) {
 
             if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                 map[prop] = value;
+                variablePersistStore[prop] = value;
                 varNameIndices.push(i);
             }
         });
@@ -122,7 +118,7 @@ function transformVars(cssText, options = {}) {
         // be set on each call thereafter (otherwise each call removes the
         // previously set variables).
         if (settings.persist) {
-            variableStore.user[prop] = value;
+            variablePersistStore[prop] = value;
         }
     });
 
@@ -135,29 +131,23 @@ function transformVars(cssText, options = {}) {
 
         Object.keys(varSource).forEach(function(key) {
             // Update internal map value with varSource value
-            map[key] = varSource[key];
+            if (map[key] !== varSource[key]) {
+                map[key] = varSource[key];
 
-            // Add new declaration to newRule
-            newRule.declarations.push({
-                type    : 'declaration',
-                property: key,
-                value   : varSource[key]
-            });
-
-            // Add to persistent storage
-            if (settings.persist) {
-                variableStore.user[key] = varSource[key];
+                // Add new declaration to newRule
+                newRule.declarations.push({
+                    type    : 'declaration',
+                    property: key,
+                    value   : varSource[key]
+                });
             }
         });
 
         // Append new :root ruleset
-        if (settings.preserve) {
+        if (settings.preserve && newRule.declarations.length) {
             cssTree.stylesheet.rules.push(newRule);
         }
     }
-
-    // Store custom property name:value pairs for export
-    variableStore.root = map;
 
     // Resolve variables
     walkCss(cssTree.stylesheet, function(declarations, node) {
@@ -384,4 +374,4 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
 // Exports
 // =============================================================================
 export default transformVars;
-export { variableStore };
+export { variablePersistStore };

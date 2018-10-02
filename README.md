@@ -56,16 +56,6 @@ NPM:
 npm install css-vars-ponyfill
 ```
 
-```javascript
-// file.js
-
-import cssVars from 'css-vars-ponyfill';
-
-cssVars({
-  // ...
-});
-```
-
 Git:
 
 ```bash
@@ -212,7 +202,7 @@ Values will be updated in both legacy and modern browsers:
 **Example**
 
 ```javascript
-// Default values shown
+// All options (default values shown)
 cssVars({
   rootElement  : document,
   include      : 'link[rel=stylesheet],style',
@@ -221,6 +211,7 @@ cssVars({
   onlyLegacy   : true,
   onlyVars     : false,
   preserve     : false,
+  shadowDOM    : false,
   silent       : false,
   updateDOM    : true,
   updateURLs   : true,
@@ -251,24 +242,25 @@ cssVars({
 - Type: `object`
 - Default: `document`
 
-Root element to traverse for `<link>` and `<style>` nodes.
+Root element containing `<link rel="stylesheet">` and `<style>` nodes to process.
 
 **Examples**
 
 ```javascript
-// Document
+// Document DOM
 cssVars({
   rootElement: document // default
 });
 
-// Iframe (must be same domain with content loaded)
+// Shadow DOM (not including nested shadow DOM trees)
 cssVars({
-  rootElement: (myIframe.contentDocument || myIframe.contentWindow.document)
+  rootElement: document.querySelector('custom-element')
 });
 
-// Shadow DOM
+// Shadow DOM (including nested shadow DOM trees)
 cssVars({
-  rootElement: myElement.shadowRoot
+  rootElement: document.querySelector('custom-element'),
+  shadowDOM  : true
 });
 ```
 
@@ -508,15 +500,32 @@ p {
 ### options.shadowDOM
 
 - Type: `boolean`
-- Default: `false
+- Default: `false`
 
-Determines if shadow DOM `<link>` and `<style>` nodes will be processed.
+Determines if shadow DOM trees within the [options.rootElement](#optionsrootelement) will be processed.
 
 **Example**
 
 ```javascript
+// Do no process shadow DOM trees
 cssVars({
   shadowDOM: false // default
+});
+
+// Process all shadow DOM trees (including nested)
+cssVars({
+  shadowDOM: true
+});
+
+// Process only specified shadowRoot (not nested shadow DOM trees)
+cssVars({
+  rootElement: document.querySelector('my-custom-element').shadowRoot,
+});
+
+// Process all shadow DOM trees within rootElement (including nested)
+cssVars({
+  rootElement: document.querySelector('my-custom-element'),
+  shadowDOM  : true
 });
 ```
 
