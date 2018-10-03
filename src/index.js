@@ -1,6 +1,7 @@
 // Dependencies
 // =============================================================================
 import getCssData          from 'get-css-data';
+import root                from 'window-or-global';
 import mergeDeep           from './merge-deep';
 import transformCss        from './transform-css';
 import { variableStore }   from './transform-css';
@@ -11,7 +12,7 @@ import { name as pkgName } from '../package.json';
 // =============================================================================
 const defaults = {
     // Sources
-    rootElement  : document,
+    rootElement  : root,
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
     // Options
