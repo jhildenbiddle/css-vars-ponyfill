@@ -57,9 +57,8 @@ function transformVars(cssText, options = {}) {
         variables    : {},
         onWarning() {}
     };
-    const map       = {};
-    const settings  = mergeDeep(defaults, options);
-    const varSource = settings.persist ? variablePersistStore : settings.variables;
+    const settings = mergeDeep(defaults, options);
+    const map      = settings.persist ? variablePersistStore : JSON.parse(JSON.stringify(variablePersistStore));
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText);
@@ -88,7 +87,6 @@ function transformVars(cssText, options = {}) {
 
             if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                 map[prop] = value;
-                variablePersistStore[prop] = value;
                 varNameIndices.push(i);
             }
         });
@@ -102,43 +100,27 @@ function transformVars(cssText, options = {}) {
     });
 
     // Handle variables defined in settings.variables
-    Object.keys(settings.variables).forEach(key => {
-        // Convert all property names to leading '--' style
-        const prop  = `--${key.replace(/^-+/, '')}`;
-        const value = settings.variables[key];
-
-        // Update settings.variables
-        if (key !== prop) {
-            settings.variables[prop] = value;
-            delete settings.variables[key];
-        }
-
-        // Store variables so they can be reapplied on subsequent call. For
-        // example, if '--myvar' is set on the first call it should continue to
-        // be set on each call thereafter (otherwise each call removes the
-        // previously set variables).
-        if (settings.persist) {
-            variablePersistStore[prop] = value;
-        }
-    });
-
-    if (Object.keys(varSource).length) {
+    if (Object.keys(settings.variables).length) {
         const newRule = {
             declarations: [],
             selectors   : [':root'],
             type        : 'rule'
         };
 
-        Object.keys(varSource).forEach(function(key) {
-            // Update internal map value with varSource value
-            if (map[key] !== varSource[key]) {
-                map[key] = varSource[key];
+        Object.keys(settings.variables).forEach(key => {
+            // Convert all property names to leading '--' style
+            const prop  = `--${key.replace(/^-+/, '')}`;
+            const value = settings.variables[key];
+
+            // Update map value with settings.variables value
+            if (map[prop] !== value) {
+                map[prop] = value;
 
                 // Add new declaration to newRule
                 newRule.declarations.push({
                     type    : 'declaration',
-                    property: key,
-                    value   : varSource[key]
+                    property: prop,
+                    value   : value
                 });
             }
         });

@@ -745,9 +745,8 @@ function transformVars(cssText) {
         variables: {},
         onWarning: function onWarning() {}
     };
-    var map = {};
     var settings = mergeDeep(defaults, options);
-    var varSource = settings.persist ? variablePersistStore : settings.variables;
+    var map = settings.persist ? variablePersistStore : JSON.parse(JSON.stringify(variablePersistStore));
     var cssTree = cssParse(cssText);
     if (settings.onlyVars) {
         cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
@@ -765,7 +764,6 @@ function transformVars(cssText) {
             var value = decl.value;
             if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                 map[prop] = value;
-                variablePersistStore[prop] = value;
                 varNameIndices.push(i);
             }
         });
@@ -775,30 +773,21 @@ function transformVars(cssText) {
             }
         }
     });
-    Object.keys(settings.variables).forEach(function(key) {
-        var prop = "--" + key.replace(/^-+/, "");
-        var value = settings.variables[key];
-        if (key !== prop) {
-            settings.variables[prop] = value;
-            delete settings.variables[key];
-        }
-        if (settings.persist) {
-            variablePersistStore[prop] = value;
-        }
-    });
-    if (Object.keys(varSource).length) {
+    if (Object.keys(settings.variables).length) {
         var newRule = {
             declarations: [],
             selectors: [ ":root" ],
             type: "rule"
         };
-        Object.keys(varSource).forEach(function(key) {
-            if (map[key] !== varSource[key]) {
-                map[key] = varSource[key];
+        Object.keys(settings.variables).forEach(function(key) {
+            var prop = "--" + key.replace(/^-+/, "");
+            var value = settings.variables[key];
+            if (map[prop] !== value) {
+                map[prop] = value;
                 newRule.declarations.push({
                     type: "declaration",
-                    property: key,
-                    value: varSource[key]
+                    property: prop,
+                    value: value
                 });
             }
         });
@@ -955,8 +944,7 @@ var defaults$1 = {
     onSuccess: function onSuccess() {},
     onWarning: function onWarning() {},
     onError: function onError() {},
-    onComplete: function onComplete() {},
-    __documentVariables: null
+    onComplete: function onComplete() {}
 };
 
 var isBrowser = typeof window !== "undefined";
@@ -972,6 +960,8 @@ var regex = {
 };
 
 var cssVarsObserver = null;
+
+var isShadowDOMReady = false;
 
 /**
  * Fetches, parses, and transforms CSS custom properties from specified
@@ -1093,7 +1083,7 @@ var cssVarsObserver = null;
         return;
     }
     if (document.readyState !== "loading") {
-        var isShadowRoot = settings.rootElement.shadowRoot || settings.rootElement.host;
+        var isShadowElm = settings.shadowDOM && settings.rootElement.shadowRoot || settings.rootElement.host;
         if (hasNativeSupport && settings.onlyLegacy) {
             if (settings.updateDOM) {
                 Object.keys(settings.variables).forEach(function(key) {
@@ -1102,7 +1092,7 @@ var cssVarsObserver = null;
                     document.documentElement.style.setProperty(prop, value);
                 });
             }
-        } else if (isShadowRoot && !settings.__documentVariables) {
+        } else if (isShadowElm && !isShadowDOMReady) {
             getCssData({
                 rootElement: defaults$1.rootElement,
                 include: defaults$1.include,
@@ -1112,17 +1102,16 @@ var cssVarsObserver = null;
                     return cssRootDecls || false;
                 },
                 onComplete: function onComplete(cssText, cssArray, nodeArray) {
-                    transformVars(cssText);
-                    settings.__documentVariables = variablePersistStore;
+                    transformVars(cssText, {
+                        persist: true
+                    });
+                    isShadowDOMReady = true;
                     cssVars(settings);
                 }
             });
         } else {
             if (settings.watch) {
                 addMutationObserver(settings, styleNodeId);
-            }
-            if (settings.__documentVariables) {
-                settings.variables = mergeDeep(settings.__documentVariables, settings.variables);
             }
             getCssData({
                 rootElement: settings.rootElement,

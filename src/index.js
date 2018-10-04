@@ -30,9 +30,7 @@ const defaults = {
     onSuccess() {},       // cssVars
     onWarning() {},       // transformCss
     onError() {},         // cssVars
-    onComplete() {},      // cssVars
-    // Private
-    __documentVariables: null
+    onComplete() {}       // cssVars
 };
 const isBrowser        = typeof window !== 'undefined';
 const hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
@@ -48,7 +46,8 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
-let cssVarsObserver = null;
+let cssVarsObserver  = null;
+let isShadowDOMReady = false;
 
 
 // Functions
@@ -188,7 +187,7 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        const isShadowRoot = settings.rootElement.shadowRoot || settings.rootElement.host;
+        const isShadowElm = (settings.shadowDOM && settings.rootElement.shadowRoot) || settings.rootElement.host;
 
         // Native support
         if (hasNativeSupport && settings.onlyLegacy) {
@@ -205,7 +204,7 @@ function cssVars(options = {}) {
             }
         }
         // Ponyfill: Handle rootElement set to a shadow host or root
-        else if (isShadowRoot && !settings.__documentVariables) {
+        else if (isShadowElm && !isShadowDOMReady) {
             // Get all document-level CSS
             getCssData({
                 rootElement: defaults.rootElement,
@@ -222,10 +221,11 @@ function cssVars(options = {}) {
                     // cssText in variablePersistStore. This step ensures that
                     // variablePersistStore contains all document-level custom
                     // property values for subsequent ponyfill calls.
-                    transformCss(cssText);
+                    transformCss(cssText, {
+                        persist: true
+                    });
 
-                    // Store a reference to variablePersistStore in settings object
-                    settings.__documentVariables = variablePersistStore;
+                    isShadowDOMReady = true;
 
                     // Call the ponyfill again to process the rootElement
                     // initially specified. Values stored in variablePersistStore
@@ -239,10 +239,6 @@ function cssVars(options = {}) {
         else {
             if (settings.watch) {
                 addMutationObserver(settings, styleNodeId);
-            }
-
-            if (settings.__documentVariables) {
-                settings.variables = mergeDeep(settings.__documentVariables, settings.variables);
             }
 
             getCssData({
@@ -363,13 +359,9 @@ function cssVars(options = {}) {
                             ...settings.rootElement.querySelectorAll('*')
                         ];
 
-                        // Iterates over all elements in rootElement and call
-                        // cssVars on each element with a shadowRoot, passing
-                        // custom properties from the rootElement parent. This
-                        // allows the ponyfill to process shadow DOM <link> and
-                        // <style> elements with custom properties from
-                        // containing element which mathces the behavior of
-                        // modern browsers.
+                        // Iterates over all elements in rootElement and calls
+                        // cssVars on each shadowRoot, passing document-level
+                        // custom properties as options.variables.
                         for (let i = 0, elm; (elm = elms[i]); ++i) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
                                 const shadowSettings = mergeDeep(settings, {
