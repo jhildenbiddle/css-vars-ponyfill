@@ -6,15 +6,14 @@
 
 - Added logic to automatically get document-level CSS custom property values
   when `option.rootElement` has been set to a shadow host or root. These values
-  are required by the polyfill to transform shadow `<link>` and `<style>` nodes,
-  and this new behavior makes it possible to target a shadow host or root
-  element without manually getting the document-level custom property values
-  first.
+  are required by the polyfill to transform shadow `<link>` and `<style>` nodes.
+  This new behavior makes it possible to target a shadow host or root element
+  without manually getting the document-level custom property values first.
 
-- Fixed custom property values not being persisting CSS from all `<link>` and
-  `<style>` nodes contains only custom properties.
+- Fixed custom property values not persisting when CSS being processed contains
+  only custom properties.
 
-- Fix ‘document is not defined’ in SSR environment
+- Fixed ‘document is not defined’ error in SSR environment introduced in 1.10.0.
 
 ## 1.10.0
 
