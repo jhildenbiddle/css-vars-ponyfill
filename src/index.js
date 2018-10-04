@@ -9,9 +9,12 @@ import { name as pkgName }      from '../package.json';
 
 // Constants & Variables
 // =============================================================================
+const isBrowser       = typeof window !== 'undefined';
+const isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
+
 const defaults = {
     // Sources
-    rootElement  : document,
+    rootElement  : isBrowser ? document : null,
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
     // Options
@@ -32,8 +35,6 @@ const defaults = {
     onError() {},         // cssVars
     onComplete() {}       // cssVars
 };
-const isBrowser        = typeof window !== 'undefined';
-const hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 const regex = {
     // CSS comments
     cssComments: /\/\*[\s\S]+?\*\//g,
@@ -46,7 +47,12 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
+
+// Mutation observer referece created via options.watch
 let cssVarsObserver  = null;
+
+// Indicates if document-level custom property values have been parsed, stored,
+// and ready for use with options.shadowDOM
 let isShadowDOMReady = false;
 
 
@@ -190,7 +196,7 @@ function cssVars(options = {}) {
         const isShadowElm = (settings.shadowDOM && settings.rootElement.shadowRoot) || settings.rootElement.host;
 
         // Native support
-        if (hasNativeSupport && settings.onlyLegacy) {
+        if (isNativeSupport && settings.onlyLegacy) {
             // Apply settings.variables
             if (settings.updateDOM) {
                 // Set variables using native methods

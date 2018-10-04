@@ -907,8 +907,10 @@
             return Array.from(arr);
         }
     };
+    var isBrowser = typeof window !== "undefined";
+    var isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
     var defaults$1 = {
-        rootElement: document,
+        rootElement: isBrowser ? document : null,
         include: "style,link[rel=stylesheet]",
         exclude: "",
         fixNestedCalc: true,
@@ -927,8 +929,6 @@
         onError: function onError() {},
         onComplete: function onComplete() {}
     };
-    var isBrowser = typeof window !== "undefined";
-    var hasNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
     var regex = {
         cssComments: /\/\*[\s\S]+?\*\//g,
         cssKeyframes: /@(?:-\w*-)?keyframes/,
@@ -1059,7 +1059,7 @@
         }
         if (document.readyState !== "loading") {
             var isShadowElm = settings.shadowDOM && settings.rootElement.shadowRoot || settings.rootElement.host;
-            if (hasNativeSupport && settings.onlyLegacy) {
+            if (isNativeSupport && settings.onlyLegacy) {
                 if (settings.updateDOM) {
                     Object.keys(settings.variables).forEach(function(key) {
                         var prop = "--" + key.replace(/^-+/, "");

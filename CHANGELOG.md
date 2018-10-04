@@ -2,7 +2,7 @@
 
 ## 1.11.0
 
-*2018-10-02*
+*2018-10-03*
 
 - Added logic to automatically get document-level CSS custom property values
   when `option.rootElement` has been set to a shadow host or root. These values
@@ -13,6 +13,8 @@
 
 - Fixed custom property values not being persisting CSS from all `<link>` and
   `<style>` nodes contains only custom properties.
+
+- Fix ‘document is not defined’ in SSR environment
 
 ## 1.10.0
 
