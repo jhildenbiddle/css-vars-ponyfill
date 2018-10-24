@@ -247,20 +247,14 @@ Root element containing `<link rel="stylesheet">` and `<style>` nodes to process
 **Examples**
 
 ```javascript
-// Document DOM
+// Document
 cssVars({
   rootElement: document // default
 });
 
-// Shadow DOM (not including nested shadow DOM trees)
+// Shadow DOM
 cssVars({
-  rootElement: document.querySelector('custom-element')
-});
-
-// Shadow DOM (including nested shadow DOM trees)
-cssVars({
-  rootElement: document.querySelector('custom-element'),
-  shadowDOM  : true
+  rootElement: document.querySelector('custom-element').shadowRoot
 });
 ```
 
@@ -502,7 +496,7 @@ p {
 - Type: `boolean`
 - Default: `false`
 
-Determines if shadow DOM trees within the [options.rootElement](#optionsrootelement) will be processed.
+Determines if shadow DOM tree(s) nested within the [options.rootElement](#optionsrootelement) will be processed.
 
 **Example**
 
@@ -512,19 +506,14 @@ cssVars({
   shadowDOM: false // default
 });
 
-// Process all shadow DOM trees (including nested)
+// Process all shadow DOM trees in document
 cssVars({
   shadowDOM: true
 });
 
-// Process only specified shadowRoot (not nested shadow DOM trees)
+// Process all shadow DOM trees in custom element
 cssVars({
-  rootElement: document.querySelector('my-custom-element').shadowRoot,
-});
-
-// Process all shadow DOM trees within rootElement (including nested)
-cssVars({
-  rootElement: document.querySelector('my-custom-element'),
+  rootElement: document.querySelector('my-element'), 
   shadowDOM  : true
 });
 ```

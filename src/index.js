@@ -193,19 +193,21 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        const isShadowElm = (settings.shadowDOM && settings.rootElement.shadowRoot) || settings.rootElement.host;
+        const isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
 
         // Native support
         if (isNativeSupport && settings.onlyLegacy) {
             // Apply settings.variables
             if (settings.updateDOM) {
+                const targetElm = settings.rootElement.host || document.documentElement;
+
                 // Set variables using native methods
                 Object.keys(settings.variables).forEach(key => {
                     // Convert all property names to leading '--' style
                     const prop  = `--${key.replace(/^-+/, '')}`;
                     const value = settings.variables[key];
 
-                    document.documentElement.style.setProperty(prop, value);
+                    targetElm.style.setProperty(prop, value);
                 });
             }
         }

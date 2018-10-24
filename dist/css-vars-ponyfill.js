@@ -1058,13 +1058,14 @@
             return;
         }
         if (document.readyState !== "loading") {
-            var isShadowElm = settings.shadowDOM && settings.rootElement.shadowRoot || settings.rootElement.host;
+            var isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
             if (isNativeSupport && settings.onlyLegacy) {
                 if (settings.updateDOM) {
+                    var targetElm = settings.rootElement.host || document.documentElement;
                     Object.keys(settings.variables).forEach(function(key) {
                         var prop = "--" + key.replace(/^-+/, "");
                         var value = settings.variables[key];
-                        document.documentElement.style.setProperty(prop, value);
+                        targetElm.style.setProperty(prop, value);
                     });
                 }
             } else if (isShadowElm && !isShadowDOMReady) {

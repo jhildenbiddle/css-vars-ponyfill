@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.11.2
+
+*2018-10-23*
+
+- Fixed bug in modern browsers that caused `option.variables` values to be
+  applied to the `document` instead of the `options.rootElement`, resulting
+  in custom properties being applied to all elements instead of scoped to the
+  specified root element.
+
 ## 1.11.0
 
 *2018-10-03*
