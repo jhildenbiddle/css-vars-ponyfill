@@ -1086,7 +1086,7 @@ var isShadowDOMReady = false;
         var isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
         if (isNativeSupport && settings.onlyLegacy) {
             if (settings.updateDOM) {
-                var targetElm = settings.rootElement.host || document.documentElement;
+                var targetElm = settings.rootElement.host || (settings.rootElement === document ? document.documentElement : settings.rootElement);
                 Object.keys(settings.variables).forEach(function(key) {
                     var prop = "--" + key.replace(/^-+/, "");
                     var value = settings.variables[key];

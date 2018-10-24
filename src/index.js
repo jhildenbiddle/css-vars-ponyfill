@@ -199,7 +199,7 @@ function cssVars(options = {}) {
         if (isNativeSupport && settings.onlyLegacy) {
             // Apply settings.variables
             if (settings.updateDOM) {
-                const targetElm = settings.rootElement.host || document.documentElement;
+                const targetElm = settings.rootElement.host || (settings.rootElement === document ? document.documentElement : settings.rootElement);
 
                 // Set variables using native methods
                 Object.keys(settings.variables).forEach(key => {

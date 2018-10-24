@@ -1,8 +1,8 @@
 # Change Log
 
-## 1.11.2
+## 1.11.3
 
-*2018-10-23*
+*2018-10-24*
 
 - Fixed bug in modern browsers that caused `option.variables` values to be
   applied to the `document` instead of the `options.rootElement`, resulting
