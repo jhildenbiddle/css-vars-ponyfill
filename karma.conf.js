@@ -22,7 +22,7 @@ const localConfig = {
     ],
     files: [
         'https://cdn.polyfill.io/v2/polyfill.min.js', // Required for web component tests
-        'node_modules/babel-polyfill/dist/polyfill.js',
+        'node_modules/@babel/polyfill/dist/polyfill.js',
         'node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js', // Required for web component tests
         files.test,
         // Serve files for accessing in tests via AJAX
@@ -45,7 +45,7 @@ const localConfig = {
                     loader : 'babel-loader',
                     options: {
                         presets: [
-                            ['env', {
+                            ['@babel/env', {
                                 targets: {
                                     browsers: ['ie >= 9']
                                 }

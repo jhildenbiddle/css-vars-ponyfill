@@ -9,13 +9,28 @@
     typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : global.cssVars = factory();
 })(this, function() {
     "use strict";
+    function _toConsumableArray(arr) {
+        return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+    }
+    function _arrayWithoutHoles(arr) {
+        if (Array.isArray(arr)) {
+            for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+            return arr2;
+        }
+    }
+    function _iterableToArray(iter) {
+        if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+    function _nonIterableSpread() {
+        throw new TypeError("Invalid attempt to spread non-iterable instance");
+    }
     /*!
-     * get-css-data
-     * v1.4.0
-     * https://github.com/jhildenbiddle/get-css-data
-     * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
-     * MIT license
-     */    function getUrls(urls) {
+   * get-css-data
+   * v1.4.0
+   * https://github.com/jhildenbiddle/get-css-data
+   * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
+   * MIT license
+   */    function getUrls(urls) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var settings = {
             mimeType: options.mimeType || null,
@@ -86,64 +101,64 @@
         });
     }
     /**
-     * Gets CSS data from <style> and <link> nodes (including @imports), then
-     * returns data in order processed by DOM. Allows specifying nodes to
-     * include/exclude and filtering CSS data using RegEx.
-     *
-     * @preserve
-     * @param {object}   [options] The options object
-     * @param {object}   [options.rootElement=document] Root element to traverse for
-     *                   <link> and <style> nodes.
-     * @param {string}   [options.include] CSS selector matching <link> and <style>
-     *                   nodes to include
-     * @param {string}   [options.exclude] CSS selector matching <link> and <style>
-     *                   nodes to exclude
-     * @param {object}   [options.filter] Regular expression used to filter node CSS
-     *                   data. Each block of CSS data is tested against the filter,
-     *                   and only matching data is included.
-     * @param {object}   [options.useCSSOM=false] Determines if CSS data will be
-     *                   collected from a stylesheet's runtime values instead of its
-     *                   text content. This is required to get accurate CSS data
-     *                   when a stylesheet has been modified using the deleteRule()
-     *                   or insertRule() methods because these modifications will
-     *                   not be reflected in the stylesheet's text content.
-     * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
-     *                   1) the XHR object, 2) source node reference, and 3) the
-     *                   source URL as arguments.
-     * @param {function} [options.onSuccess] Callback on each CSS node read. Passes
-     *                   1) CSS text, 2) source node reference, and 3) the source
-     *                   URL as arguments.
-     * @param {function} [options.onError] Callback on each error. Passes 1) the XHR
-     *                   object for inspection, 2) soure node reference, and 3) the
-     *                   source URL that failed (either a <link> href or an @import)
-     *                   as arguments
-     * @param {function} [options.onComplete] Callback after all nodes have been
-     *                   processed. Passes 1) concatenated CSS text, 2) an array of
-     *                   CSS text in DOM order, and 3) an array of nodes in DOM
-     *                   order as arguments.
-     *
-     * @example
-     *
-     *   getCssData({
-     *     rootElement: document,
-     *     include    : 'style,link[rel="stylesheet"]',
-     *     exclude    : '[href="skip.css"]',
-     *     filter     : /red/,
-     *     useCSSOM   : false,
-     *     onBeforeSend(xhr, node, url) {
-     *       // ...
-     *     }
-     *     onSuccess(cssText, node, url) {
-     *       // ...
-     *     }
-     *     onError(xhr, node, url) {
-     *       // ...
-     *     },
-     *     onComplete(cssText, cssArray, nodeArray) {
-     *       // ...
-     *     }
-     *   });
-     */    function getCssData(options) {
+   * Gets CSS data from <style> and <link> nodes (including @imports), then
+   * returns data in order processed by DOM. Allows specifying nodes to
+   * include/exclude and filtering CSS data using RegEx.
+   *
+   * @preserve
+   * @param {object}   [options] The options object
+   * @param {object}   [options.rootElement=document] Root element to traverse for
+   *                   <link> and <style> nodes.
+   * @param {string}   [options.include] CSS selector matching <link> and <style>
+   *                   nodes to include
+   * @param {string}   [options.exclude] CSS selector matching <link> and <style>
+   *                   nodes to exclude
+   * @param {object}   [options.filter] Regular expression used to filter node CSS
+   *                   data. Each block of CSS data is tested against the filter,
+   *                   and only matching data is included.
+   * @param {object}   [options.useCSSOM=false] Determines if CSS data will be
+   *                   collected from a stylesheet's runtime values instead of its
+   *                   text content. This is required to get accurate CSS data
+   *                   when a stylesheet has been modified using the deleteRule()
+   *                   or insertRule() methods because these modifications will
+   *                   not be reflected in the stylesheet's text content.
+   * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
+   *                   1) the XHR object, 2) source node reference, and 3) the
+   *                   source URL as arguments.
+   * @param {function} [options.onSuccess] Callback on each CSS node read. Passes
+   *                   1) CSS text, 2) source node reference, and 3) the source
+   *                   URL as arguments.
+   * @param {function} [options.onError] Callback on each error. Passes 1) the XHR
+   *                   object for inspection, 2) soure node reference, and 3) the
+   *                   source URL that failed (either a <link> href or an @import)
+   *                   as arguments
+   * @param {function} [options.onComplete] Callback after all nodes have been
+   *                   processed. Passes 1) concatenated CSS text, 2) an array of
+   *                   CSS text in DOM order, and 3) an array of nodes in DOM
+   *                   order as arguments.
+   *
+   * @example
+   *
+   *   getCssData({
+   *     rootElement: document,
+   *     include    : 'style,link[rel="stylesheet"]',
+   *     exclude    : '[href="skip.css"]',
+   *     filter     : /red/,
+   *     useCSSOM   : false,
+   *     onBeforeSend(xhr, node, url) {
+   *       // ...
+   *     }
+   *     onSuccess(cssText, node, url) {
+   *       // ...
+   *     }
+   *     onError(xhr, node, url) {
+   *       // ...
+   *     },
+   *     onComplete(cssText, cssArray, nodeArray) {
+   *       // ...
+   *     }
+   *   });
+   */    function getCssData(options) {
         var regex = {
             cssComments: /\/\*[\s\S]+?\*\//g,
             cssImports: /(?:@import\s*)(?:url\(\s*)?(?:['"])([^'"]*)(?:['"])(?:\s*\))?(?:[^;]*;)/g
@@ -303,7 +318,7 @@
         var isObject = function isObject(obj) {
             return obj instanceof Object && obj.constructor === Object;
         };
-        for (var _len = arguments.length, objects = Array(_len), _key = 0; _key < _len; _key++) {
+        for (var _len = arguments.length, objects = new Array(_len), _key = 0; _key < _len; _key++) {
             objects[_key] = arguments[_key];
         }
         return objects.reduce(function(prev, obj) {
@@ -370,7 +385,7 @@
     function cssParse(css) {
         var errors = [];
         function error(msg) {
-            throw new Error("CSS parse error: " + msg);
+            throw new Error("CSS parse error: ".concat(msg));
         }
         function match(re) {
             var m = re.exec(css);
@@ -409,7 +424,7 @@
         }
         function comments() {
             var cmnts = [];
-            var c = void 0;
+            var c;
             while (c = comment()) {
                 cmnts.push(c);
             }
@@ -453,7 +468,7 @@
             if (!open()) {
                 return error("missing '{'");
             }
-            var d = void 0, decls = comments();
+            var d, decls = comments();
             while (d = declaration()) {
                 decls.push(d);
                 decls = decls.concat(comments());
@@ -466,7 +481,7 @@
         function keyframe() {
             whitespace();
             var vals = [];
-            var m = void 0;
+            var m;
             while (m = match(/^((\d+\.\d+|\.\d+|\d+)%?|[a-z]+)\s*/)) {
                 vals.push(m[1]);
                 match(/^,\s*/);
@@ -493,7 +508,7 @@
             if (!open()) {
                 return error("@keyframes missing '{'");
             }
-            var frame = void 0, frames = comments();
+            var frame, frames = comments();
             while (frame = keyframe()) {
                 frames.push(frame);
                 frames = frames.concat(comments());
@@ -609,7 +624,7 @@
             if (!core && !open()) {
                 return error("missing '{'");
             }
-            var node = void 0, rules = comments();
+            var node, rules = comments();
             while (css.length && (core || css[0] !== "}") && (node = at_rule() || rule())) {
                 rules.push(node);
                 rules = rules.concat(comments());
@@ -629,7 +644,7 @@
     }
     function stringifyCss(tree) {
         var delim = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        var cb = arguments[2];
+        var cb = arguments.length > 2 ? arguments[2] : undefined;
         var renderMethods = {
             charset: function charset(node) {
                 return "@charset " + node.name + ";";
@@ -767,7 +782,7 @@
                 type: "rule"
             };
             Object.keys(settings.variables).forEach(function(key) {
-                var prop = "--" + key.replace(/^-+/, "");
+                var prop = "--".concat(key.replace(/^-+/, ""));
                 var value = settings.variables[key];
                 if (map[prop] !== value) {
                     map[prop] = value;
@@ -783,9 +798,9 @@
             }
         }
         walkCss(cssTree.stylesheet, function(declarations, node) {
-            var decl = void 0;
-            var resolvedValue = void 0;
-            var value = void 0;
+            var decl;
+            var resolvedValue;
+            var value;
             for (var i = 0; i < declarations.length; i++) {
                 decl = declarations[i];
                 value = decl.value;
@@ -856,10 +871,10 @@
                         oldValue = oldValue.slice(rootCalc.end);
                         while (reCalcExp.test(rootCalc.body)) {
                             var nestedCalc = balancedMatch(reCalcExp, ")", rootCalc.body);
-                            rootCalc.body = nestedCalc.pre + "(" + nestedCalc.body + ")" + nestedCalc.post;
+                            rootCalc.body = "".concat(nestedCalc.pre, "(").concat(nestedCalc.body, ")").concat(nestedCalc.post);
                         }
-                        newValue += rootCalc.pre + "calc(" + rootCalc.body;
-                        newValue += !reCalcExp.test(oldValue) ? ")" + rootCalc.post : "";
+                        newValue += "".concat(rootCalc.pre, "calc(").concat(rootCalc.body);
+                        newValue += !reCalcExp.test(oldValue) ? ")".concat(rootCalc.post) : "";
                     }
                     decl.value = newValue || decl.value;
                 });
@@ -868,7 +883,7 @@
     }
     function resolveValue(value, map) {
         var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-        var __recursiveFallback = arguments[3];
+        var __recursiveFallback = arguments.length > 3 ? arguments[3] : undefined;
         var varFuncData = balancedMatch("var(", ")", value);
         var warningIntro = "CSS transform warning:";
         function resolveFunc(value) {
@@ -878,38 +893,30 @@
             var replacement = match || (fallback ? String(fallback) : undefined);
             var unresolvedFallback = __recursiveFallback || value;
             if (!match) {
-                settings.onWarning(warningIntro + ' variable "' + name + '" is undefined');
+                settings.onWarning("".concat(warningIntro, ' variable "').concat(name, '" is undefined'));
             }
             if (replacement && replacement !== "undefined" && replacement.length > 0) {
                 return resolveValue(replacement, map, settings, unresolvedFallback);
             } else {
-                return "var(" + unresolvedFallback + ")";
+                return "var(".concat(unresolvedFallback, ")");
             }
         }
         if (!varFuncData) {
             if (value.indexOf("var(") !== -1) {
-                settings.onWarning(warningIntro + ' missing closing ")" in the value "' + value + '"');
+                settings.onWarning("".concat(warningIntro, ' missing closing ")" in the value "').concat(value, '"'));
             }
             return value;
         } else if (varFuncData.body.trim().length === 0) {
-            settings.onWarning(warningIntro + " var() must contain a non-whitespace string");
+            settings.onWarning("".concat(warningIntro, " var() must contain a non-whitespace string"));
             return value;
         } else {
             return varFuncData.pre + resolveFunc(varFuncData.body) + resolveValue(varFuncData.post, map, settings);
         }
     }
     var name = "css-vars-ponyfill";
-    var toConsumableArray = function(arr) {
-        if (Array.isArray(arr)) {
-            for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-            return arr2;
-        } else {
-            return Array.from(arr);
-        }
-    };
     var isBrowser = typeof window !== "undefined";
     var isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
-    var defaults$1 = {
+    var defaults = {
         rootElement: isBrowser ? document : null,
         include: "style,link[rel=stylesheet]",
         exclude: "",
@@ -939,112 +946,112 @@
     var cssVarsObserver = null;
     var isShadowDOMReady = false;
     /**
-     * Fetches, parses, and transforms CSS custom properties from specified
-     * <style> and <link> elements into static values, then appends a new <style>
-     * element with static values to the DOM to provide CSS custom property
-     * compatibility for legacy browsers. Also provides a single interface for
-     * live updates of runtime values in both modern and legacy browsers.
-     *
-     * @preserve
-     * @param {object}   [options] Options object
-     * @param {object}   [options.rootElement=document] Root element to traverse for
-     *                   <link> and <style> nodes.
-     * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
-     *                   matching <link re="stylesheet"> and <style> nodes to
-     *                   process
-     * @param {string}   [options.exclude] CSS selector matching <link
-     *                   rel="stylehseet"> and <style> nodes to exclude from those
-     *                   matches by options.include
-     * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
-     *                   for legacy browser compatibility.
-     * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
-     *                   only generate legacy-compatible CSS in browsers that lack
-     *                   native support (i.e., legacy browsers)
-     * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
-     *                   declarations without a custom property value should be
-     *                   removed from the ponyfill-generated CSS
-     * @param {boolean}  [options.preserve=false] Determines if the original CSS
-     *                   custom property declaration will be retained in the
-     *                   ponyfill-generated CSS.
-     * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
-     *                   and <style> nodes will be processed.
-     * @param {boolean}  [options.silent=false] Determines if warning and error
-     *                   messages will be displayed on the console
-     * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
-     *                   update the DOM after processing CSS custom properties
-     * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
-     *                   convert relative url() paths to absolute urls.
-     * @param {object}   [options.variables] A map of custom property name/value
-     *                   pairs. Property names can omit or include the leading
-     *                   double-hyphen (—), and values specified will override
-     *                   previous values.
-     * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
-     *                   be created that will execute the ponyfill when a <link> or
-     *                   <style> DOM mutation is observed.
-     * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
-     *                   1) the XHR object, 2) source node reference, and 3) the
-     *                   source URL as arguments.
-     * @param {function} [options.onSuccess] Callback after CSS data has been
-     *                   collected from each node and before CSS custom properties
-     *                   have been transformed. Allows modifying the CSS data before
-     *                   it is transformed by returning any string value (or false
-     *                   to skip). Passes 1) CSS text, 2) source node reference, and
-     *                   3) the source URL as arguments.
-     * @param {function} [options.onWarning] Callback after each CSS parsing warning
-     *                   has occurred. Passes 1) a warning message as an argument.
-     * @param {function} [options.onError] Callback after a CSS parsing error has
-     *                   occurred or an XHR request has failed. Passes 1) an error
-     *                   message, and 2) source node reference, 3) xhr, and 4 url as
-     *                   arguments.
-     * @param {function} [options.onComplete] Callback after all CSS has been
-     *                   processed, legacy-compatible CSS has been generated, and
-     *                   (optionally) the DOM has been updated. Passes 1) a CSS
-     *                   string with CSS variable values resolved, 2) a reference to
-     *                   the appended <style> node, and 3) an object containing all
-     *                   custom properies names and values.
-     *
-     * @example
-     *
-     *   cssVars({
-     *     rootElement  : document,
-     *     include      : 'style,link[rel="stylesheet"]',
-     *     exclude      : '',
-     *     fixNestedCalc: true,
-     *     onlyLegacy   : true,
-     *     onlyVars     : false,
-     *     preserve     : false,
-     *     shadowDOM    : false,
-     *     silent       : false,
-     *     updateDOM    : true,
-     *     updateURLs   : true,
-     *     variables    : {
-     *       // ...
-     *     },
-     *     watch        : false,
-     *     onBeforeSend(xhr, node, url) {
-     *       // ...
-     *     }
-     *     onSuccess(cssText, node, url) {
-     *       // ...
-     *     },
-     *     onWarning(message) {
-     *       // ...
-     *     },
-     *     onError(message, node) {
-     *       // ...
-     *     },
-     *     onComplete(cssText, styleNode) {
-     *       // ...
-     *     }
-     *   });
-     */    function cssVars() {
+   * Fetches, parses, and transforms CSS custom properties from specified
+   * <style> and <link> elements into static values, then appends a new <style>
+   * element with static values to the DOM to provide CSS custom property
+   * compatibility for legacy browsers. Also provides a single interface for
+   * live updates of runtime values in both modern and legacy browsers.
+   *
+   * @preserve
+   * @param {object}   [options] Options object
+   * @param {object}   [options.rootElement=document] Root element to traverse for
+   *                   <link> and <style> nodes.
+   * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
+   *                   matching <link re="stylesheet"> and <style> nodes to
+   *                   process
+   * @param {string}   [options.exclude] CSS selector matching <link
+   *                   rel="stylehseet"> and <style> nodes to exclude from those
+   *                   matches by options.include
+   * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
+   *                   for legacy browser compatibility.
+   * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
+   *                   only generate legacy-compatible CSS in browsers that lack
+   *                   native support (i.e., legacy browsers)
+   * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
+   *                   declarations without a custom property value should be
+   *                   removed from the ponyfill-generated CSS
+   * @param {boolean}  [options.preserve=false] Determines if the original CSS
+   *                   custom property declaration will be retained in the
+   *                   ponyfill-generated CSS.
+   * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
+   *                   and <style> nodes will be processed.
+   * @param {boolean}  [options.silent=false] Determines if warning and error
+   *                   messages will be displayed on the console
+   * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
+   *                   update the DOM after processing CSS custom properties
+   * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
+   *                   convert relative url() paths to absolute urls.
+   * @param {object}   [options.variables] A map of custom property name/value
+   *                   pairs. Property names can omit or include the leading
+   *                   double-hyphen (—), and values specified will override
+   *                   previous values.
+   * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
+   *                   be created that will execute the ponyfill when a <link> or
+   *                   <style> DOM mutation is observed.
+   * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
+   *                   1) the XHR object, 2) source node reference, and 3) the
+   *                   source URL as arguments.
+   * @param {function} [options.onSuccess] Callback after CSS data has been
+   *                   collected from each node and before CSS custom properties
+   *                   have been transformed. Allows modifying the CSS data before
+   *                   it is transformed by returning any string value (or false
+   *                   to skip). Passes 1) CSS text, 2) source node reference, and
+   *                   3) the source URL as arguments.
+   * @param {function} [options.onWarning] Callback after each CSS parsing warning
+   *                   has occurred. Passes 1) a warning message as an argument.
+   * @param {function} [options.onError] Callback after a CSS parsing error has
+   *                   occurred or an XHR request has failed. Passes 1) an error
+   *                   message, and 2) source node reference, 3) xhr, and 4 url as
+   *                   arguments.
+   * @param {function} [options.onComplete] Callback after all CSS has been
+   *                   processed, legacy-compatible CSS has been generated, and
+   *                   (optionally) the DOM has been updated. Passes 1) a CSS
+   *                   string with CSS variable values resolved, 2) a reference to
+   *                   the appended <style> node, and 3) an object containing all
+   *                   custom properies names and values.
+   *
+   * @example
+   *
+   *   cssVars({
+   *     rootElement  : document,
+   *     include      : 'style,link[rel="stylesheet"]',
+   *     exclude      : '',
+   *     fixNestedCalc: true,
+   *     onlyLegacy   : true,
+   *     onlyVars     : false,
+   *     preserve     : false,
+   *     shadowDOM    : false,
+   *     silent       : false,
+   *     updateDOM    : true,
+   *     updateURLs   : true,
+   *     variables    : {
+   *       // ...
+   *     },
+   *     watch        : false,
+   *     onBeforeSend(xhr, node, url) {
+   *       // ...
+   *     }
+   *     onSuccess(cssText, node, url) {
+   *       // ...
+   *     },
+   *     onWarning(message) {
+   *       // ...
+   *     },
+   *     onError(message, node) {
+   *       // ...
+   *     },
+   *     onComplete(cssText, styleNode) {
+   *       // ...
+   *     }
+   *   });
+   */    function cssVars() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var settings = mergeDeep(defaults$1, options);
+        var settings = mergeDeep(defaults, options);
         var styleNodeId = name;
-        settings.exclude = "#" + styleNodeId + (settings.exclude ? "," + settings.exclude : "");
+        settings.exclude = "#".concat(styleNodeId) + (settings.exclude ? ",".concat(settings.exclude) : "");
         function handleError(message, sourceNode, xhr, url) {
             if (!settings.silent) {
-                console.error(message + "\n", sourceNode);
+                console.error("".concat(message, "\n"), sourceNode);
             }
             settings.onError(message, sourceNode, xhr, url);
         }
@@ -1063,15 +1070,15 @@
                 if (settings.updateDOM) {
                     var targetElm = settings.rootElement.host || (settings.rootElement === document ? document.documentElement : settings.rootElement);
                     Object.keys(settings.variables).forEach(function(key) {
-                        var prop = "--" + key.replace(/^-+/, "");
+                        var prop = "--".concat(key.replace(/^-+/, ""));
                         var value = settings.variables[key];
                         targetElm.style.setProperty(prop, value);
                     });
                 }
             } else if (isShadowElm && !isShadowDOMReady) {
                 getCssData({
-                    rootElement: defaults$1.rootElement,
-                    include: defaults$1.include,
+                    rootElement: defaults.rootElement,
+                    include: defaults.include,
                     exclude: settings.exclude,
                     onSuccess: function onSuccess(cssText, node, url) {
                         var cssRootDecls = (cssText.match(regex.cssRootRules) || []).join("");
@@ -1110,15 +1117,15 @@
                     },
                     onError: function onError(xhr, node, url) {
                         var responseUrl = xhr.responseURL || getFullUrl$1(url, location.href);
-                        var statusText = xhr.statusText ? "(" + xhr.statusText + ")" : "Unspecified Error" + (xhr.status === 0 ? " (possibly CORS related)" : "");
-                        var errorMsg = "CSS XHR Error: " + responseUrl + " " + xhr.status + " " + statusText;
+                        var statusText = xhr.statusText ? "(".concat(xhr.statusText, ")") : "Unspecified Error" + (xhr.status === 0 ? " (possibly CORS related)" : "");
+                        var errorMsg = "CSS XHR Error: ".concat(responseUrl, " ").concat(xhr.status, " ").concat(statusText);
                         handleError(errorMsg, node, xhr, responseUrl);
                     },
                     onComplete: function onComplete(cssText, cssArray, nodeArray) {
                         var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                         var styleNode = null;
                         cssText = cssArray.map(function(css, i) {
-                            return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-" + i + "__*/";
+                            return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
                         }).join("");
                         try {
                             cssText = transformVars(cssText, {
@@ -1135,7 +1142,7 @@
                             });
                             if (settings.updateDOM && nodeArray && nodeArray.length) {
                                 var lastNode = nodeArray[nodeArray.length - 1];
-                                styleNode = settings.rootElement.querySelector("#" + styleNodeId) || document.createElement("style");
+                                styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                                 styleNode.setAttribute("id", styleNodeId);
                                 if (styleNode.textContent !== cssText) {
                                     styleNode.textContent = cssText;
@@ -1163,7 +1170,7 @@
                             }
                         }
                         if (settings.shadowDOM) {
-                            var elms = [ settings.rootElement ].concat(toConsumableArray(settings.rootElement.querySelectorAll("*")));
+                            var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
                             for (var i = 0, elm; elm = elms[i]; ++i) {
                                 if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
                                     var shadowSettings = mergeDeep(settings, {
