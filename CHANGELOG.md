@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.12.0
+
+*2018-10-25*
+
+- Added TypeScript definitions.
+
 ## 1.11.3
 
 *2018-10-24*
