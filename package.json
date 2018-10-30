@@ -98,7 +98,7 @@
     "rollup-plugin-eslint": "^5.0.0",
     "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^3.4.0",
-    "rollup-plugin-terser": "^1.0.1",
+    "rollup-plugin-terser": "^3.0.0",
     "webpack": "^4.23.1"
   },
   "dependencies": {}
