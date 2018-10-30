@@ -35,7 +35,8 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 - Supports complex values
 - Supports fallback values
 - UMD and ES6 module available
-- Lightweight (5k min+gzip) and dependency-free
+- TypeScript definitions included
+- Lightweight (6k min+gzip) and dependency-free
 
 **Limitations**
 
