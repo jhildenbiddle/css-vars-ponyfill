@@ -15,9 +15,12 @@ import walkCss      from './walk-css';
 
 // Constants & Variables
 // =============================================================================
-const VAR_PROP_IDENTIFIER  = '--';
-const VAR_FUNC_IDENTIFIER  = 'var';
-const variablePersistStore = {};
+const VAR_PROP_IDENTIFIER = '--';
+const VAR_FUNC_IDENTIFIER = 'var';
+const variableStore       = {
+    persist: {},
+    noPersist: {}
+};
 
 
 // Functions
@@ -58,7 +61,7 @@ function transformVars(cssText, options = {}) {
         onWarning() {}
     };
     const settings = mergeDeep(defaults, options);
-    const map      = settings.persist ? variablePersistStore : JSON.parse(JSON.stringify(variablePersistStore));
+    const map      = settings.persist ? variableStore.persist : variableStore.noPersist = JSON.parse(JSON.stringify(variableStore.persist));
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText);
@@ -356,4 +359,4 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
 // Exports
 // =============================================================================
 export default transformVars;
-export { variablePersistStore };
+export { variableStore };

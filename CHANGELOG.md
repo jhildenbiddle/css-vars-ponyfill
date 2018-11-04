@@ -1,16 +1,24 @@
 # Change Log
 
+## 1.12.1
+
+*2018-11-04*
+
+- Fixed bug that caused the `options.onComplete` callback's `cssVariables`
+  argument to be returned as an empty object when `options.updateDOM` is set to
+  `false`.
+
 ## 1.12.0
 
 *2018-10-25*
 
 - Added TypeScript definitions.
 
-## 1.11.3
+## 1.11.1-3
 
 *2018-10-24*
 
-- Fixed bug in modern browsers that caused `option.variables` values to be
+- Fixed bug in modern browsers that caused `options.variables` values to be
   applied to the `document` instead of the `options.rootElement`, resulting
   in custom properties being applied to all elements instead of scoped to the
   specified root element.
@@ -20,7 +28,7 @@
 *2018-10-03*
 
 - Added logic to automatically get document-level CSS custom property values
-  when `option.rootElement` has been set to a shadow host or root. These values
+  when `options.rootElement` has been set to a shadow host or root. These values
   are required by the polyfill to transform shadow `<link>` and `<style>` nodes.
   This new behavior makes it possible to target a shadow host or root element
   without manually getting the document-level custom property values first.
@@ -67,7 +75,7 @@
 
 - Added fix for browser-related bugs that prevent keyframe animations from being
   applied when values are initially set using custom properties or updated using
-  the `variables` ponyfill option. (#13)
+  the `variables` ponyfill options. (#13)
 
 - Fixed inaccurate “variable is undefined” console warning when a custom
   property value is `0` or `false`.

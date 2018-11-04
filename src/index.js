@@ -1,10 +1,10 @@
 // Dependencies
 // =============================================================================
-import getCssData               from 'get-css-data';
-import mergeDeep                from './merge-deep';
-import transformCss             from './transform-css';
-import { variablePersistStore } from './transform-css';
-import { name as pkgName }      from '../package.json';
+import getCssData          from 'get-css-data';
+import mergeDeep           from './merge-deep';
+import transformCss        from './transform-css';
+import { variableStore }   from './transform-css';
+import { name as pkgName } from '../package.json';
 
 
 // Constants & Variables
@@ -226,9 +226,9 @@ function cssVars(options = {}) {
                 },
                 onComplete(cssText, cssArray, nodeArray) {
                     // Transform CSS, which stores custom property values from
-                    // cssText in variablePersistStore. This step ensures that
-                    // variablePersistStore contains all document-level custom
-                    // property values for subsequent ponyfill calls.
+                    // cssText in variableStore. This step ensures that
+                    // variableStore contains all document-level custom property
+                    // values for subsequent ponyfill calls.
                     transformCss(cssText, {
                         persist: true
                     });
@@ -236,9 +236,8 @@ function cssVars(options = {}) {
                     isShadowDOMReady = true;
 
                     // Call the ponyfill again to process the rootElement
-                    // initially specified. Values stored in variablePersistStore
-                    // will be used to transform values in shadow host/root
-                    // elements.
+                    // initially specified. Values stored in variableStore will
+                    // be used to transform values in shadow host/root elements.
                     cssVars(settings);
                 }
             });
@@ -374,7 +373,7 @@ function cssVars(options = {}) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
                                 const shadowSettings = mergeDeep(settings, {
                                     rootElement: elm.shadowRoot,
-                                    variables  : variablePersistStore
+                                    variables  : variableStore.persist
                                 });
 
                                 cssVars(shadowSettings);
@@ -382,7 +381,7 @@ function cssVars(options = {}) {
                         }
                     }
 
-                    settings.onComplete(cssText, styleNode, variablePersistStore);
+                    settings.onComplete(cssText, styleNode, settings.updateDOM ? variableStore.persist : variableStore.noPersist);
                 }
             });
         }

@@ -751,7 +751,10 @@ var VAR_PROP_IDENTIFIER = "--";
 
 var VAR_FUNC_IDENTIFIER = "var";
 
-var variablePersistStore = {};
+var variableStore = {
+    persist: {},
+    noPersist: {}
+};
 
 function transformVars(cssText) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -764,7 +767,7 @@ function transformVars(cssText) {
         onWarning: function onWarning() {}
     };
     var settings = mergeDeep(defaults, options);
-    var map = settings.persist ? variablePersistStore : JSON.parse(JSON.stringify(variablePersistStore));
+    var map = settings.persist ? variableStore.persist : variableStore.noPersist = JSON.parse(JSON.stringify(variableStore.persist));
     var cssTree = cssParse(cssText);
     if (settings.onlyVars) {
         cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
@@ -1202,13 +1205,13 @@ var isShadowDOMReady = false;
                             if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
                                 var shadowSettings = mergeDeep(settings, {
                                     rootElement: elm.shadowRoot,
-                                    variables: variablePersistStore
+                                    variables: variableStore.persist
                                 });
                                 cssVars(shadowSettings);
                             }
                         }
                     }
-                    settings.onComplete(cssText, styleNode, variablePersistStore);
+                    settings.onComplete(cssText, styleNode, settings.updateDOM ? variableStore.persist : variableStore.noPersist);
                 }
             });
         }
