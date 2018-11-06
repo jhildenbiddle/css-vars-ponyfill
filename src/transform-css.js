@@ -18,8 +18,12 @@ import walkCss      from './walk-css';
 const VAR_PROP_IDENTIFIER = '--';
 const VAR_FUNC_IDENTIFIER = 'var';
 const variableStore       = {
-    persist: {},
-    noPersist: {}
+    // Persisted custom property values (matches modern browsers)
+    dom : {},
+    // Non-persisted custom properties values
+    temp: {},
+    // Persisted custom property values passed using options.variables
+    user: {}
 };
 
 
@@ -61,7 +65,7 @@ function transformVars(cssText, options = {}) {
         onWarning() {}
     };
     const settings = mergeDeep(defaults, options);
-    const map      = settings.persist ? variableStore.persist : variableStore.noPersist = JSON.parse(JSON.stringify(variableStore.persist));
+    const map      = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText);
@@ -102,6 +106,11 @@ function transformVars(cssText, options = {}) {
         }
     });
 
+    // Restore persisted user values
+    Object.keys(variableStore.user).forEach(key => {
+        map[key] = variableStore.user[key];
+    });
+
     // Handle variables defined in settings.variables
     if (Object.keys(settings.variables).length) {
         const newRule = {
@@ -114,6 +123,11 @@ function transformVars(cssText, options = {}) {
             // Convert all property names to leading '--' style
             const prop  = `--${key.replace(/^-+/, '')}`;
             const value = settings.variables[key];
+
+            // Persist settings.variables values
+            if (settings.persist) {
+                variableStore.user[prop] = value;
+            }
 
             // Update map value with settings.variables value
             if (map[prop] !== value) {

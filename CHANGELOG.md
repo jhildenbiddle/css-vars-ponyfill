@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.12.2
+
+*2018-11-06*
+
+- Updated `options.onComplete` callback to return a clone instead of a reference
+  to the internal variable storage object as the `cssVariables` argument.
+
+- Fixed bug that prevented `options.variables` values from persisting properly
+  (regression introduced in 1.11.0).
+
 ## 1.12.1
 
 *2018-11-04*

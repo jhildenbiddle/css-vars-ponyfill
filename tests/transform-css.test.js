@@ -1,8 +1,9 @@
 // Dependencies
 // =============================================================================
-import loadFixtures from './helpers/load-fixtures';
-import transformCss from '../src/transform-css';
-import { expect }   from 'chai';
+import loadFixtures       from './helpers/load-fixtures';
+import resetVariableStore from './helpers/reset-variablestore';
+import transformCss       from '../src/transform-css';
+import { expect }         from 'chai';
 
 
 // Suite
@@ -20,6 +21,10 @@ describe('transform-css', function() {
                 'test-stringify.css'
             ]
         }, fixtures);
+    });
+
+    beforeEach(function() {
+        resetVariableStore();
     });
 
     // Tests: Transforms
@@ -290,6 +295,57 @@ describe('transform-css', function() {
                 `.replace(/\n|\s/g, '').replace(/@media/, '@media ');
 
                 expect(cssOut).to.equal(expectCss);
+            });
+        });
+
+        describe('persist', function() {
+            it('false (default)', function() {
+                const cssIn = `
+                    :root { --color: red; }
+                    p { color: var(--color); }
+                `;
+                const cssOut    = [
+                    transformCss(cssIn, { persist: false }).replace(/\n/g, ''),
+                    transformCss(cssIn, { persist: false, variables: { 'color': 'green'} }).replace(/\n/g, ''),
+                    transformCss(cssIn, { persist: false }).replace(/\n/g, '')
+                ];
+                const expectCss = [
+                    'p{color:red;}',
+                    'p{color:green;}'
+                ];
+
+                expect(cssOut[0], 'Pass 1').to.equal(expectCss[0]);
+                expect(cssOut[1], 'Pass 2').to.equal(expectCss[1]);
+                expect(cssOut[2], 'Pass 3').to.equal(expectCss[0]);
+            });
+
+            it('true', function() {
+                const cssIn = `
+                    :root {
+                        --color1: red;
+                        --color2: red;
+                    }
+                    p.one {
+                        color: var(--color1);
+                    }
+                    p.two {
+                        color: var(--color2);
+                    }
+                `;
+                const cssOut    = [
+                    transformCss(cssIn, { persist: true }).replace(/\n/g, ''),
+                    transformCss(cssIn, { persist: true, variables: { 'color1': 'green'} }).replace(/\n/g, ''),
+                    transformCss(cssIn, { persist: true, variables: { 'color2': 'green'} }).replace(/\n/g, '')
+                ];
+                const expectCss = [
+                    'p.one{color:red;}p.two{color:red;}',
+                    'p.one{color:green;}p.two{color:red;}',
+                    'p.one{color:green;}p.two{color:green;}'
+                ];
+
+                expect(cssOut[0], 'Pass 1').to.equal(expectCss[0]);
+                expect(cssOut[1], 'Pass 2').to.equal(expectCss[1]);
+                expect(cssOut[2], 'Pass 3').to.equal(expectCss[2]);
             });
         });
 

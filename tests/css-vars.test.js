@@ -1,9 +1,10 @@
 // Dependencies
 // =============================================================================
-import chai       from 'chai';
-import createElms from 'create-elms';
-import cssVars    from '../src/index';
-import { expect } from 'chai';
+import chai               from 'chai';
+import createElms         from 'create-elms';
+import cssVars            from '../src/index';
+import resetVariableStore from './helpers/reset-variablestore';
+import { expect }         from 'chai';
 
 chai.use(require('chai-colors'));
 
@@ -75,6 +76,8 @@ describe('css-vars', function() {
         for (let i = 0; i < testNodes.length; i++) {
             testNodes[i].parentNode.removeChild(testNodes[i]);
         }
+
+        resetVariableStore();
     });
 
     // Tests: Stylesheets
@@ -199,9 +202,6 @@ describe('css-vars', function() {
                         updateDOM  : false,
                         onComplete(cssText, styleNode, cssVariables) {
                             expect(cssText).to.equal(expectCss);
-
-                            // Prevent errors on proceeding tests
-                            delete cssVariables['--test-component-background'];
                         }
                     });
                 });
@@ -766,9 +766,9 @@ describe('css-vars', function() {
             });
         });
 
-        it('triggers onComplete callback with proper arguments', function(done) {
-            const styleCss  = ':root { --color: red; } p { color: var(--color); }';
-            const expectCss = 'p{color:red;}';
+        it('triggers onComplete callback with proper arguments', function() {
+            const styleCss   = ':root { --color: red; } p { color: var(--color); }';
+            const expectCss  = 'p{color:red;}';
 
             createElmsWrap({ tag: 'style', text: styleCss });
 
@@ -777,19 +777,9 @@ describe('css-vars', function() {
                 onlyLegacy: false,
                 updateDOM : false,
                 onComplete(cssText, styleNode, cssVariables) {
-                    const expectVars = JSON.stringify(cssVariables);
-
                     expect(cssText).to.equal(expectCss);
-
-                    cssVars({
-                        include   : '[data-test]',
-                        onlyLegacy: false,
-                        updateDOM : false,
-                        onComplete(cssText, styleNode, cssVariables) {
-                            expect(JSON.stringify(cssVariables)).to.equal(expectVars);
-                            done();
-                        }
-                    });
+                    expect(cssVariables).to.have.property('--color');
+                    expect(cssVariables['--color']).to.equal('red');
                 }
             });
         });

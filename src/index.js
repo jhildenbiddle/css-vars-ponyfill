@@ -373,7 +373,7 @@ function cssVars(options = {}) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
                                 const shadowSettings = mergeDeep(settings, {
                                     rootElement: elm.shadowRoot,
-                                    variables  : variableStore.persist
+                                    variables  : variableStore.dom
                                 });
 
                                 cssVars(shadowSettings);
@@ -381,7 +381,7 @@ function cssVars(options = {}) {
                         }
                     }
 
-                    settings.onComplete(cssText, styleNode, settings.updateDOM ? variableStore.persist : variableStore.noPersist);
+                    settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)));
                 }
             });
         }

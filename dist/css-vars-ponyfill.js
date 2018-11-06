@@ -737,8 +737,9 @@
     var VAR_PROP_IDENTIFIER = "--";
     var VAR_FUNC_IDENTIFIER = "var";
     var variableStore = {
-        persist: {},
-        noPersist: {}
+        dom: {},
+        temp: {},
+        user: {}
     };
     function transformVars(cssText) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -751,7 +752,7 @@
             onWarning: function onWarning() {}
         };
         var settings = mergeDeep(defaults, options);
-        var map = settings.persist ? variableStore.persist : variableStore.noPersist = JSON.parse(JSON.stringify(variableStore.persist));
+        var map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
         var cssTree = cssParse(cssText);
         if (settings.onlyVars) {
             cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
@@ -778,6 +779,9 @@
                 }
             }
         });
+        Object.keys(variableStore.user).forEach(function(key) {
+            map[key] = variableStore.user[key];
+        });
         if (Object.keys(settings.variables).length) {
             var newRule = {
                 declarations: [],
@@ -787,6 +791,9 @@
             Object.keys(settings.variables).forEach(function(key) {
                 var prop = "--".concat(key.replace(/^-+/, ""));
                 var value = settings.variables[key];
+                if (settings.persist) {
+                    variableStore.user[prop] = value;
+                }
                 if (map[prop] !== value) {
                     map[prop] = value;
                     newRule.declarations.push({
@@ -1178,13 +1185,13 @@
                                 if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
                                     var shadowSettings = mergeDeep(settings, {
                                         rootElement: elm.shadowRoot,
-                                        variables: variableStore.persist
+                                        variables: variableStore.dom
                                     });
                                     cssVars(shadowSettings);
                                 }
                             }
                         }
-                        settings.onComplete(cssText, styleNode, settings.updateDOM ? variableStore.persist : variableStore.noPersist);
+                        settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)));
                     }
                 });
             }
