@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.13.0
+
+*2018-11-09*
+
+- Added ability to change the ponyfill settings used by the `options.watch`
+  MutationObserver by setting `options.watch` set to `true`.
+
+- Added ability to disconnect the ponyfill MutationObserver by setting
+  `options.watch` to `false`.
+
 ## 1.12.2
 
 *2018-11-06*

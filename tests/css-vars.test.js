@@ -614,8 +614,20 @@ describe('css-vars', function() {
 
         if ('MutationObserver' in window) {
             describe('watch', function() {
-                it('true', function(done) {
-                    const styleCss  = ':root{--color:red;}body{color:var(--color);}';
+                it('true - create MutationObserver', function(done) {
+                    const styleCss  = [
+                        ':root{--color:red;}body{color:var(--color);}',
+                        ':root{--color:green;}'
+                    ];
+
+                    createElmsWrap({ tag: 'style', text: styleCss[0] });
+
+                    cssVars({
+                        include   : '[data-test]',
+                        onlyLegacy: false
+                    });
+
+                    expect(getComputedStyle(document.body).color).to.be.colored('red');
 
                     cssVars({
                         include   : '[data-test]',
@@ -623,11 +635,46 @@ describe('css-vars', function() {
                         watch     : true
                     });
 
-                    createElmsWrap({ tag: 'style', text: styleCss });
+                    createElmsWrap({ tag: 'style', text: styleCss[1] });
+
+                    setTimeout(function() {
+                        expect(getComputedStyle(document.body).color).to.be.colored('green');
+                        done();
+                    }, 100);
+                });
+
+                it('false - disconnect MutationObserver', function(done) {
+                    const styleCss  = [
+                        ':root{--color:red;}body{color:var(--color);}',
+                        ':root{--color:green;}'
+                    ];
+
+                    expect(getComputedStyle(document.body).color).to.not.be.colored('red');
+
+                    cssVars({
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        watch     : true
+                    });
+
+                    createElmsWrap({ tag: 'style', text: styleCss[0] });
 
                     setTimeout(function() {
                         expect(getComputedStyle(document.body).color).to.be.colored('red');
-                        done();
+
+                        cssVars({
+                            include   : '[data-test]',
+                            onlyLegacy: false,
+                            watch     : false
+                        });
+
+                        createElmsWrap({ tag: 'style', text: styleCss[1] });
+
+                        setTimeout(function() {
+                            expect(getComputedStyle(document.body).color).to.be.colored('red');
+
+                            done();
+                        }, 100);
                     }, 100);
                 });
             });

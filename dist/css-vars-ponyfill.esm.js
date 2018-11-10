@@ -962,7 +962,7 @@ var defaults = {
     updateDOM: true,
     updateURLs: true,
     variables: {},
-    watch: false,
+    watch: null,
     onBeforeSend: function onBeforeSend() {},
     onSuccess: function onSuccess() {},
     onWarning: function onWarning() {},
@@ -1132,6 +1132,8 @@ var isShadowDOMReady = false;
         } else {
             if (settings.watch) {
                 addMutationObserver(settings, styleNodeId);
+            } else if (settings.watch === false && cssVarsObserver) {
+                cssVarsObserver.disconnect();
             }
             getCssData({
                 rootElement: settings.rootElement,
@@ -1231,43 +1233,48 @@ var isShadowDOMReady = false;
 }
 
 function addMutationObserver(settings, ignoreId) {
-    if (window.MutationObserver && !cssVarsObserver) {
-        var isLink = function isLink(node) {
-            return node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
-        };
-        var isStyle = function isStyle(node) {
-            return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
-        };
-        var debounceTimer = null;
-        cssVarsObserver = new MutationObserver(function(mutations) {
-            var isUpdateMutation = false;
-            mutations.forEach(function(mutation) {
-                if (mutation.type === "attributes") {
-                    isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
-                } else if (mutation.type === "childList") {
-                    var addedNodes = Array.apply(null, mutation.addedNodes);
-                    var removedNodes = Array.apply(null, mutation.removedNodes);
-                    isUpdateMutation = [].concat(addedNodes, removedNodes).some(function(node) {
-                        var isValidLink = isLink(node) && !node.disabled;
-                        var isValidStyle = isStyle(node) && !node.disabled && regex.cssVars.test(node.textContent);
-                        return isValidLink || isValidStyle;
-                    });
-                }
-                if (isUpdateMutation) {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(function() {
-                        cssVars(settings);
-                    }, 1);
-                }
-            });
-        });
-        cssVarsObserver.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: [ "disabled", "href" ],
-            childList: true,
-            subtree: true
-        });
+    if (!window.MutationObserver) {
+        return;
     }
+    var isLink = function isLink(node) {
+        return node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
+    };
+    var isStyle = function isStyle(node) {
+        return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
+    };
+    var debounceTimer = null;
+    if (cssVarsObserver) {
+        cssVarsObserver.disconnect();
+    }
+    settings.watch = defaults.watch;
+    cssVarsObserver = new MutationObserver(function(mutations) {
+        var isUpdateMutation = false;
+        mutations.forEach(function(mutation) {
+            if (mutation.type === "attributes") {
+                isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
+            } else if (mutation.type === "childList") {
+                var addedNodes = Array.apply(null, mutation.addedNodes);
+                var removedNodes = Array.apply(null, mutation.removedNodes);
+                isUpdateMutation = [].concat(addedNodes, removedNodes).some(function(node) {
+                    var isValidLink = isLink(node) && !node.disabled;
+                    var isValidStyle = isStyle(node) && !node.disabled && regex.cssVars.test(node.textContent);
+                    return isValidLink || isValidStyle;
+                });
+            }
+            if (isUpdateMutation) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function() {
+                    cssVars(settings);
+                }, 1);
+            }
+        });
+    });
+    cssVarsObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: [ "disabled", "href" ],
+        childList: true,
+        subtree: true
+    });
 }
 
 function fixKeyframes(rootElement) {
