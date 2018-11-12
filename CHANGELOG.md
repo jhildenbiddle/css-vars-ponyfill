@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.14.0
+
+*2018-11-11*
+
+- Updated `get-css-data` dependency and added test for invalid `<link>` CSS text
+  (test for HTML returned from stylesheet 404 redirect).
+
 ## 1.13.0
 
 *2018-11-09*

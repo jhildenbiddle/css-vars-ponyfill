@@ -813,6 +813,31 @@ describe('css-vars', function() {
             });
         });
 
+        it('triggers onError callback on invalid <link> CSS', function(done) {
+            const linkUrl  = '/base/tests/fixtures/404.html';
+            const styleElm = createElmsWrap({ tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } })[0];
+
+            let onErrorCount = 0;
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true, // remove to display console error messages
+                onError(errorMsg, node, xhr, url) {
+                    onErrorCount++;
+
+                    expect(errorMsg.toLowerCase().indexOf('error') > -1, 'onError message').to.be.true;
+                    expect(node, 'onError nodes').to.equal(styleElm);
+                    expect(xhr.status, 'onError XHR').to.equal(200);
+                    expect(url, 'onError URL').to.include(linkUrl);
+                },
+                onComplete(cssText, styleNode, cssVariables) {
+                    expect(onErrorCount, 'onError count').to.equal(1);
+                    done();
+                }
+            });
+        });
+
         it('triggers onComplete callback with proper arguments', function() {
             const styleCss   = ':root { --color: red; } p { color: var(--color); }';
             const expectCss  = 'p{color:red;}';
