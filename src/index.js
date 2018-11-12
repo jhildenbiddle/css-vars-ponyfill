@@ -467,8 +467,10 @@ function addMutationObserver(settings, ignoreId) {
 }
 
 /**
- * Fixes issue keyframe properties set using CSS custom property not being
+ * Fixes issue with keyframe properties set using CSS custom property not being
  * applied properly in some legacy (IE) and modern (Safari) browsers.
+ *
+ * @param {object} rootElement
  */
 function fixKeyframes(rootElement) {
     const animationNameProp = [
@@ -508,9 +510,9 @@ function fixKeyframes(rootElement) {
 /**
  * Returns fully qualified URL from relative URL and (optional) base URL
  *
- * @param {any} url
- * @param {any} [base=location.href]
- * @returns
+ * @param   {string} url
+ * @param   {string} [base=location.href]
+ * @returns {string}
  */
 function getFullUrl(url, base = location.href) {
     const d = document.implementation.createHTMLDocument('');
