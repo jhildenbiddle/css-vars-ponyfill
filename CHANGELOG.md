@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.15.0
+
+*2018-11-12*
+
+- Updated `options.onSuccess` callback to better handle falsey return values
+  (e.g. `false`, `null`, `0`, `""`).
+
 ## 1.14.0
 
 *2018-11-11*

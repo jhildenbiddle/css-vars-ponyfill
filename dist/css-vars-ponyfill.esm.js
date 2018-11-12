@@ -26,7 +26,7 @@ function _nonIterableSpread() {
 
 /*!
  * get-css-data
- * v1.5.0
+ * v1.6.0
  * https://github.com/jhildenbiddle/get-css-data
  * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
@@ -199,7 +199,7 @@ function _nonIterableSpread() {
     }
     function handleSuccess(cssText, cssIndex, node, sourceUrl) {
         var returnVal = settings.onSuccess(cssText, node, sourceUrl);
-        cssText = returnVal === false ? "" : returnVal || cssText;
+        cssText = returnVal !== undefined && Boolean(returnVal) === false ? "" : returnVal || cssText;
         resolveImports(cssText, node, sourceUrl, function(resolvedCssText, errorData) {
             if (cssArray[cssIndex] === null) {
                 errorData.forEach(function(data) {
@@ -1152,7 +1152,7 @@ var isShadowDOMReady = false;
                 onBeforeSend: settings.onBeforeSend,
                 onSuccess: function onSuccess(cssText, node, url) {
                     var returnVal = settings.onSuccess(cssText, node, url);
-                    cssText = returnVal === false ? "" : returnVal || cssText;
+                    cssText = returnVal !== undefined && Boolean(returnVal) === false ? "" : returnVal || cssText;
                     if (settings.updateURLs) {
                         var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
                         cssUrls.forEach(function(cssUrl) {

@@ -78,7 +78,7 @@
     "eslint": "^5.9.0",
     "eslint-plugin-chai-expect": "^2.0.1",
     "eslint-plugin-mocha": "^5.2.0",
-    "get-css-data": "^1.5.0",
+    "get-css-data": "^1.6.0",
     "karma": "^3.1.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.2.0",

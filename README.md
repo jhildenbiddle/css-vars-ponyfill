@@ -725,7 +725,7 @@ cssVars({
   1. **node**: The source node `object` reference
   1. **url**: The source URL `string` (`<link>` href, `@import` url, or page url for `<style>` data)
 
-Callback after CSS data has been collected from each node and *before* CSS custom properties have been transformed. Allows modifying the CSS data before it is transformed by returning any `string` value (or `false` to skip).
+Callback after CSS data has been collected from each node. Allows modifying the CSS data before it is added to the final output by returning any `string` value or skipping the CSS data by returning `false`, `null`, or an empty string (`""`).
 
 **Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
 
