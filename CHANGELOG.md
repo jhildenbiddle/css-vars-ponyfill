@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.15.1
+
+*2018-11-14*
+
+- Fixed bug that prevented IE10 from fetching `<link>` CSS data from external
+  domains.
+
 ## 1.15.0
 
 *2018-11-12*
