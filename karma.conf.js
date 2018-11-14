@@ -7,7 +7,6 @@ const saucelabs = require('./saucelabs.config');
 // Variables
 // =============================================================================
 const files = {
-    serve: './tests/fixtures/**/*.*',
     test : './tests/**/*.test.js'
 };
 
@@ -21,12 +20,12 @@ const localConfig = {
         'ChromeHeadless'
     ],
     files: [
+        // Included
         'node_modules/@babel/polyfill/dist/polyfill.js',
-        'node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js',
         files.test,
-        // Serve files for accessing in tests via AJAX
-        // Ex: /base/[files.serve]/path/to/file
-        { pattern: files.serve, included: false, served: true, watched: true }
+        // Served only
+        // NOTE: Access in test files by prepending /base/ to path)
+        { pattern: './tests/fixtures/**/*.*', included: false, served: true, watched: true }
     ],
     preprocessors: {
         [files.test]: ['eslint', 'webpack', 'sourcemap']
@@ -120,22 +119,18 @@ const remoteConfig = Object.assign({}, localConfig, {
             platform   : 'Windows 10',
             version    : '11.0'
         },
-
-        // IE < 11 test disabled due to web component incompatibility
-        // ----------------------------------------------------------
-        // sl_ie_10: {
-        //     base       : 'SauceLabs',
-        //     browserName: 'Internet Explorer',
-        //     platform   : 'Windows 8',
-        //     version    : '10.0'
-        // },
-        // sl_ie_9: {
-        //     base       : 'SauceLabs',
-        //     browserName: 'Internet Explorer',
-        //     platform   : 'Windows 7',
-        //     version    : '9.0'
-        // },
-
+        sl_ie_10: {
+            base       : 'SauceLabs',
+            browserName: 'Internet Explorer',
+            platform   : 'Windows 8',
+            version    : '10.0'
+        },
+        sl_ie_9: {
+            base       : 'SauceLabs',
+            browserName: 'Internet Explorer',
+            platform   : 'Windows 7',
+            version    : '9.0'
+        },
         sl_safari: {
             base       : 'SauceLabs',
             browserName: 'Safari',

@@ -30,45 +30,29 @@ function createElmsWrap(elmData, sharedOptions = {}) {
 }
 
 
-// Component
-// =============================================================================
-class TestComponent extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-    }
-
-    connectedCallback() {
-        this.shadowRoot.innerHTML = `
-            <style data-test-shadow>
-                .test-component {
-                    background: red;
-                    background: var(--test-component-background, red);
-                    color: white;
-                }
-            </style>
-
-            <p class="test-component">${this.getAttribute('data-text')}</p>
-        `;
-    }
-}
-
-if ('customElements' in window) {
-    window.customElements.define('test-component', TestComponent);
-
-    // createElms({ tag: 'style', text: ':root { --test-component-background: green; }', appendTo: 'head' });
-    // createElms([
-    //     { tag: 'test-component', attr: { 'data-text': 'Custom element' }},
-    //     { tag: 'p', text: 'Standard element' }
-    // ], { appendTo: 'body' });
-}
-
-
 // Suite
 // =============================================================================
 describe('css-vars', function() {
     // Hooks
     // -------------------------------------------------------------------------
+    // Conditionally include web component+polyfill to avoid errors in IE < 11
+    before(function() {
+        const hasWebComponentSupport = () => 'customElements' in window;
+        const isNotIELessThan11      = navigator.appVersion.indexOf('MSIE') === -1;
+
+        if (!hasWebComponentSupport() && isNotIELessThan11) {
+            console.log('*** Injected: Web Component Polyfill ***');
+
+            require('@webcomponents/webcomponentsjs/webcomponents-bundle.js');
+        }
+
+        if (hasWebComponentSupport()) {
+            console.log('*** Injected: Web Component ***');
+
+            require('./helpers/inject-test-component.js')();
+        }
+    });
+
     // Remove <link> and <style> elements added for each test
     beforeEach(function() {
         const testNodes = document.querySelectorAll('[data-test]');
