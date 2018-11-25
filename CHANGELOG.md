@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.15.2
+
+*2018-11-24*
+
+- Updated README with `options.onlyLegacy` examples.
+
 ## 1.15.1
 
 *2018-11-14*

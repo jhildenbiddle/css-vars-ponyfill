@@ -382,6 +382,16 @@ When `true`, the ponyfill will only transform custom properties, generate CSS, a
 cssVars({
   onlyLegacy: true // default
 });
+
+cssVars({
+  // Treat all browsers as legacy
+  onlyLegacy: false
+});
+
+cssVars({
+  // Treat Edge 15/16 as legacy
+  onlyLegacy: !(/Edge\/1[56]\./i.test(navigator.userAgent))
+});
 ```
 
 ### options.onlyVars
