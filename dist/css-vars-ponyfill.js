@@ -904,7 +904,10 @@
     function resolveValue(value, map) {
         var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
         var __recursiveFallback = arguments.length > 3 ? arguments[3] : undefined;
-        var varFuncData = balancedMatch("var(", ")", value);
+        if (value.indexOf("var(") === -1) {
+            return value;
+        }
+        var valueData = balancedMatch("(", ")", value);
         var warningIntro = "CSS transform warning:";
         function resolveFunc(value) {
             var name = value.split(",")[0];
@@ -921,16 +924,21 @@
                 return "var(".concat(unresolvedFallback, ")");
             }
         }
-        if (!varFuncData) {
+        if (!valueData) {
             if (value.indexOf("var(") !== -1) {
                 settings.onWarning("".concat(warningIntro, ' missing closing ")" in the value "').concat(value, '"'));
             }
             return value;
-        } else if (varFuncData.body.trim().length === 0) {
-            settings.onWarning("".concat(warningIntro, " var() must contain a non-whitespace string"));
-            return value;
+        } else if (valueData.pre.slice(-3) === "var") {
+            var isEmptyVarFunc = valueData.body.trim().length === 0;
+            if (isEmptyVarFunc) {
+                settings.onWarning("".concat(warningIntro, " var() must contain a non-whitespace string"));
+                return value;
+            } else {
+                return valueData.pre.slice(0, -3) + resolveFunc(valueData.body) + resolveValue(valueData.post, map, settings);
+            }
         } else {
-            return varFuncData.pre + resolveFunc(varFuncData.body) + resolveValue(varFuncData.post, map, settings);
+            return valueData.pre + "(".concat(resolveValue(valueData.body, map, settings), ")") + resolveValue(valueData.post, map, settings);
         }
     }
     var name = "css-vars-ponyfill";

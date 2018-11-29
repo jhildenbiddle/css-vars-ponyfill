@@ -126,6 +126,17 @@ describe('transform-css', function() {
             expect(cssOut).to.equal(expectCss);
         });
 
+        it('transforms variable function with color function fallback', function() {
+            const cssIn     = `
+                :root { --color: rgba(0, 0, 0, 0.5); }
+                p { color: var(--color, rgba(255, 255, 255, 0.5)); }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{color:rgba(0, 0, 0, 0.5);}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
         it('transforms variable function with nested fallbacks', function() {
             const cssIn     = 'p { color: var(--fail1, var(--fail2, red)); }';
             const cssOut    = transformCss(cssIn);

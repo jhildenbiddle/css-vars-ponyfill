@@ -312,7 +312,11 @@ function fixNestedCalc(rules) {
  *   // => '10px'
  */
 function resolveValue(value, map, settings = {}, __recursiveFallback) {
-    const varFuncData  = balanced('var(', ')', value);
+    if (value.indexOf('var(') === -1) {
+        return value;
+    }
+
+    const valueData    = balanced('(', ')', value);
     const warningIntro = 'CSS transform warning:';
 
     /**
@@ -348,23 +352,37 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
         }
     }
 
-    if (!varFuncData) {
+    // No balanced brace data
+    if (!valueData) {
         if (value.indexOf('var(') !== -1) {
             settings.onWarning(`${warningIntro} missing closing ")" in the value "${value}"`);
         }
 
         return value;
     }
-    else if (varFuncData.body.trim().length === 0) {
-        settings.onWarning(`${warningIntro} var() must contain a non-whitespace string`);
+    // Balanced brace data is var() function
+    else if (valueData.pre.slice(-3) === 'var') {
+        const isEmptyVarFunc = valueData.body.trim().length === 0;
 
-        return value;
+        if (isEmptyVarFunc) {
+            settings.onWarning(`${warningIntro} var() must contain a non-whitespace string`);
+
+            return value;
+        }
+        else {
+            return (
+                valueData.pre.slice(0,-3)
+                + resolveFunc(valueData.body)
+                + resolveValue(valueData.post, map, settings)
+            );
+        }
     }
+    // Balanced brace data is NOT var() function
     else {
         return (
-            varFuncData.pre
-            + resolveFunc(varFuncData.body)
-            + resolveValue(varFuncData.post, map, settings)
+            valueData.pre
+            + `(${resolveValue(valueData.body, map, settings)})`
+            + resolveValue(valueData.post, map, settings)
         );
     }
 }

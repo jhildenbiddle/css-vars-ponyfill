@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.15.3
+
+*2018-11-28*
+
+- Fix bug that incorrectly transformed variable functions that resolve to values
+  containing parenthesis with fallback values that also contain parenthesis
+  (#42).
+
 ## 1.15.2
 
 *2018-11-24*
