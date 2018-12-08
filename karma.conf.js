@@ -110,7 +110,7 @@ const remoteConfig = Object.assign({}, localConfig, {
             base       : 'SauceLabs',
             browserName: 'MicrosoftEdge',
             platform   : 'Windows 10',
-            version    : '13.10586'
+            version    : '14.14393'
         },
         sl_firefox: {
             base       : 'SauceLabs',
