@@ -60,8 +60,7 @@
     "test": "rimraf coverage/* && karma start",
     "test-watch": "npm test -- --auto-watch --no-single-run",
     "test-remote": "npm test -- --remote",
-    "preversion": "npm test",
-    "version": "npm run build && git add -A dist"
+    "version": "npm run build && npm test && git add -A dist"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
