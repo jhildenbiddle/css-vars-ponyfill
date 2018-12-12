@@ -3,6 +3,8 @@ language: node_js
 node_js: "stable"
 
 addons:
+  hosts:
+    - travis.dev
   chrome: stable
 
 notifications:

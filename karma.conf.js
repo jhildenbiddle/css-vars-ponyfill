@@ -87,10 +87,9 @@ const localConfig = {
     singleRun  : true,
     concurrency: Infinity,
     // Avoid DISCONNECTED messages
-    browserDisconnectTimeout  : 10000,     // default 2000
-    browserDisconnectTolerance: 1,         // default 0
-    browserNoActivityTimeout  : 4*60*1000, //default 10000
-    captureTimeout            : 4*60*1000  //default 60000
+    browserDisconnectTimeout  : 10000, // default 2000
+    browserDisconnectTolerance: 1,     // default 0
+    browserNoActivityTimeout  : 30000  // default 10000
 };
 
 
@@ -149,9 +148,11 @@ const remoteConfig = Object.assign({}, localConfig, {
     },
     // SauceLab settings
     sauceLabs: {
-        username : saucelabs.username || process.env.SAUCE_USERNAME,
-        accessKey: saucelabs.accessKey || process.env.SAUCE_ACCESS_KEY,
-        testName : `${pkg.name} (karma)`
+        username         : saucelabs.username || process.env.SAUCE_USERNAME,
+        accessKey        : saucelabs.accessKey || process.env.SAUCE_ACCESS_KEY,
+        testName         : `${pkg.name} (karma)`,
+        recordScreenshots: false,
+        recordVideo      : false
     }
 });
 
@@ -173,6 +174,13 @@ module.exports = function(config) {
 
         // Remove text-summary reporter
         testConfig.coverageReporter.reporters = testConfig.coverageReporter.reporters.filter(obj => obj.type !== 'text-summary');
+
+        // Use custom hostname to prevent Safari disconnects
+        // https://support.saucelabs.com/hc/en-us/articles/115010079868-Issues-with-Safari-and-Karma-Test-Runner
+        testConfig.hostname = 'travis.dev';
+
+        // Disable logs to prevent Edge/Safari disconnects
+        testConfig.logLevel = config.LOG_ERROR;
     }
     else {
         // eslint-disable-next-line
@@ -181,9 +189,10 @@ module.exports = function(config) {
             `KARMA: localhost:${testConfig.port}/debug.html\n`,
             '============================================================\n'
         ].join(''));
+
+        // Logging: LOG_DISABLE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG
+        testConfig.logLevel = config.LOG_INFO;
     }
 
-    // Logging: LOG_DISABLE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG
-    testConfig.logLevel = config.LOG_WARN;
     config.set(testConfig);
 };
