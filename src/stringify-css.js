@@ -38,7 +38,7 @@ function stringifyCss(tree, delim = '', cb) {
         host(node) {
             return '@host' + '{' + visit(node.rules) + '}';
         },
-        import(node) {
+        'import'(node) {
             // FIXED
             return '@import ' + node.name + ';';
         },
