@@ -37,7 +37,7 @@ const variableStore       = {
  * @param {object}   [options] Options object
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
- * @param {boolean}  [options.onlyVars=true] Remove declarations that do not
+ * @param {boolean}  [options.onlyVars=false] Remove declarations that do not
  *                   contain a CSS variable from the return value. Note that
  *                   @font-face and @keyframe rules require all declarations to
  *                   be returned if a CSS variable is used.
@@ -58,7 +58,7 @@ const variableStore       = {
 function transformVars(cssText, options = {}) {
     const defaults = {
         fixNestedCalc: true,
-        onlyVars     : true,
+        onlyVars     : false,
         persist      : false,
         preserve     : false,
         variables    : {},
@@ -68,12 +68,9 @@ function transformVars(cssText, options = {}) {
     const map      = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
 
     // Convert cssText to AST (this could throw errors)
-    const cssTree = parseCss(cssText);
-
-    // Remove non-vars
-    if (settings.onlyVars) {
-        cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
-    }
+    const cssTree = parseCss(cssText, {
+        onlyVars: settings.onlyVars
+    });
 
     // Define variables
     cssTree.stylesheet.rules.forEach(function(rule) {
@@ -200,60 +197,6 @@ function transformVars(cssText, options = {}) {
 
 // Functions (Private)
 // =============================================================================
-/**
- * Filters rules recursively, retaining only declarations that contain either a
- * CSS variable definition (property) or function (value). Maintains all
- * declarations for @font-face and @keyframes rules that contain a CSS
- * definition or function.
- *
- * @param {array} rules
- * @returns {array}
- */
-function filterVars(rules) {
-    return rules.filter(rule => {
-        // Rule, @font-face, @host, @page
-        if (rule.declarations) {
-            const declArray = rule.declarations.filter(d => {
-                const hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                const hasVarVal  = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + '(') > -1;
-
-                return hasVarProp || hasVarVal;
-            });
-
-            // For most rule types the filtered declarations should be applied.
-            // @font-face declaratons are unique and require all declarations to
-            // be retained if any declaration contains a CSS variable definition
-            // or value.
-            if (rule.type !== 'font-face') {
-                rule.declarations = declArray;
-            }
-
-            return Boolean(declArray.length);
-        }
-        // @keyframes
-        else if (rule.keyframes) {
-            // @keyframe rules require all declarations to be retained if any
-            // declaration contains a CSS variable definition or value.
-            return Boolean(rule.keyframes.filter(k =>
-                Boolean(k.declarations.filter(d => {
-                    const hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                    const hasVarVal  = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + '(') > -1;
-
-                    return hasVarProp || hasVarVal;
-                }).length)
-            ).length);
-        }
-        // @document, @media, @supports
-        else if (rule.rules) {
-            rule.rules = filterVars(rule.rules).filter(r => r.declarations && r.declarations.length);
-
-            return Boolean(rule.rules.length);
-        }
-
-        return true;
-    });
-}
-
 /**
  * Removes nested calc keywords for legacy browser compatibility.
  * Example: calc(1 + calc(2 + calc(3 + 3))) => calc(1 + (2 + (3 + 3)))

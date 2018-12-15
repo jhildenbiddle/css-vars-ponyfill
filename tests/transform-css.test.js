@@ -67,7 +67,7 @@ describe('transform-css', function() {
                 }
                 /* 21 */
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut    = transformCss(cssIn, { onlyVars: true });
             const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);

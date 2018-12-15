@@ -4,16 +4,34 @@
  */
 
 
+// Dependencies
+// =============================================================================
+import balanced  from 'balanced-match';
+import mergeDeep from './merge-deep';
+
+
 // Functions
 // =============================================================================
 /**
  * Parses CSS string and generates AST object
  *
- * @param {string} css The CSS stringt to be converted to an AST
+ * @param {string}  css The CSS stringt to be converted to an AST
+ * @param {object}  [options] Options object
+ * @param {boolean} [options.onlyVars=false] Remove declarations that do not
+ *                  contain a CSS variable from the return value. Note that
+ *                  @font-face and @keyframe rules require all declarations to
+ *                  be returned if a CSS variable is used.
+ * @param {boolean} [options.removeComments=false] Remove comments from returned
+ *                  object.
  * @returns {object}
  */
-function cssParse(css) {
-    const errors = [];
+function cssParse(css, options = {}) {
+    const defaults = {
+        onlyVars      : false,
+        removeComments: false
+    };
+    const settings = mergeDeep(defaults, options);
+    const errors   = [];
 
     // Errors
     // -------------------------------------------------------------------------
@@ -34,14 +52,16 @@ function cssParse(css) {
         }
     }
 
-    function whitespace() {
-        match(/^\s*/);
-    }
     function open() {
         return match(/^{\s*/);
     }
+
     function close() {
         return match(/^}/);
+    }
+
+    function whitespace() {
+        match(/^\s*/);
     }
 
     // Comments
@@ -49,51 +69,64 @@ function cssParse(css) {
     function comment() {
         whitespace();
 
-        if (css[0] !== '/' || css[1] !== '*') { return; }
+        if (css[0] !== '/' || css[1] !== '*') {
+            return;
+        }
 
         let i = 2;
-        while (css[i] && (css[i] !== '*' || css[i + 1] !== '/')) { i++; }
 
-        // FIXED
-        if (!css[i]) { return error('end of comment is missing'); }
+        while (css[i] && (css[i] !== '*' || css[i + 1] !== '/')) {
+            i++;
+        }
+
+        if (!css[i]) {
+            return error('end of comment is missing');
+        }
 
         const str = css.slice(2, i);
+
         css = css.slice(i + 2);
 
-        return { type: 'comment', comment: str };
+        return {
+            type   : 'comment',
+            comment: str
+        };
     }
+
     function comments() {
         const cmnts = [];
-
         let c;
 
         while ((c = comment())) {
             cmnts.push(c);
         }
-        return cmnts;
+
+        return settings.removeComments ? [] : cmnts;
     }
 
     // Selector
     // -------------------------------------------------------------------------
     function selector() {
         whitespace();
+
         while (css[0] === '}') {
             error('extra closing bracket');
         }
 
         const m = match(/^(("(?:\\"|[^"])*"|'(?:\\'|[^'])*'|[^{])+)/);
 
-        if (m)
-        { return m[0]
-            .trim() // remove all comments from selectors
-            .replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, '')
-            .replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, function(m) {
-                return m.replace(/,/g, '\u200C');
-            })
-            .split(/\s*(?![^(]*\)),\s*/)
-            .map(function(s) {
-                return s.replace(/\u200C/g, ',');
-            }); }
+        if (m) {
+            return m[0]
+                .trim() // remove all comments from selectors
+                .replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, '')
+                .replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, function(m) {
+                    return m.replace(/,/g, '\u200C');
+                })
+                .split(/\s*(?![^(]*\)),\s*/)
+                .map(function(s) {
+                    return s.replace(/\u200C/g, ',');
+                });
+        }
     }
 
     // Declarations
@@ -102,35 +135,47 @@ function cssParse(css) {
         match(/^([;\s]*)+/); // ignore empty declarations + whitespace
 
         const comment_regexp = /\/\*[^*]*\*+([^/*][^*]*\*+)*\//g;
-
         let prop = match(/^(\*?[-#/*\\\w]+(\[[0-9a-z_-]+\])?)\s*/);
-        if (!prop) { return; }
+
+        if (!prop) {
+            return;
+        }
 
         prop = prop[0].trim();
 
-        if (!match(/^:\s*/)) { return error('property missing \':\''); }
+        if (!match(/^:\s*/)) {
+            return error('property missing \':\'');
+        }
 
         // Quotes regex repeats verbatim inside and outside parentheses
         const val = match(/^((?:\/\*.*?\*\/|'(?:\\'|.)*?'|"(?:\\"|.)*?"|\((\s*'(?:\\'|.)*?'|"(?:\\"|.)*?"|[^)]*?)\s*\)|[^};])+)/);
-
-        const ret = { type: 'declaration', property: prop.replace(comment_regexp, ''), value: val ? val[0].replace(comment_regexp, '').trim() : '' };
+        const ret = {
+            type    : 'declaration',
+            property: prop.replace(comment_regexp, ''),
+            value   : val ? val[0].replace(comment_regexp, '').trim() : ''
+        };
 
         match(/^[;\s]*/);
 
         return ret;
     }
-    function declarations() {
-        if (!open()) { return error('missing \'{\''); }
 
-        let d,
-            decls = comments();
+    function declarations() {
+        if (!open()) {
+            return error('missing \'{\'');
+        }
+
+        let d;
+        let decls = comments();
 
         while ((d = declaration())) {
             decls.push(d);
             decls = decls.concat(comments());
         }
 
-        if (!close()) { return error('missing \'}\''); }
+        if (!close()) {
+            return error('missing \'}\'');
+        }
 
         return decls;
     }
@@ -141,7 +186,6 @@ function cssParse(css) {
         whitespace();
 
         const vals = [];
-
         let m;
 
         while ((m = match(/^((\d+\.\d+|\.\d+|\d+)%?|[a-z]+)\s*/))) {
@@ -149,32 +193,54 @@ function cssParse(css) {
             match(/^,\s*/);
         }
 
-        if (vals.length) { return { type: 'keyframe', values: vals, declarations: declarations() }; }
+        if (vals.length) {
+            return {
+                type        : 'keyframe',
+                values      : vals,
+                declarations: declarations()
+            };
+        }
     }
+
     function at_keyframes() {
         let m = match(/^@([-\w]+)?keyframes\s*/);
 
-        if (!m) { return; }
+        if (!m) {
+            return;
+        }
 
         const vendor = m[1];
 
         m = match(/^([-\w]+)\s*/);
-        if (!m) { return error('@keyframes missing name'); } // identifier
+
+        if (!m) {
+            return error('@keyframes missing name');
+        }
 
         const name = m[1];
 
-        if (!open()) { return error('@keyframes missing \'{\''); }
+        if (!open()) {
+            return error('@keyframes missing \'{\'');
+        }
 
-        let frame,
-            frames = comments();
+        let frame;
+        let frames = comments();
+
         while ((frame = keyframe())) {
             frames.push(frame);
             frames = frames.concat(comments());
         }
 
-        if (!close()) { return error('@keyframes missing \'}\''); }
+        if (!close()) {
+            return error('@keyframes missing \'}\'');
+        }
 
-        return { type: 'keyframes', name: name, vendor: vendor, keyframes: frames };
+        return {
+            type     : 'keyframes',
+            name     : name,
+            vendor   : vendor,
+            keyframes: frames
+        };
     }
 
     // @ Rules
@@ -208,7 +274,6 @@ function cssParse(css) {
     }
     function at_document() {
         const m = match(/^@([-\w]+)?document *([^{]+)/);
-        // FIXED
         if (m) { return { type: 'document', document: m[2].trim(), vendor: m[1] ? m[1].trim() : null, rules: rules() }; }
     }
     function at_x() {
@@ -217,36 +282,100 @@ function cssParse(css) {
     }
     function at_rule() {
         whitespace();
-        if (css[0] === '@') { return at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x(); }
+
+        if (css[0] === '@') {
+            const ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
+
+            if (settings.onlyVars) {
+                let hasVarFunc = false;
+
+                // @page, @font-face
+                if (ret.declarations) {
+                    hasVarFunc = ret.declarations.some(decl => /var\(/.test(decl.value));
+                }
+                // @keyframes, @media, @supports, etc.
+                else {
+                    const arr = ret.keyframes || ret.rules || [];
+
+                    hasVarFunc = arr.some(obj => (obj.declarations || []).some(decl => /var\(/.test(decl.value)));
+                }
+
+                return hasVarFunc ? ret : {};
+            }
+
+            return ret;
+        }
     }
 
     // Rules
     // -------------------------------------------------------------------------
     function rule() {
-        const sel = selector() || [];
-        if (!sel.length) { error('selector missing'); }
+        if (settings.onlyVars) {
+            const balancedMatch = balanced('{', '}', css);
 
-        const decls = declarations();
+            // When onlyVars:true, skip rulset if it does not contain a :root
+            // variable declaration of a variable function value
+            if (balancedMatch) {
+                const hasVarDecl = balancedMatch.pre.indexOf(':root') !== -1 && /--\S*\s*:/.test(balancedMatch.body);
+                const hasVarFunc = /var\(/.test(balancedMatch.body);
 
-        return { type: 'rule', selectors: sel, declarations: decls };
+                if (!hasVarDecl && !hasVarFunc) {
+                    css = css.slice(balancedMatch.end + 1);
+
+                    return {};
+                }
+            }
+        }
+
+        const sel   = selector() || [];
+        const decls = !settings.onlyVars ? declarations() : declarations().filter(decl => {
+            const hasVarDecl = sel.some(s => s.indexOf(':root') !== -1) && /^--\S/.test(decl.property);
+            const hasVarFunc = /var\(/.test(decl.value);
+
+            return hasVarDecl || hasVarFunc;
+        });
+
+        if (!sel.length) {
+            error('selector missing');
+        }
+
+        return {
+            type        : 'rule',
+            selectors   : sel,
+            declarations: decls
+        };
     }
-    function rules(core) {
-        if (!core && !open()) { return error('missing \'{\''); }
 
-        let node,
-            rules = comments();
+    function rules(core) {
+        if (!core && !open()) {
+            return error('missing \'{\'');
+        }
+
+        let node;
+        let rules = comments();
 
         while (css.length && (core || css[0] !== '}') && (node = at_rule() || rule())) {
-            rules.push(node);
+            if (node.type) {
+                rules.push(node);
+            }
+
             rules = rules.concat(comments());
         }
 
-        if (!core && !close()) { return error('missing \'}\''); }
+        if (!core && !close()) {
+            return error('missing \'}\'');
+        }
 
         return rules;
     }
 
-    return { type: 'stylesheet', stylesheet: { rules: rules(true), errors: errors } };
+    return {
+        type: 'stylesheet',
+        stylesheet: {
+            rules: rules(true),
+            errors: errors
+        }
+    };
 }
 
 

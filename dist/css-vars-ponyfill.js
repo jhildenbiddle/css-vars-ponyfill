@@ -393,6 +393,12 @@
         return result;
     }
     function cssParse(css) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var defaults = {
+            onlyVars: false,
+            removeComments: false
+        };
+        var settings = mergeDeep(defaults, options);
         var errors = [];
         function error(msg) {
             throw new Error("CSS parse error: ".concat(msg));
@@ -404,14 +410,14 @@
                 return m;
             }
         }
-        function whitespace() {
-            match(/^\s*/);
-        }
         function open() {
             return match(/^{\s*/);
         }
         function close() {
             return match(/^}/);
+        }
+        function whitespace() {
+            match(/^\s*/);
         }
         function comment() {
             whitespace();
@@ -438,7 +444,7 @@
             while (c = comment()) {
                 cmnts.push(c);
             }
-            return cmnts;
+            return settings.removeComments ? [] : cmnts;
         }
         function selector() {
             whitespace();
@@ -478,7 +484,8 @@
             if (!open()) {
                 return error("missing '{'");
             }
-            var d, decls = comments();
+            var d;
+            var decls = comments();
             while (d = declaration()) {
                 decls.push(d);
                 decls = decls.concat(comments());
@@ -518,7 +525,8 @@
             if (!open()) {
                 return error("@keyframes missing '{'");
             }
-            var frame, frames = comments();
+            var frame;
+            var frames = comments();
             while (frame = keyframe()) {
                 frames.push(frame);
                 frames = frames.concat(comments());
@@ -615,15 +623,49 @@
         function at_rule() {
             whitespace();
             if (css[0] === "@") {
-                return at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
+                var ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
+                if (settings.onlyVars) {
+                    var hasVarFunc = false;
+                    if (ret.declarations) {
+                        hasVarFunc = ret.declarations.some(function(decl) {
+                            return /var\(/.test(decl.value);
+                        });
+                    } else {
+                        var arr = ret.keyframes || ret.rules || [];
+                        hasVarFunc = arr.some(function(obj) {
+                            return (obj.declarations || []).some(function(decl) {
+                                return /var\(/.test(decl.value);
+                            });
+                        });
+                    }
+                    return hasVarFunc ? ret : {};
+                }
+                return ret;
             }
         }
         function rule() {
+            if (settings.onlyVars) {
+                var balancedMatch$$1 = balancedMatch("{", "}", css);
+                if (balancedMatch$$1) {
+                    var hasVarDecl = balancedMatch$$1.pre.indexOf(":root") !== -1 && /--\S*\s*:/.test(balancedMatch$$1.body);
+                    var hasVarFunc = /var\(/.test(balancedMatch$$1.body);
+                    if (!hasVarDecl && !hasVarFunc) {
+                        css = css.slice(balancedMatch$$1.end + 1);
+                        return {};
+                    }
+                }
+            }
             var sel = selector() || [];
+            var decls = !settings.onlyVars ? declarations() : declarations().filter(function(decl) {
+                var hasVarDecl = sel.some(function(s) {
+                    return s.indexOf(":root") !== -1;
+                }) && /^--\S/.test(decl.property);
+                var hasVarFunc = /var\(/.test(decl.value);
+                return hasVarDecl || hasVarFunc;
+            });
             if (!sel.length) {
                 error("selector missing");
             }
-            var decls = declarations();
             return {
                 type: "rule",
                 selectors: sel,
@@ -634,9 +676,12 @@
             if (!core && !open()) {
                 return error("missing '{'");
             }
-            var node, rules = comments();
+            var node;
+            var rules = comments();
             while (css.length && (core || css[0] !== "}") && (node = at_rule() || rule())) {
-                rules.push(node);
+                if (node.type) {
+                    rules.push(node);
+                }
                 rules = rules.concat(comments());
             }
             if (!core && !close()) {
@@ -755,7 +800,7 @@
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
             fixNestedCalc: true,
-            onlyVars: true,
+            onlyVars: false,
             persist: false,
             preserve: false,
             variables: {},
@@ -763,10 +808,9 @@
         };
         var settings = mergeDeep(defaults, options);
         var map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
-        var cssTree = cssParse(cssText);
-        if (settings.onlyVars) {
-            cssTree.stylesheet.rules = filterVars(cssTree.stylesheet.rules);
-        }
+        var cssTree = cssParse(cssText, {
+            onlyVars: settings.onlyVars
+        });
         cssTree.stylesheet.rules.forEach(function(rule) {
             var varNameIndices = [];
             if (rule.type !== "rule") {
@@ -849,35 +893,6 @@
             fixNestedCalc(cssTree.stylesheet.rules);
         }
         return stringifyCss(cssTree);
-    }
-    function filterVars(rules) {
-        return rules.filter(function(rule) {
-            if (rule.declarations) {
-                var declArray = rule.declarations.filter(function(d) {
-                    var hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                    var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") > -1;
-                    return hasVarProp || hasVarVal;
-                });
-                if (rule.type !== "font-face") {
-                    rule.declarations = declArray;
-                }
-                return Boolean(declArray.length);
-            } else if (rule.keyframes) {
-                return Boolean(rule.keyframes.filter(function(k) {
-                    return Boolean(k.declarations.filter(function(d) {
-                        var hasVarProp = d.property && d.property.indexOf(VAR_PROP_IDENTIFIER) === 0;
-                        var hasVarVal = d.value && d.value.indexOf(VAR_FUNC_IDENTIFIER + "(") > -1;
-                        return hasVarProp || hasVarVal;
-                    }).length);
-                }).length);
-            } else if (rule.rules) {
-                rule.rules = filterVars(rule.rules).filter(function(r) {
-                    return r.declarations && r.declarations.length;
-                });
-                return Boolean(rule.rules.length);
-            }
-            return true;
-        });
     }
     function fixNestedCalc(rules) {
         var reCalcExp = /(-[a-z]+-)?calc\(/;

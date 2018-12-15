@@ -20,7 +20,7 @@ const defaults = {
     // Options
     fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
-    onlyVars     : false, // cssVars, transformCss
+    onlyVars     : false, // cssVars, parseCSS
     preserve     : false, // transformCss
     shadowDOM    : false, // cssVars
     silent       : false, // cssVars
