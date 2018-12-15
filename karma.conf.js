@@ -175,12 +175,12 @@ module.exports = function(config) {
         // Remove text-summary reporter
         testConfig.coverageReporter.reporters = testConfig.coverageReporter.reporters.filter(obj => obj.type !== 'text-summary');
 
-        // Use custom hostname to prevent Safari disconnects
-        // https://support.saucelabs.com/hc/en-us/articles/115010079868-Issues-with-Safari-and-Karma-Test-Runner
-        testConfig.hostname = 'travis.dev';
-
-        // Disable logs to prevent Edge/Safari disconnects
-        testConfig.logLevel = config.LOG_ERROR;
+        // Travis-specific settings
+        if ('TRAVIS' in process.env) {
+            // Use custom hostname to prevent Safari disconnects
+            // https://support.saucelabs.com/hc/en-us/articles/115010079868-Issues-with-Safari-and-Karma-Test-Runner
+            testConfig.hostname = 'travis.dev';
+        }
     }
     else {
         // eslint-disable-next-line
@@ -189,10 +189,9 @@ module.exports = function(config) {
             `KARMA: localhost:${testConfig.port}/debug.html\n`,
             '============================================================\n'
         ].join(''));
-
-        // Logging: LOG_DISABLE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG
-        testConfig.logLevel = config.LOG_INFO;
     }
 
+    // Logging: LOG_DISABLE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG
+    testConfig.logLevel = config.LOG_WARN;
     config.set(testConfig);
 };
