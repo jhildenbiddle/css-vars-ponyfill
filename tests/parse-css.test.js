@@ -309,7 +309,7 @@ describe('parse-css', function() {
 
     // Tests: Performance
     // -------------------------------------------------------------------------
-    // describe('Performance', function() {
+    // describe.only('Performance', function() {
     //     it('Handles large block of CSS using onlyVars option', function() {
     //         const css = `
     //             :root { --color: red; }

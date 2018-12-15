@@ -1018,4 +1018,33 @@ describe('css-vars', function() {
             });
         }
     });
+
+    // Tests: Performance
+    // -------------------------------------------------------------------------
+    // describe.only('Performance', function() {
+    //     it('Handles large block of CSS using onlyVars option', function() {
+    //         const styleCss  = `
+    //             :root { --color: red; }
+    //             p { color: var(--color); }
+    //             ${'div { color: red; }'.repeat(100000)}
+    //         `;
+    //         const expectCss = 'p{color:red;}';
+
+    //         createElmsWrap({ tag: 'style', text: styleCss });
+
+    //         console.time('Performance Test');
+
+    //         cssVars({
+    //             include   : '[data-test]',
+    //             onlyLegacy: false,
+    //             onlyVars  : true,
+    //             onComplete(cssText, styleNode, cssVariables) {
+    //                 expect(cssText).to.equal(expectCss);
+
+    //                 console.timeEnd('Performance Test');
+    //                 console.log('CSS:', cssText.length);
+    //             }
+    //         });
+    //     });
+    // });
 });
