@@ -1,12 +1,20 @@
 # Change Log
 
+## 1.16.0
+
+*2018-12-14*
+
+- Add `types` property to package.json.
+- Update `options.onlyVars` implementation for significant performance increase.
+- Fix build status badge (now reflects only master branch status).
+
 ## 1.15.3
 
 *2018-11-28*
 
-- Fix bug that incorrectly transformed variable functions that resolve to values
-  containing parenthesis with fallback values that also contain parenthesis
-  (#42).
+- Fixed bug that incorrectly transformed variable functions that resolve to
+  values containing parenthesis with fallback values that also contain
+  parenthesis (#42).
 
 ## 1.15.2
 
