@@ -4,9 +4,10 @@
 
 *2018-12-14*
 
-- Add `types` property to package.json.
-- Update `options.onlyVars` implementation for significant performance increase.
-- Fix build status badge (now reflects only master branch status).
+- Added `types` property to package.json.
+- Updated `options.onlyVars` implementation resulting in a significant
+  performance increase.
+- Fixed build status badge (now reflects only master branch status).
 
 ## 1.15.3
 
