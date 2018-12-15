@@ -49,6 +49,7 @@
   "browserslist": [
     "ie >= 9"
   ],
+  "types": "dist/css-vars-ponyfill.d.ts",
   "main": "dist/css-vars-ponyfill.js",
   "module": "dist/css-vars-ponyfill.esm.js",
   "unpkg": "dist/css-vars-ponyfill.min.js",
