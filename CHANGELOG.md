@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.16.1
+
+*2018-12-17*
+
+- Fix removal of unrecognized at-rule when `options.onlyVars` is set to `true`.
+
 ## 1.16.0
 
 *2018-12-14*
