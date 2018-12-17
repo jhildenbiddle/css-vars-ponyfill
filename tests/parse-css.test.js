@@ -280,6 +280,19 @@ describe('parse-css', function() {
 
                 expect(ast.stylesheet.rules).to.have.lengthOf(0);
             });
+
+            it('true (remove unrecognized @ rule)', function() {
+                const css = `
+                    @-ms-viewport {
+                        background: white;
+                    }
+                `;
+                const ast = parseCss(css, {
+                    onlyVars: true
+                });
+
+                expect(ast.stylesheet.rules).to.have.lengthOf(0);
+            });
         });
 
         describe('removeComments', function() {

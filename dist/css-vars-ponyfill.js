@@ -7,7 +7,7 @@
  */
 (function(global, factory) {
     typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : global.cssVars = factory();
-})(this, function() {
+})(typeof self !== "undefined" ? self : this, function() {
     "use strict";
     function _toConsumableArray(arr) {
         return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
@@ -624,7 +624,7 @@
             whitespace();
             if (css[0] === "@") {
                 var ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
-                if (settings.onlyVars) {
+                if (ret && settings.onlyVars) {
                     var hasVarFunc = false;
                     if (ret.declarations) {
                         hasVarFunc = ret.declarations.some(function(decl) {

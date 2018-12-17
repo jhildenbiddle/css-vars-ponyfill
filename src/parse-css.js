@@ -286,7 +286,7 @@ function cssParse(css, options = {}) {
         if (css[0] === '@') {
             const ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
 
-            if (settings.onlyVars) {
+            if (ret && settings.onlyVars) {
                 let hasVarFunc = false;
 
                 // @page, @font-face
