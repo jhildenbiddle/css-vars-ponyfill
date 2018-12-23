@@ -63,17 +63,11 @@ Git:
 git clone https://github.com/jhildenbiddle/css-vars-ponyfill.git
 ```
 
-CDN ([unpkg.com](https://unpkg.com/) shown, also on [jsdelivr.net](https://www.jsdelivr.com/)):
+CDN ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/)):
 
 ```html
-<!-- file.html (latest v1.x.x) -->
-
-<script src="https://unpkg.com/css-vars-ponyfill@1"></script>
-<script>
-  cssVars({
-    // ...
-  });
-</script>
+<!-- Latest v1.x.x -->
+<script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@1"></script>
 ```
 
 ## Examples
