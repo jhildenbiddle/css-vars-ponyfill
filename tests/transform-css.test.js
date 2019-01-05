@@ -1,6 +1,5 @@
 // Dependencies
 // =============================================================================
-import loadFixtures       from './helpers/load-fixtures';
 import resetVariableStore from './helpers/reset-variablestore';
 import transformCss       from '../src/transform-css';
 import { expect }         from 'chai';
@@ -9,20 +8,8 @@ import { expect }         from 'chai';
 // Suite
 // =============================================================================
 describe('transform-css', function() {
-    const fixtures = {};
-
     // Hooks
     // -------------------------------------------------------------------------
-    before(async function() {
-        await loadFixtures({
-            base: '/base/tests/fixtures/',
-            urls : [
-                'test-parse.css',
-                'test-stringify.css'
-            ]
-        }, fixtures);
-    });
-
     beforeEach(function() {
         resetVariableStore();
     });

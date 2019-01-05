@@ -1,6 +1,5 @@
 // Dependencies
 // =============================================================================
-import loadFixtures from './helpers/load-fixtures';
 import parseCss     from '../src/parse-css';
 import stringifyCss from '../src/stringify-css';
 import { expect }   from 'chai';
@@ -9,19 +8,7 @@ import { expect }   from 'chai';
 // Suite
 // =============================================================================
 describe('stringify-css', function() {
-    const fixtures = {};
-
-    // Hooks
-    // -------------------------------------------------------------------------
-    before(async function() {
-        await loadFixtures({
-            base: '/base/tests/fixtures/',
-            urls : [
-                'test-parse.css',
-                'test-stringify.css'
-            ]
-        }, fixtures);
-    });
+    const fixtures = window.__FIXTURES__;
 
     // Tests
     // -------------------------------------------------------------------------

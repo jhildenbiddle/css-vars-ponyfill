@@ -1,23 +1,13 @@
 // Dependencies
 // =============================================================================
-import loadFixtures from './helpers/load-fixtures';
-import parseCss     from '../src/parse-css';
-import { expect }   from 'chai';
+import parseCss   from '../src/parse-css';
+import { expect } from 'chai';
 
 
 // Suite
 // =============================================================================
 describe('parse-css', function() {
-    const fixtures = {};
-
-    // Hooks
-    // -------------------------------------------------------------------------
-    before(async function() {
-        await loadFixtures({
-            base: '/base/tests/fixtures/',
-            urls : ['test-parse.css'],
-        }, fixtures);
-    });
+    const fixtures = window.__FIXTURES__;
 
     // Tests: Parsing
     // -------------------------------------------------------------------------

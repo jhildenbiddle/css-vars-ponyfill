@@ -7,7 +7,8 @@ const saucelabs = require('./saucelabs.config');
 // Variables
 // =============================================================================
 const files = {
-    test : './tests/**/*.test.js'
+    fixtures: './tests/fixtures/**/*',
+    test    : './tests/**/*.test.js'
 };
 
 
@@ -20,18 +21,21 @@ const localConfig = {
         'ChromeHeadless'
     ],
     files: [
-        // Included
         'node_modules/@babel/polyfill/dist/polyfill.js',
         files.test,
         // Served only
         // NOTE: Access in test files by prepending /base/ to path)
-        { pattern: './tests/fixtures/**/*.*', included: false, served: true, watched: true }
+        { pattern: files.fixtures, included: false, served: true, watched: true }
     ],
     preprocessors: {
-        [files.test]: ['eslint', 'webpack', 'sourcemap']
+        [files.fixtures]: ['file-fixtures'],
+        [files.test]    : ['eslint', 'webpack', 'sourcemap']
     },
     frameworks: ['mocha', 'chai'],
     reporters : ['mocha', 'coverage'],
+    fileFixtures: {
+        stripPrefix: 'tests/fixtures/'
+    },
     webpack   : {
         mode   : 'development',
         devtool: 'inline-source-map',
