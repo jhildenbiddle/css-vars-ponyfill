@@ -91,9 +91,10 @@ const localConfig = {
     singleRun  : true,
     concurrency: Infinity,
     // Avoid DISCONNECTED messages
-    browserDisconnectTimeout  : 10000, // default 2000
-    browserDisconnectTolerance: 1,     // default 0
-    browserNoActivityTimeout  : 30000  // default 10000
+    browserDisconnectTimeout  : 1000*2,  // default 2000
+    browserDisconnectTolerance: 1,       // default 0
+    browserNoActivityTimeout  : 1000*10, // default 10000
+    captureTimeout            : 1000*60  // default 60000
 };
 
 
@@ -107,14 +108,15 @@ const remoteConfig = Object.assign({}, localConfig, {
             base       : 'SauceLabs',
             browserName: 'Chrome',
             platform   : 'Windows 10',
-            version    : '26.0'
+            version    : '48.0'
         },
-        sl_edge: {
-            base       : 'SauceLabs',
-            browserName: 'MicrosoftEdge',
-            platform   : 'Windows 10',
-            version    : '14.14393'
-        },
+        // DISABLED DUE TO SAUCELABS ISSUES
+        // sl_edge: {
+        //     base       : 'SauceLabs',
+        //     browserName: 'MicrosoftEdge',
+        //     platform   : 'Windows 10',
+        //     version    : '14.14393'
+        // },
         sl_firefox: {
             base       : 'SauceLabs',
             browserName: 'Firefox',
@@ -138,13 +140,14 @@ const remoteConfig = Object.assign({}, localConfig, {
             browserName: 'Internet Explorer',
             platform   : 'Windows 7',
             version    : '9.0'
-        },
-        sl_safari: {
-            base       : 'SauceLabs',
-            browserName: 'Safari',
-            platform   : 'OS X 10.10',
-            version    : '8.0'
         }
+        // DISABLED DUE TO SAUCELABS ISSUES
+        // sl_safari: {
+        //     base       : 'SauceLabs',
+        //     browserName: 'Safari',
+        //     platform   : 'OS X 10.10',
+        //     version    : '8.0'
+        // }
     },
     // Set browsers to customLaunchers
     get browsers() {
@@ -196,6 +199,6 @@ module.exports = function(config) {
     }
 
     // Logging: LOG_DISABLE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG
-    testConfig.logLevel = config.LOG_WARN;
+    testConfig.logLevel = config.LOG_INFO;
     config.set(testConfig);
 };
