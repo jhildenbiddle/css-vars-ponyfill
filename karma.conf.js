@@ -123,12 +123,13 @@ const remoteConfig = Object.assign({}, localConfig, {
             platform   : 'Windows 10',
             version    : '30'
         },
-        sl_ie_11: {
-            base       : 'SauceLabs',
-            browserName: 'Internet Explorer',
-            platform   : 'Windows 10',
-            version    : '11.0'
-        },
+        // DISABLED DUE TO SAUCELABS ISSUES
+        // sl_ie_11: {
+        //     base       : 'SauceLabs',
+        //     browserName: 'Internet Explorer',
+        //     platform   : 'Windows 10',
+        //     version    : '11.0'
+        // },
         sl_ie_10: {
             base       : 'SauceLabs',
             browserName: 'Internet Explorer',
