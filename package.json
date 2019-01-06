@@ -58,9 +58,9 @@
     "build": "rollup -c",
     "dev": "npm start | npm run test-watch",
     "start": "rimraf coverage/* && npm run build -- --watch",
-    "test": "rimraf coverage/* && karma start",
-    "test-watch": "npm test -- --auto-watch --no-single-run",
-    "test-remote": "npm test -- --remote",
+    "test": "karma start",
+    "test-watch": "karma start --auto-watch --no-single-run",
+    "test-remote": "karma start --remotetest && karma start --remotecoverage",
     "version": "npm run build && npm test && git add -A dist"
   },
   "devDependencies": {
