@@ -16,9 +16,6 @@ const files = {
 // =============================================================================
 const settings = {
     base: {
-        browsers: [
-            'ChromeHeadless'
-        ],
         files: [
             'node_modules/@babel/polyfill/dist/polyfill.js',
             files.test,
@@ -204,17 +201,25 @@ module.exports = function(config) {
             }
         });
     }
-    // Remove coverage
+    // Remote coverage
     else if (isRemoteCoverage) {
         message('KARMA: Code Coverage');
 
-        Object.assign(testConfig, settings.remote, settings.coverage);
+        Object.assign(testConfig, settings.remote, settings.coverage, {
+            browsers: [
+                'Chrome'
+            ]
+        });
     }
     // Local
     else {
         message(`KARMA: localhost:${testConfig.port}/debug.html`);
 
-        Object.assign(testConfig, settings.local, settings.coverage);
+        Object.assign(testConfig, settings.local, settings.coverage, {
+            browsers: [
+                'ChromeHeadless'
+            ]
+        });
     }
 
     // Logging: LOG_DISABLE, LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG
