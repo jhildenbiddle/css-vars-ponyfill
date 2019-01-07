@@ -206,9 +206,9 @@ module.exports = function(config) {
         message('KARMA: Code Coverage');
 
         Object.assign(testConfig, settings.remote, settings.coverage, {
-            browsers       : ['ChromeTravis'],
+            browsers       : ['Chrome', 'ChromeHeadless', 'ChromeHeadlessNoSandbox'],
             customLaunchers: {
-                ChromeTravis: {
+                ChromeHeadlessNoSandbox: {
                     base : 'ChromeHeadless',
                     flags: [
                         '--no-sandbox'
