@@ -206,9 +206,13 @@ module.exports = function(config) {
         message('KARMA: Code Coverage');
 
         Object.assign(testConfig, settings.remote, settings.coverage, {
-            browsers: [
-                'Chrome'
-            ]
+            browsers       : ['ChromeNoSandbox'],
+            customLaunchers: {
+                ChromeNoSandbox: {
+                    base : 'Chrome',
+                    flags: ['--no-sandbox']
+                }
+            }
         });
     }
     // Local
@@ -216,9 +220,7 @@ module.exports = function(config) {
         message(`KARMA: localhost:${testConfig.port}/debug.html`);
 
         Object.assign(testConfig, settings.local, settings.coverage, {
-            browsers: [
-                'ChromeHeadless'
-            ]
+            browsers: ['ChromeHeadless']
         });
     }
 
