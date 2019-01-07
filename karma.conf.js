@@ -1,5 +1,6 @@
 // Dependencies
 // =============================================================================
+const path      = require('path');
 const pkg       = require('./package');
 const saucelabs = require('./saucelabs.config');
 
@@ -82,7 +83,7 @@ const settings = {
     },
     coverage: {
         get reporters() {
-            return [].concat(settings.base.reporters, 'coverage');
+            return [].concat(settings.base.reporters, 'coverage-istanbul');
         },
         get webpack() {
             const webpackConfig = Object.assign({}, settings.base.webpack);
@@ -93,13 +94,13 @@ const settings = {
             return webpackConfig;
         },
         // Code coverage
-        // https://www.npmjs.com/package/karma-coverage
-        coverageReporter: {
-            reporters: [
-                { type: 'html' },
-                { type: 'lcovonly' },
-                { type: 'text-summary' }
-            ]
+        // https://github.com/mattlewis92/karma-coverage-istanbul-reporter
+        coverageIstanbulReporter: {
+            reports: ['html', 'lcovonly', 'text-summary'],
+            dir: path.join(__dirname, 'coverage'),
+            combineBrowserReports: true,
+            fixWebpackSourcePaths: true,
+            skipFilesWithNoCoverage: true
         }
     },
     local: {
