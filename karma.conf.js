@@ -206,9 +206,9 @@ module.exports = function(config) {
         message('KARMA: Code Coverage');
 
         Object.assign(testConfig, settings.remote, settings.coverage, {
-            browsers       : ['ChromeNoSandbox'],
+            browsers       : ['ChromeTravis'],
             customLaunchers: {
-                ChromeNoSandbox: {
+                ChromeTravis: {
                     base : 'Chrome',
                     flags: [
                         '--disable-gpu',
@@ -217,6 +217,7 @@ module.exports = function(config) {
                         '--remote-debugging-address=0.0.0.0',
                         '--remote-debugging-port=9222',
                         '--user-data-dir=/tmp'
+                    ]
                 }
             }
         });
