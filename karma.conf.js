@@ -211,8 +211,6 @@ module.exports = function(config) {
                 ChromeTravis: {
                     base : 'Chrome',
                     flags: [
-                        '--disable-web-security',
-                        '--disable-gpu',
                         '--no-sandbox'
                     ]
                 }

@@ -2,9 +2,6 @@ sudo: required
 language: node_js
 node_js: "stable"
 
-env:
-  - NO_PROXY="localhost, 0.0.0.0/4201, 0.0.0.0/9876"
-
 addons:
   hosts:
     - travis.dev
@@ -15,6 +12,9 @@ notifications:
 
 before_install:
   - stty cols 80
+  - export CHROME_BIN=chromium-browser
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
 
 script:
   # Main repo
