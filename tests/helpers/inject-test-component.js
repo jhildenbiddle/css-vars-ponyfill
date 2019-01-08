@@ -29,4 +29,4 @@ module.exports = function() {
     //     { tag: 'test-component', attr: { 'data-text': 'Custom element' }},
     //     { tag: 'p', text: 'Standard element' }
     // ], { appendTo: 'body' });
-}
+};
