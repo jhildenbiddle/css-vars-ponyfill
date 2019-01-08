@@ -1005,30 +1005,28 @@ describe('css-vars', function() {
                     }
                 ` });
 
-                setTimeout(function() {
-                    cssVars({
-                        include   : 'style[data-test]',
-                        onlyLegacy: false,
-                        onComplete(cssText, styleNode, cssVariables) {
-                            expect(getCurrentColor(), 'Initial @keyframes').to.be.colored('red');
-                        }
-                    });
-                }, 250);
+                cssVars({
+                    include   : 'style[data-test]',
+                    onlyLegacy: false
+                });
 
                 setTimeout(function() {
+                    expect(getCurrentColor(), 'Initial @keyframes').to.be.colored('red');
+
                     cssVars({
                         include   : 'style[data-test]',
                         onlyLegacy: false,
                         variables : {
                             color: 'blue'
-                        },
-                        onComplete(cssText, styleNode, cssVariables) {
-                            expect(getCurrentColor(), 'Updated @keyframes').to.be.colored('blue');
-
-                            done();
                         }
                     });
-                }, 500);
+
+                    setTimeout(function() {
+                        expect(getCurrentColor(), 'Updated @keyframes').to.be.colored('blue');
+
+                        done();
+                    }, 250);
+                }, 250);
             });
         }
     });
