@@ -55,7 +55,7 @@ describe('css-vars', function() {
 
     // Remove <link> and <style> elements added for each test
     beforeEach(function() {
-        const testNodes = document.querySelectorAll('[data-test]');
+        const testNodes = document.querySelectorAll('#css-vars-ponyfill,[data-test]');
 
         for (let i = 0; i < testNodes.length; i++) {
             testNodes[i].parentNode.removeChild(testNodes[i]);
@@ -598,6 +598,9 @@ describe('css-vars', function() {
 
         if ('MutationObserver' in window) {
             describe('watch', function() {
+                // Fix Safari flakiness
+                this.retries(5);
+
                 it('true - create MutationObserver', function(done) {
                     const styleCss  = [
                         ':root{--color:red;}body{color:var(--color);}',
@@ -608,43 +611,16 @@ describe('css-vars', function() {
 
                     cssVars({
                         include   : '[data-test]',
-                        onlyLegacy: false
+                        onlyLegacy: false,
+                        watch     : true
                     });
 
                     expect(getComputedStyle(document.body).color).to.be.colored('red');
 
-                    cssVars({
-                        include   : '[data-test]',
-                        onlyLegacy: false,
-                        watch     : true
-                    });
-
                     createElmsWrap({ tag: 'style', text: styleCss[1] });
 
                     setTimeout(function() {
-                        expect(getComputedStyle(document.body).color).to.be.colored('green');
-                        done();
-                    }, 100);
-                });
-
-                it('false - disconnect MutationObserver', function(done) {
-                    const styleCss  = [
-                        ':root{--color:red;}body{color:var(--color);}',
-                        ':root{--color:green;}'
-                    ];
-
-                    expect(getComputedStyle(document.body).color).to.not.be.colored('red');
-
-                    cssVars({
-                        include   : '[data-test]',
-                        onlyLegacy: false,
-                        watch     : true
-                    });
-
-                    createElmsWrap({ tag: 'style', text: styleCss[0] });
-
-                    setTimeout(function() {
-                        expect(getComputedStyle(document.body).color).to.be.colored('red');
+                        expect(getComputedStyle(document.body).color, 'Observer On').to.be.colored('green');
 
                         cssVars({
                             include   : '[data-test]',
@@ -652,14 +628,45 @@ describe('css-vars', function() {
                             watch     : false
                         });
 
-                        createElmsWrap({ tag: 'style', text: styleCss[1] });
+                        done();
+                    }, 250);
+                });
+
+                it('false - disconnect MutationObserver', function(done) {
+                    const styleCss  = [
+                        ':root{--color:red;}body{color:var(--color);}',
+                        ':root{--color:green;}',
+                        ':root{--color:purple;}'
+                    ];
+
+                    createElmsWrap({ tag: 'style', text: styleCss[0] });
+
+                    cssVars({
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        watch     : true
+                    });
+
+                    expect(getComputedStyle(document.body).color).to.be.colored('red');
+
+                    createElmsWrap({ tag: 'style', text: styleCss[1] });
+
+                    setTimeout(function() {
+                        expect(getComputedStyle(document.body).color, 'Observer On').to.be.colored('green');
+
+                        cssVars({
+                            include   : '[data-test]',
+                            onlyLegacy: false,
+                            watch     : false
+                        });
+
+                        createElmsWrap({ tag: 'style', text: styleCss[2] });
 
                         setTimeout(function() {
-                            expect(getComputedStyle(document.body).color).to.be.colored('red');
-
+                            expect(getComputedStyle(document.body).color, 'Observer Off').to.be.colored('green');
                             done();
-                        }, 100);
-                    }, 100);
+                        }, 250);
+                    }, 250);
                 });
             });
         }
@@ -969,6 +976,9 @@ describe('css-vars', function() {
         // @keyframe support required
         if (hasAnimationSupport) {
             it('Fixes @keyframe bug in legacy (IE) and modern (Safari) browsers', function() {
+                // Fix Safari flakiness
+                this.retries(5);
+
                 const testElm = createElmsWrap({
                     tag: 'p', text: 'Test Element', appendTo: 'body', attr: { class: 'test' }
                 })[0];

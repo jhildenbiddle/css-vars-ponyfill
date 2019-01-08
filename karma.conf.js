@@ -71,15 +71,23 @@ const settings = {
             // https://www.npmjs.com/package/karma-mocha-reporter
             output: 'autowatch'
         },
-        autoWatch                 : false,
-        browserDisconnectTimeout  : 1000*2,  // default 2000
+        autoWatch  : false,
+        colors     : true,
+        concurrency: Infinity,
+        port       : 9876,
+        singleRun  : true,
+
+        // Prevent disconnect in Firefox/Safari
+        // https://support.saucelabs.com/hc/en-us/articles/225104707-Karma-Tests-Disconnect-Particularly-When-Running-Tests-on-Safari
+        browserDisconnectTimeout  : 1000*10, // default 2000
         browserDisconnectTolerance: 1,       // default 0
-        browserNoActivityTimeout  : 1000*10, // default 10000
+        browserNoActivityTimeout  : 1000*30, // default 10000
         captureTimeout            : 1000*60, // default 60000
-        colors                    : true,
-        concurrency               : Infinity,
-        port                      : 9876,
-        singleRun                 : true
+        client: {
+            mocha: {
+                timeout: 1000*20 // default 2000
+            }
+        }
     },
     coverage: {
         get reporters() {
@@ -87,9 +95,9 @@ const settings = {
         },
         get webpack() {
             const webpackConfig = Object.assign({}, settings.base.webpack);
-            const babelPluginsConfig = webpackConfig.module.rules[0].use[0].options.plugins;
+            const babelPlugins = webpackConfig.module.rules[0].use[0].options.plugins;
 
-            babelPluginsConfig.push(['istanbul', { exclude: 'tests/*' }]);
+            babelPlugins.push(['istanbul', { exclude: 'tests/*' }]);
 
             return webpackConfig;
         },
@@ -183,6 +191,18 @@ module.exports = function(config) {
                     browserName: 'Firefox',
                     platform   : 'Windows 10',
                     version    : '30'
+                },
+                sl_ie_11: {
+                    base       : 'SauceLabs',
+                    browserName: 'Internet Explorer',
+                    platform   : 'Windows 10',
+                    version    : '11.0'
+                },
+                sl_ie_10: {
+                    base       : 'SauceLabs',
+                    browserName: 'Internet Explorer',
+                    platform   : 'Windows 8',
+                    version    : '10.0'
                 },
                 sl_ie_9: {
                     base       : 'SauceLabs',
