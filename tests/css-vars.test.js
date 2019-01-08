@@ -598,9 +598,6 @@ describe('css-vars', function() {
 
         if ('MutationObserver' in window) {
             describe('watch', function() {
-                // Fix Safari flakiness
-                this.retries(5);
-
                 it('true - create MutationObserver', function(done) {
                     const styleCss  = [
                         ':root{--color:red;}body{color:var(--color);}',
@@ -615,9 +612,11 @@ describe('css-vars', function() {
                         watch     : true
                     });
 
-                    expect(getComputedStyle(document.body).color).to.be.colored('red');
+                    setTimeout(function() {
+                        expect(getComputedStyle(document.body).color).to.be.colored('red');
 
-                    createElmsWrap({ tag: 'style', text: styleCss[1] });
+                        createElmsWrap({ tag: 'style', text: styleCss[1] });
+                    }, 250);
 
                     setTimeout(function() {
                         expect(getComputedStyle(document.body).color, 'Observer On').to.be.colored('green');
@@ -629,7 +628,7 @@ describe('css-vars', function() {
                         });
 
                         done();
-                    }, 250);
+                    }, 500);
                 });
 
                 it('false - disconnect MutationObserver', function(done) {
@@ -647,9 +646,11 @@ describe('css-vars', function() {
                         watch     : true
                     });
 
-                    expect(getComputedStyle(document.body).color).to.be.colored('red');
+                    setTimeout(function() {
+                        expect(getComputedStyle(document.body).color).to.be.colored('red');
 
-                    createElmsWrap({ tag: 'style', text: styleCss[1] });
+                        createElmsWrap({ tag: 'style', text: styleCss[1] });
+                    }, 250);
 
                     setTimeout(function() {
                         expect(getComputedStyle(document.body).color, 'Observer On').to.be.colored('green');
@@ -666,7 +667,7 @@ describe('css-vars', function() {
                             expect(getComputedStyle(document.body).color, 'Observer Off').to.be.colored('green');
                             done();
                         }, 250);
-                    }, 250);
+                    }, 500);
                 });
             });
         }
@@ -975,10 +976,7 @@ describe('css-vars', function() {
 
         // @keyframe support required
         if (hasAnimationSupport) {
-            it('Fixes @keyframe bug in legacy (IE) and modern (Safari) browsers', function() {
-                // Fix Safari flakiness
-                this.retries(5);
-
+            it('Fixes @keyframe bug in legacy (IE) and modern (Safari) browsers', function(done) {
                 const testElm = createElmsWrap({
                     tag: 'p', text: 'Test Element', appendTo: 'body', attr: { class: 'test' }
                 })[0];
@@ -1007,24 +1005,30 @@ describe('css-vars', function() {
                     }
                 ` });
 
-                cssVars({
-                    include   : 'style[data-test]',
-                    onlyLegacy: false,
-                    onComplete(cssText, styleNode, cssVariables) {
-                        expect(getCurrentColor(), 'Initial @keyframes').to.be.colored('red');
-                    }
-                });
+                setTimeout(function() {
+                    cssVars({
+                        include   : 'style[data-test]',
+                        onlyLegacy: false,
+                        onComplete(cssText, styleNode, cssVariables) {
+                            expect(getCurrentColor(), 'Initial @keyframes').to.be.colored('red');
+                        }
+                    });
+                }, 250);
 
-                cssVars({
-                    include   : 'style[data-test]',
-                    onlyLegacy: false,
-                    variables : {
-                        color: 'blue'
-                    },
-                    onComplete(cssText, styleNode, cssVariables) {
-                        expect(getCurrentColor(), 'Updated @keyframes').to.be.colored('blue');
-                    }
-                });
+                setTimeout(function() {
+                    cssVars({
+                        include   : 'style[data-test]',
+                        onlyLegacy: false,
+                        variables : {
+                            color: 'blue'
+                        },
+                        onComplete(cssText, styleNode, cssVariables) {
+                            expect(getCurrentColor(), 'Updated @keyframes').to.be.colored('blue');
+
+                            done();
+                        }
+                    });
+                }, 500);
             });
         }
     });
