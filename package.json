@@ -60,7 +60,7 @@
     "start": "rimraf coverage/* && npm run build -- --watch",
     "test": "karma start",
     "test-watch": "karma start --auto-watch --no-single-run",
-    "test-remote": "karma start --remotetest && karma start --remotecoverage",
+    "test-remote": "karma start --remote",
     "version": "npm run build && npm test && git add -A dist"
   },
   "devDependencies": {
