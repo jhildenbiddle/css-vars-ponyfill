@@ -24,7 +24,7 @@ const bannerData = [
     `${pkg.name}`,
     `v${pkg.version}`,
     `${pkg.homepage}`,
-    `(c) ${(new Date()).getFullYear()} ${pkg.author}`,
+    `(c) 2018 ${pkg.author}`,
     `${pkg.license} license`
 ];
 
