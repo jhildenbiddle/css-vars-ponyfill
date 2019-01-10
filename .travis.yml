@@ -22,4 +22,4 @@ script:
   - if [ $TRAVIS_PULL_REQUEST != "false" ]; then npm test; fi
 
 after_success:
-  - if [ $TRAVIS_PULL_REQUEST = "false" ]; then bash <(curl -s https://codecov.io/bash) -e TRAVIS_NODE_VERSION; fi
+  - bash <(curl -s https://codecov.io/bash) -e TRAVIS_NODE_VERSION
