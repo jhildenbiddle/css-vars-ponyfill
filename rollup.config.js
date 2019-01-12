@@ -48,6 +48,9 @@ const pluginSettings = {
                     browsers: ['ie >= 9']
                 }
             }]
+        ],
+        plugins: [
+            '@babel/plugin-transform-object-assign'
         ]
     },
     terser: {

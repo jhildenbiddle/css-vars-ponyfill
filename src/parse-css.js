@@ -6,8 +6,7 @@
 
 // Dependencies
 // =============================================================================
-import balanced  from 'balanced-match';
-import mergeDeep from './merge-deep';
+import balanced from 'balanced-match';
 
 
 // Functions
@@ -30,7 +29,7 @@ function cssParse(css, options = {}) {
         onlyVars      : false,
         removeComments: false
     };
-    const settings = mergeDeep(defaults, options);
+    const settings = Object.assign({}, defaults, options);
     const errors   = [];
 
     // Errors

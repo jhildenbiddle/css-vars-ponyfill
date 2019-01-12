@@ -1,7 +1,6 @@
 // Dependencies
 // =============================================================================
 import getCssData          from 'get-css-data';
-import mergeDeep           from './merge-deep';
 import transformCss        from './transform-css';
 import { variableStore }   from './transform-css';
 import { name as pkgName } from '../package.json';
@@ -159,7 +158,7 @@ let isShadowDOMReady = false;
  *   });
  */
 function cssVars(options = {}) {
-    const settings    = mergeDeep(defaults, options);
+    const settings    = Object.assign({}, defaults, options);
     const styleNodeId = pkgName;
 
     // Always exclude styleNodeId element, which is the generated <style> node
@@ -376,7 +375,7 @@ function cssVars(options = {}) {
                         // custom properties as options.variables.
                         for (let i = 0, elm; (elm = elms[i]); ++i) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
-                                const shadowSettings = mergeDeep(settings, {
+                                const shadowSettings = Object.assign({}, settings, {
                                     rootElement: elm.shadowRoot,
                                     variables  : variableStore.dom
                                 });

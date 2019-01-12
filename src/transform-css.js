@@ -7,7 +7,6 @@
 // Dependencies
 // =============================================================================
 import balanced     from 'balanced-match';
-import mergeDeep    from './merge-deep';
 import parseCss     from './parse-css';
 import stringifyCss from './stringify-css';
 import walkCss      from './walk-css';
@@ -64,7 +63,7 @@ function transformVars(cssText, options = {}) {
         variables    : {},
         onWarning() {}
     };
-    const settings = mergeDeep(defaults, options);
+    const settings = Object.assign({}, defaults, options);
     const map      = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
 
     // Convert cssText to AST (this could throw errors)

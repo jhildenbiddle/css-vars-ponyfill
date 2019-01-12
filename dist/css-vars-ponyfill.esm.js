@@ -2,9 +2,24 @@
  * css-vars-ponyfill
  * v1.16.2
  * https://github.com/jhildenbiddle/css-vars-ponyfill
- * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
+ * (c) 2018-2019 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
  */
+function _extends() {
+    _extends = Object.assign || function(target) {
+        for (var i = 1; i < arguments.length; i++) {
+            var source = arguments[i];
+            for (var key in source) {
+                if (Object.prototype.hasOwnProperty.call(source, key)) {
+                    target[key] = source[key];
+                }
+            }
+        }
+        return target;
+    };
+    return _extends.apply(this, arguments);
+}
+
 function _toConsumableArray(arr) {
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
 }
@@ -328,27 +343,6 @@ function matchesSelector(elm, selector) {
     return matches.call(elm, selector);
 }
 
-function mergeDeep() {
-    var isObject = function isObject(obj) {
-        return obj instanceof Object && obj.constructor === Object;
-    };
-    for (var _len = arguments.length, objects = new Array(_len), _key = 0; _key < _len; _key++) {
-        objects[_key] = arguments[_key];
-    }
-    return objects.reduce(function(prev, obj) {
-        Object.keys(obj).forEach(function(key) {
-            var pVal = prev[key];
-            var oVal = obj[key];
-            if (isObject(pVal) && isObject(oVal)) {
-                prev[key] = mergeDeep(pVal, oVal);
-            } else {
-                prev[key] = oVal;
-            }
-        });
-        return prev;
-    }, {});
-}
-
 var balancedMatch = balanced;
 
 function balanced(a, b, str) {
@@ -408,7 +402,7 @@ function cssParse(css) {
         onlyVars: false,
         removeComments: false
     };
-    var settings = mergeDeep(defaults, options);
+    var settings = _extends({}, defaults, options);
     var errors = [];
     function error(msg) {
         throw new Error("CSS parse error: ".concat(msg));
@@ -822,7 +816,7 @@ function transformVars(cssText) {
         variables: {},
         onWarning: function onWarning() {}
     };
-    var settings = mergeDeep(defaults, options);
+    var settings = _extends({}, defaults, options);
     var map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
     var cssTree = cssParse(cssText, {
         onlyVars: settings.onlyVars
@@ -1115,7 +1109,7 @@ var isShadowDOMReady = false;
  *   });
  */ function cssVars() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var settings = mergeDeep(defaults, options);
+    var settings = _extends({}, defaults, options);
     var styleNodeId = name;
     settings.exclude = "#".concat(styleNodeId) + (settings.exclude ? ",".concat(settings.exclude) : "");
     function handleError(message, sourceNode, xhr, url) {
@@ -1244,7 +1238,7 @@ var isShadowDOMReady = false;
                         var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
                         for (var i = 0, elm; elm = elms[i]; ++i) {
                             if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
-                                var shadowSettings = mergeDeep(settings, {
+                                var shadowSettings = _extends({}, settings, {
                                     rootElement: elm.shadowRoot,
                                     variables: variableStore.dom
                                 });

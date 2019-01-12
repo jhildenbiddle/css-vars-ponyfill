@@ -52,6 +52,7 @@ const settings = {
                                     ]
                                 ],
                                 plugins: [
+                                    '@babel/plugin-transform-object-assign',
                                     'transform-custom-element-classes',
                                     ['istanbul', { exclude: 'tests/*' }]
                                 ]
