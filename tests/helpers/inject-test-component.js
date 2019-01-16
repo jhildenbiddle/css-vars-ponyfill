@@ -1,6 +1,6 @@
 // Export
 // =============================================================================
-module.exports = function() {
+module.exports = function injectTestComponent() {
     class TestComponent extends HTMLElement {
         constructor() {
             super();

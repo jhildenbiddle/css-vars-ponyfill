@@ -19,6 +19,7 @@ function resetVariableStore(variableStoreObj = variableStore) {
     });
 }
 
+
 // Export
 // =============================================================================
 export default resetVariableStore;
