@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.16.3
+
+*2019-01-15*
+
+- Updated method of merging default and user options from deep to shallow merge
+  to better accommodate SSR / virtual DOM environments.
+
 ## 1.16.2
 
 *2018-12-23*
@@ -10,7 +17,7 @@
 
 *2018-12-17*
 
-- Fixed removal of unrecognized at-rule when `options.onlyVars` is set to `true`.
+- Fixed removal of unrecognized at-rule when `options.onlyVars` is `true`.
 
 ## 1.16.0
 
