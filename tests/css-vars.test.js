@@ -1,7 +1,6 @@
 // Dependencies
 // =============================================================================
 import chai               from 'chai';
-import createElms         from 'create-elms';
 import createTestElms     from './helpers/create-test-elms';
 import cssVars            from '../src/index';
 import resetVariableStore from './helpers/reset-variablestore';
@@ -399,65 +398,45 @@ describe('css-vars', function() {
 
         describe('updateDOM', function() {
             it('true (appends <style> after last processed element in <head>)', function() {
-                const elm = createTestElms({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'head'
-                })[0];
-
-                // Not processed by cssVars (used to test insert location)
-                const skipElm = createElms({
-                    tag     : 'style',
-                    text    : ':root{--skipped:true;}',
-                    appendTo: 'body'
-                })[0];
+                const testElms = createTestElms([
+                    { tag: 'style' },
+                    // Not processed by cssVars (used to test insert location)
+                    { tag: 'style', attr: { 'data-skip': true }, appendTo: 'body' }
+                ]);
 
                 cssVars({
-                    include   : '[data-test]',
+                    include   : '[data-test]:not([data-skip])',
                     onlyLegacy: false,
                     updateDOM : true,
                     onComplete(cssText, styleNode, cssVariables) {
                         const styleElms = Array.from(document.querySelectorAll('style'));
-                        const isAfterLastProcessedElm = elm.nextSibling === styleNode;
-                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm);
+                        const isAfterLastProcessedElm = testElms[0].nextSibling === styleNode;
+                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(testElms[1]);
 
                         expect(isAfterLastProcessedElm).to.be.true;
                         expect(isBeforeSkipElm).to.be.true;
-
-                        // Remove skipElm
-                        skipElm.parentNode.removeChild(skipElm);
                     }
                 });
             });
 
             it('true (appends <style> after last processed element in <body>)', function() {
-                const elm = createTestElms({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'body'
-                })[0];
-
-                // Not processed by cssVars (used to test insert location)
-                const skipElm = createElms({
-                    tag     : 'style',
-                    text    : ':root{--skipped:true;}',
-                    appendTo: 'body'
-                })[0];
+                const testElms = createTestElms([
+                    { tag: 'style', appendTo: 'body' },
+                    // Not processed by cssVars (used to test insert location)
+                    { tag: 'style', attr: { 'data-skip': true }, appendTo: 'body' }
+                ]);
 
                 cssVars({
-                    include   : '[data-test]',
+                    include   : '[data-test]:not([data-skip])',
                     onlyLegacy: false,
                     updateDOM : true,
                     onComplete(cssText, styleNode, cssVariables) {
                         const styleElms = Array.from(document.querySelectorAll('style'));
-                        const isAfterLastProcessedElm = elm.nextSibling === styleNode;
-                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm);
+                        const isAfterLastProcessedElm = testElms[0].nextSibling === styleNode;
+                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(testElms[1]);
 
                         expect(isAfterLastProcessedElm).to.be.true;
                         expect(isBeforeSkipElm).to.be.true;
-
-                        // Remove skipElm
-                        skipElm.parentNode.removeChild(skipElm);
                     }
                 });
             });
