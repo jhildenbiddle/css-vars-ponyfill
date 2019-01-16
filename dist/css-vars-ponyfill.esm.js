@@ -41,9 +41,9 @@ function _nonIterableSpread() {
 
 /*!
  * get-css-data
- * v1.6.1
+ * v1.6.2
  * https://github.com/jhildenbiddle/get-css-data
- * (c) 2018 John Hildenbiddle <http://hildenbiddle.com>
+ * (c) 2018-2019 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
  */ function getUrls(urls) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
