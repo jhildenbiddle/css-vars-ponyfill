@@ -161,7 +161,10 @@ module.exports = function(config) {
     }
     // Local
     else {
-        settings.browsers = ['ChromeHeadless'];
+        settings.browsers = [
+            'ChromeHeadless'
+            // 'jsdom' // SSR Testing
+        ];
         settings.webpack.devtool = 'inline-source-map';
         settings.coverageIstanbulReporter.reports.push('html');
 
