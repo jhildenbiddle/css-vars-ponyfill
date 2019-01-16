@@ -2,6 +2,7 @@
 // =============================================================================
 import chai               from 'chai';
 import createElms         from 'create-elms';
+import createTestElms     from './helpers/create-test-elms';
 import cssVars            from '../src/index';
 import resetVariableStore from './helpers/reset-variablestore';
 import { expect }         from 'chai';
@@ -16,20 +17,6 @@ const hasAnimationSupport      = bodyComputedStyle.animationName || bodyComputed
 const hasCustomPropertySupport = window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 
 
-// Helpers
-// =============================================================================
-function createElmsWrap(elmData, sharedOptions = {}) {
-    const isHeadElm = elmData.tag && ['link', 'style'].indexOf(elmData.tag) !== -1;
-
-    sharedOptions = Object.assign({}, {
-        attr    : Object.assign({ 'data-test': true }, sharedOptions.attr || {}),
-        appendTo: isHeadElm ? 'head' : 'body'
-    }, sharedOptions);
-
-    return createElms(elmData, sharedOptions);
-}
-
-
 // Suite
 // =============================================================================
 describe('css-vars', function() {
@@ -38,9 +25,10 @@ describe('css-vars', function() {
     // Conditionally include web component+polyfill to avoid errors in IE < 11
     before(function() {
         const hasWebComponentSupport = () => 'customElements' in window;
-        const isNotIELessThan11      = navigator.appVersion.indexOf('MSIE') === -1;
+        const isIELessThan11 = navigator.userAgent.indexOf('MSIE') !== -1;
+        const isJSDOM        = navigator.userAgent.indexOf('jsdom') !== -1;
 
-        if (!hasWebComponentSupport() && isNotIELessThan11) {
+        if (!hasWebComponentSupport() && !isIELessThan11 && !isJSDOM) {
             console.log('*** Injected: Web Component Polyfill ***');
 
             require('@webcomponents/webcomponentsjs/webcomponents-bundle.js');
@@ -74,7 +62,7 @@ describe('css-vars', function() {
             `;
             const expectCss = 'p{color:red;}';
 
-            createElmsWrap({ tag: 'style', text: styleCss });
+            createTestElms({ tag: 'style', text: styleCss });
 
             cssVars({
                 include   : '[data-test]',
@@ -90,7 +78,7 @@ describe('css-vars', function() {
             const linkUrl2  = '/base/tests/fixtures/test-value.css';
             const expectCss = 'p{color:red;}';
 
-            createElmsWrap([
+            createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl1 } },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl2 } }
             ]);
@@ -115,7 +103,7 @@ describe('css-vars', function() {
             `;
             const expectCss = 'p{color:red;}p{color:red;}p{color:red;}';
 
-            createElmsWrap([
+            createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl1 } },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl2 } },
                 { tag: 'style', text: styleCss }
@@ -138,7 +126,7 @@ describe('css-vars', function() {
             `;
             const expectCss = `p{color:red;}${'p{color:blue;}'.repeat(5)}`;
 
-            createElmsWrap([
+            createTestElms([
                 { tag: 'style', text: styleCss },
                 { tag: 'style', text: 'p { color: blue; }' },
                 { tag: 'style', text: 'p { color: blue; }' },
@@ -174,11 +162,11 @@ describe('css-vars', function() {
         if ('customElements' in window) {
             describe('rootElement', function() {
                 it('handles Element.shadowRoot <style> elements', function() {
-                    const customElm  = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                    const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
 
-                    createElmsWrap({ tag: 'style', text: ':root { --test-component-background: green; }' });
+                    createTestElms({ tag: 'style', text: ':root { --test-component-background: green; }' });
 
                     cssVars({
                         rootElement: shadowRoot,
@@ -191,7 +179,7 @@ describe('css-vars', function() {
                 });
 
                 it('handles Element.shadowRoot using options.variables', function() {
-                    const customElm  = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                    const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
 
@@ -215,7 +203,7 @@ describe('css-vars', function() {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';
                 const expectCss = hasCustomPropertySupport ? '' : 'p{color:red;}';
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -234,7 +222,7 @@ describe('css-vars', function() {
             it('true - filters CSS data', function() {
                 const expectCss = 'p{color:red;}';
 
-                createElmsWrap([
+                createTestElms([
                     { tag: 'style', text: ':root { --color: red; }' },
                     { tag: 'style', text: 'p { color: var(--color); }' },
                     { tag: 'style', text: 'p { color: green; }' }
@@ -258,7 +246,7 @@ describe('css-vars', function() {
                 `;
                 const expectCss = 'p{color:red;}';
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -278,7 +266,7 @@ describe('css-vars', function() {
                 `;
                 const expectCss = 'p{color:red;}p{color:green;}';
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -296,7 +284,7 @@ describe('css-vars', function() {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';
                 const expectCss = ':root{--color:red;}p{color:red;color:var(--color);}';
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -312,7 +300,7 @@ describe('css-vars', function() {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';
                 const expectCss = 'p{color:red;}';
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -330,14 +318,14 @@ describe('css-vars', function() {
                 it('true (handles Element.shadowRoot <style> elements)', function() {
                     const styleCss  = ':root { --test-component-background: green; }';
                     const expectCss = '.test-component{background:red;background:green;color:white;}';
-                    const testElms  = createElmsWrap([
+                    const testElms  = createTestElms([
                         { tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } },
                         { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' } }
                     ]);
 
                     let onCompleteCount = 0;
 
-                    createElmsWrap({ tag: 'style', text: styleCss });
+                    createTestElms({ tag: 'style', text: styleCss });
 
                     cssVars({
                         include   : '[data-test],[data-test-shadow]',
@@ -360,11 +348,11 @@ describe('css-vars', function() {
                 it('true (handles nested Element.shadowRoot <style> elements)', function() {
                     const styleCss  = ':root { --test-component-background: green; }';
                     const expectCss = '.test-component{background:red;background:green;color:white;}';
-                    const testElm1  = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
+                    const testElm1  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
 
                     let onCompleteCount = 0;
 
-                    createElmsWrap([
+                    createTestElms([
                         { tag: 'style', text: styleCss },
                         { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 }
                     ]);
@@ -388,10 +376,10 @@ describe('css-vars', function() {
                 it('false (ignores nested Element.shadowRoot <style> elements)', function() {
                     const styleCss  = ':root { --test-component-background: green; }';
                     const expectCss = '.test-component{background:red;background:green;color:white;}';
-                    const testElm1  = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
-                    const testElm2  = createElmsWrap({ tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 })[0];
+                    const testElm1  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
+                    const testElm2  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 })[0];
 
-                    createElmsWrap({ tag: 'style', text: styleCss });
+                    createTestElms({ tag: 'style', text: styleCss });
 
                     cssVars({
                         rootElement: testElm1.shadowRoot,
@@ -411,7 +399,7 @@ describe('css-vars', function() {
 
         describe('updateDOM', function() {
             it('true (appends <style> after last processed element in <head>)', function() {
-                const elm = createElmsWrap({
+                const elm = createTestElms({
                     tag     : 'style',
                     text    : ':root{--color:red;}p{color:var(--color);}',
                     appendTo: 'head'
@@ -443,7 +431,7 @@ describe('css-vars', function() {
             });
 
             it('true (appends <style> after last processed element in <body>)', function() {
-                const elm = createElmsWrap({
+                const elm = createTestElms({
                     tag     : 'style',
                     text    : ':root{--color:red;}p{color:var(--color);}',
                     appendTo: 'body'
@@ -475,7 +463,7 @@ describe('css-vars', function() {
             });
 
             it('false (does not append <style>)', function() {
-                createElmsWrap({
+                createTestElms({
                     tag     : 'style',
                     text    : ':root{--color:red;}p{color:var(--color);}',
                     appendTo: 'head'
@@ -515,7 +503,7 @@ describe('css-vars', function() {
                     }
                 `.replace(/\n|\s/g, '');
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -532,7 +520,7 @@ describe('css-vars', function() {
                 const styleCss  = 'p{background:url(image.png);}';
                 const expectCss = styleCss;
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -556,7 +544,7 @@ describe('css-vars', function() {
                 `;
                 const expectCss = 'p{color:red;}p{color:green;}p{color:blue;}p{color:purple;}';
 
-                createElmsWrap({ tag: 'style', text: styleCss });
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
@@ -575,7 +563,7 @@ describe('css-vars', function() {
 
             if (hasCustomPropertySupport) {
                 it('updates values via native setProperty() method', function() {
-                    const testElms = createElmsWrap([
+                    const testElms = createTestElms([
                         '<p style="color: var(--color1);"></p>',
                         '<p style="color: var(--color2);"></p>',
                         '<p style="color: var(--color3);"></p>'
@@ -604,7 +592,7 @@ describe('css-vars', function() {
                         ':root{--color:green;}'
                     ];
 
-                    createElmsWrap({ tag: 'style', text: styleCss[0] });
+                    createTestElms({ tag: 'style', text: styleCss[0] });
 
                     cssVars({
                         include   : '[data-test]',
@@ -615,7 +603,7 @@ describe('css-vars', function() {
                     setTimeout(function() {
                         expect(getComputedStyle(document.body).color).to.be.colored('red');
 
-                        createElmsWrap({ tag: 'style', text: styleCss[1] });
+                        createTestElms({ tag: 'style', text: styleCss[1] });
                     }, 250);
 
                     setTimeout(function() {
@@ -638,7 +626,7 @@ describe('css-vars', function() {
                         ':root{--color:purple;}'
                     ];
 
-                    createElmsWrap({ tag: 'style', text: styleCss[0] });
+                    createTestElms({ tag: 'style', text: styleCss[0] });
 
                     cssVars({
                         include   : '[data-test]',
@@ -649,7 +637,7 @@ describe('css-vars', function() {
                     setTimeout(function() {
                         expect(getComputedStyle(document.body).color).to.be.colored('red');
 
-                        createElmsWrap({ tag: 'style', text: styleCss[1] });
+                        createTestElms({ tag: 'style', text: styleCss[1] });
                     }, 250);
 
                     setTimeout(function() {
@@ -661,7 +649,7 @@ describe('css-vars', function() {
                             watch     : false
                         });
 
-                        createElmsWrap({ tag: 'style', text: styleCss[2] });
+                        createTestElms({ tag: 'style', text: styleCss[2] });
 
                         setTimeout(function() {
                             expect(getComputedStyle(document.body).color, 'Observer Off').to.be.colored('green');
@@ -679,7 +667,7 @@ describe('css-vars', function() {
         it('triggers onBeforeSend callback on each request with proper arguments', function(done) {
             let onBeforeSendCount = 0;
 
-            createElmsWrap([
+            createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: '/base/tests/fixtures/test-value.css' } },
                 { tag: 'style', text: '@import "/base/tests/fixtures/test-declaration.css";@import "/base/tests/fixtures/test-value.css";' }
             ]);
@@ -701,7 +689,7 @@ describe('css-vars', function() {
 
         it('triggers onSuccess callback on each success with proper arguments', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-value.css';
-            const styleElms = createElmsWrap([
+            const styleElms = createTestElms([
                 { tag: 'style', text: ':root { --color: red; }' },
                 { tag: 'style', text: 'p { color: var(--color); }' },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } }
@@ -742,7 +730,7 @@ describe('css-vars', function() {
         });
 
         it('triggers onWarning callback on each warning with proper arguments', function(done) {
-            const styleElms = createElmsWrap([
+            const styleElms = createTestElms([
                 { tag: 'style', text: 'p { color: var(--fail); }' }
             ]);
 
@@ -768,7 +756,7 @@ describe('css-vars', function() {
         it('triggers onError callback on each error with proper arguments', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-onerror.css';
             const styleCss  = ':root { --error: red;';
-            const styleElms = createElmsWrap([
+            const styleElms = createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: 'fail.css' } },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } },
                 { tag: 'style', text: styleCss }
@@ -807,7 +795,7 @@ describe('css-vars', function() {
 
         it('triggers onError callback on invalid <link> CSS', function(done) {
             const linkUrl  = '/base/tests/fixtures/404.html';
-            const styleElm = createElmsWrap({ tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } })[0];
+            const styleElm = createTestElms({ tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } })[0];
 
             let onErrorCount = 0;
 
@@ -834,7 +822,7 @@ describe('css-vars', function() {
             const styleCss   = ':root { --color: red; } p { color: var(--color); }';
             const expectCss  = 'p{color:red;}';
 
-            createElmsWrap({ tag: 'style', text: styleCss });
+            createTestElms({ tag: 'style', text: styleCss });
 
             cssVars({
                 include   : '[data-test]',
@@ -858,7 +846,7 @@ describe('css-vars', function() {
                 'p{color:green;}'
             ];
 
-            createElmsWrap({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
+            createTestElms({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
 
             cssVars({
                 include   : '[data-test]',
@@ -868,7 +856,7 @@ describe('css-vars', function() {
                 }
             });
 
-            createElmsWrap({ tag: 'style', text: ':root { --color: green; }' });
+            createTestElms({ tag: 'style', text: ':root { --color: green; }' });
 
             cssVars({
                 include   : '[data-test]',
@@ -880,47 +868,45 @@ describe('css-vars', function() {
         });
 
         it('updates inserted <style> location when called multiple times', function() {
-            const elm1 = createElmsWrap({ tag: 'style', text: ':root{--processed:true;}' })[0];
-
-            // Not processed by cssVars (used to test insert location)
-            const skipElm1 = createElms({ tag : 'style', text: ':root{--skipped:true;}', appendTo: 'head' })[0];
+            const styleElms1 = createTestElms([
+                { tag: 'style' },
+                // Not processed by cssVars (used to test insert location)
+                { tag : 'style', attr: { 'data-skip': true }}
+            ]);
 
             cssVars({
-                include   : '[data-test]',
+                include   : '[data-test]:not([data-skip])',
                 onlyLegacy: false,
                 onComplete(cssText, styleNode, cssVariables) {
                     const styleElms = Array.from(document.querySelectorAll('style'));
-                    const isAfterLastProcessedElm = elm1.nextSibling === styleNode;
-                    const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm1);
+                    const isAfterLastProcessedElm = styleElms1[0].nextSibling === styleNode;
+                    const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(styleElms1[1]);
 
-                    expect(styleNode.parentNode, 'inserted into <head>').to.equals(document.head);
+                    expect(styleNode.parentNode.tagName, 'inserted into <head>').to.equal('HEAD');
                     expect(isAfterLastProcessedElm, 'inserted after last element processed').to.be.true;
                     expect(isBeforeSkipElm, 'inserted before skipped element').to.be.true;
                 }
             });
 
-            const elm2 = createElmsWrap({ tag: 'style', text: ':root{--processed:true;}', appendTo: 'body' })[0];
-
-            // Not processed by cssVars (used to test insert location)
-            const skipElm2 = createElms({ tag : 'style', text: ':root{--skipped:true;}', appendTo: 'body' })[0];
+            const styleElms2 = createTestElms([
+                { tag: 'style' },
+                // Not processed by cssVars (used to test insert location)
+                { tag : 'style', attr: { 'data-skip': true }}
+            ], { appendTo: 'body' });
 
             cssVars({
-                include   : '[data-test]',
+                include   : '[data-test]:not([data-skip])',
                 onlyLegacy: false,
                 onComplete(cssText, styleNode, cssVariables) {
                     const styleElms = Array.from(document.querySelectorAll('style'));
-                    const isAfterLastProcessedElm = elm2.nextSibling === styleNode;
-                    const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(skipElm2);
+                    const isAfterLastProcessedElm = styleElms2[0].nextSibling === styleNode;
+                    const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(styleElms2[1]);
 
-                    expect(styleNode.parentNode, 'inserted into <body>').to.equals(document.body);
+                    expect(styleNode.parentNode.tagName, 'inserted into <body>').to.equal('BODY');
                     expect(isAfterLastProcessedElm, 'inserted after last element processed').to.be.true;
                     expect(isBeforeSkipElm, 'inserted before skipped element').to.be.true;
                 }
             });
-
-            // Remove skipElms
-            skipElm1.parentNode.removeChild(skipElm1);
-            skipElm2.parentNode.removeChild(skipElm2);
         });
 
         it('persists options.variables when called multiple times', function() {
@@ -930,7 +916,7 @@ describe('css-vars', function() {
                 'p{color:blue;}p{width:200px;}'
             ];
 
-            createElmsWrap({ tag: 'style', text: 'p { color: var(--color); }' });
+            createTestElms({ tag: 'style', text: 'p { color: var(--color); }' });
 
             cssVars({
                 include   : '[data-test]',
@@ -941,7 +927,7 @@ describe('css-vars', function() {
                 }
             });
 
-            createElmsWrap({ tag: 'style', text: 'p { width: var(--width); }' });
+            createTestElms({ tag: 'style', text: 'p { width: var(--width); }' });
 
             cssVars({
                 exclude   : ':not([data-test])',
@@ -977,7 +963,7 @@ describe('css-vars', function() {
         // @keyframe support required
         if (hasAnimationSupport) {
             it('Fixes @keyframe bug in legacy (IE) and modern (Safari) browsers', function(done) {
-                const testElm = createElmsWrap({
+                const testElm = createTestElms({
                     tag: 'p', text: 'Test Element', appendTo: 'body', attr: { class: 'test' }
                 })[0];
 
@@ -985,7 +971,7 @@ describe('css-vars', function() {
                     return getComputedStyle(testElm).color;
                 }
 
-                createElmsWrap({ tag: 'style', text: `
+                createTestElms({ tag: 'style', text: `
                     :root {
                         --color: red;
                     }
@@ -1042,7 +1028,7 @@ describe('css-vars', function() {
     //         `;
     //         const expectCss = 'p{color:red;}';
 
-    //         createElmsWrap({ tag: 'style', text: styleCss });
+    //         createTestElms({ tag: 'style', text: styleCss });
 
     //         console.time('Performance Test');
 
