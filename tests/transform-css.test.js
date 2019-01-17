@@ -83,6 +83,21 @@ describe('transform-css', function() {
             expect(cssOut).to.equal(expectCss);
         });
 
+        it('transforms variable function with spaces, tabs, and new lines', function() {
+            const cssIn = `
+                :root { --color: red; }
+                p {
+                    color: var(
+                        --color
+                    );
+                }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = 'p{color:red;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
         it('transforms variable function in mixed property value', function() {
             const cssIn = `
                 :root { --margin: 20px; }

@@ -7,6 +7,8 @@
 - Updated method of merging default and user options from deep to shallow merge
   to better accommodate SSR / virtual DOM environments.
 
+- Fixed parsing of variable functions that contain spaces, tabs, and new lines.
+
 ## 1.16.2
 
 *2018-12-23*
@@ -24,8 +26,10 @@
 *2018-12-14*
 
 - Added `types` property to package.json.
+
 - Updated `options.onlyVars` implementation resulting in a significant
   performance increase.
+
 - Fixed build status badge (now reflects only master branch status).
 
 ## 1.15.3
@@ -53,7 +57,7 @@
 
 *2018-11-12*
 
-- Updated `options.onSuccess` callback to better handle falsey return values
+- Changed `options.onSuccess` callback to better handle falsey return values
   (e.g. `false`, `null`, `0`, `""`).
 
 ## 1.14.0
@@ -77,7 +81,7 @@
 
 *2018-11-06*
 
-- Updated `options.onComplete` callback to return a clone instead of a reference
+- Changed `options.onComplete` callback to return a clone instead of a reference
   to the internal variable storage object as the `cssVariables` argument.
 
 - Fixed bug that prevented `options.variables` values from persisting properly
@@ -139,8 +143,8 @@
 
 - Added check for non-browser environments to support Node+SSR. (#16)
 
-- Updated keyframe animation fix to support legacy browsers that require vendor
-  prefixes for `animation-name` and `@keyframes`.
+- Fixed keyframe animation fix by adding vendor prefixes for `animation-name`
+  and `@keyframes`.
 
 - Fixed internal placeholder comments appearing in CSS output instead of
   stylesheet content. (#15)
@@ -167,7 +171,7 @@
 
 *2018-05-20*
 
-- Updated `options.onError` callback `url` argument so that it always returns an
+- Changed `options.onError` callback `url` argument so that it always returns an
   absolute URL.
 
 - Updated README with `options.onError` fixes and a few other minor tweaks.
@@ -213,12 +217,12 @@
 
 - Updated `get-css-data` dependency to 1.2.0 to resolve a callback related bug.
 
-- Updated logic for inserting generated `<style>` element. Element is now
+- Changed logic for inserting generated `<style>` element. Element is now
   inserted after the last `<style>` or `<link>` node processed. This
   change, combined with the proceeding change, ensures that the original cascade
   order is maintained after the transformed styles are appended to the DOM.
 
-- Updated `options.onlyVars` default value from `true` to `false`. This
+- Changed `options.onlyVars` default value from `true` to `false`. This
   change, combined with the preceding change, ensures that the original cascade
   order is maintained after the transformed styles are appended to the DOM.
 
@@ -268,10 +272,10 @@
 - Fixed bug that prevented `options.onlyVars` from properly filtering
   declarations that do not contain a custom property value or function.
 
-- Updated `options.preserve` default value from `true` to `false`. This aligns
+- Changed `options.preserve` default value from `true` to `false`. This aligns
   with other default values which assume a "legacy-only" configuration.
 
-- Updated logic for inserting generated `<style>` element. Element is now
+- Changed logic for inserting generated `<style>` element. Element is now
   inserted as first CSS source node rather than the last. This allows the
   cascade order to be maintained when `options.onlyVars` is `true`.
 

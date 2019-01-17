@@ -276,7 +276,7 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
      *   // => 'var(--fail)' when map['--fail'] does not exist
      */
     function resolveFunc(value) {
-        const name               = value.split(',')[0];
+        const name               = value.split(',')[0].replace(/[\s\n\t]/g, '');
         const fallback           = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
         const match              = map.hasOwnProperty(name) ? String(map[name]) : undefined;
         const replacement        = match || (fallback ? String(fallback) : undefined);
