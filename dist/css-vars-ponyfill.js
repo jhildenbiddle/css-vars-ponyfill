@@ -920,7 +920,7 @@
         var valueData = balancedMatch("(", ")", value);
         var warningIntro = "CSS transform warning:";
         function resolveFunc(value) {
-            var name = value.split(",")[0];
+            var name = value.split(",")[0].replace(/[\s\n\t]/g, "");
             var fallback = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
             var match = map.hasOwnProperty(name) ? String(map[name]) : undefined;
             var replacement = match || (fallback ? String(fallback) : undefined);

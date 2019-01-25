@@ -2,7 +2,7 @@
 
 ## 1.16.3
 
-*2019-01-15*
+*2019-01-25*
 
 - Updated method of merging default and user options from deep to shallow merge
   to better accommodate SSR / virtual DOM environments.
