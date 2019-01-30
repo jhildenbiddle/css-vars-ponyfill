@@ -41,7 +41,7 @@
     }
     /*!
    * get-css-data
-   * v1.6.2
+   * v1.6.3
    * https://github.com/jhildenbiddle/get-css-data
    * (c) 2018-2019 John Hildenbiddle <http://hildenbiddle.com>
    * MIT license
@@ -74,14 +74,14 @@
                 settings.onComplete(urlQueue);
             }
         }
+        var parser = document.createElement("a");
         urlArray.forEach(function(url, i) {
-            var parser = document.createElement("a");
             parser.setAttribute("href", url);
             parser.href = String(parser.href);
-            var isCrossDomain = parser.host !== location.host;
-            var isIElte9 = document.all && !window.atob;
-            var isSameProtocol = parser.protocol === location.protocol;
-            if (isCrossDomain && isIElte9) {
+            var isIElte9 = Boolean(document.all && !window.atob);
+            var isIElte9CORS = isIElte9 && parser.host.split(":")[0] !== location.host.split(":")[0];
+            if (isIElte9CORS) {
+                var isSameProtocol = parser.protocol === location.protocol;
                 if (isSameProtocol) {
                     var xdr = new XDomainRequest();
                     xdr.open("GET", url);
@@ -102,7 +102,7 @@
                         xdr.send();
                     }, 0);
                 } else {
-                    console.log("Internet Explorer 9 Cross-Origin (CORS) requests must use the same protocol");
+                    console.warn("Internet Explorer 9 Cross-Origin (CORS) requests must use the same protocol (".concat(url, ")"));
                     onError(null, i);
                 }
             } else {

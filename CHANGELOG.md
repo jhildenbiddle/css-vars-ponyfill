@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.16.4
+
+*2019-01-30*
+
+- Fixed IE9 CORS check by updating `get-css-data` dependency
+
 ## 1.16.3
 
 *2019-01-25*
