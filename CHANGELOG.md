@@ -10,7 +10,7 @@
 
 *2019-01-25*
 
-- Updated method of merging default and user options from deep to shallow merge
+- Updated method of merging defanult and user options from deep to shallow merge
   to better accommodate SSR / virtual DOM environments.
 
 - Fixed parsing of variable functions that contain spaces, tabs, and new lines.
