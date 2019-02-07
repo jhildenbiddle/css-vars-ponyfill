@@ -794,6 +794,7 @@
     function transformVars(cssText) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
+            allowMultiple: false,
             fixNestedCalc: true,
             onlyVars: false,
             persist: false,
@@ -811,7 +812,9 @@
             if (rule.type !== "rule") {
                 return;
             }
-            if (rule.selectors.length !== 1 || rule.selectors[0] !== ":root") {
+            if (!settings.allowMultiple && rule.selectors.length !== 1 || rule.selectors[0] !== ":root") {
+                return;
+            } else if (settings.allowMultiple && rule.selectors.indexOf(":root") < 0) {
                 return;
             }
             rule.declarations.forEach(function(decl, i) {
@@ -958,6 +961,7 @@
         rootElement: isBrowser ? document : null,
         include: "style,link[rel=stylesheet]",
         exclude: "",
+        allowMultiple: false,
         fixNestedCalc: true,
         onlyLegacy: true,
         onlyVars: false,
@@ -979,7 +983,7 @@
         cssKeyframes: /@(?:-\w*-)?keyframes/,
         cssRootRules: /(?::root\s*{\s*[^}]*})/g,
         cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
-        cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
+        cssVars: /(?:(?::root[^{]*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
     var cssVarsObserver = null;
     var isShadowDOMReady = false;
@@ -1000,6 +1004,10 @@
    * @param {string}   [options.exclude] CSS selector matching <link
    *                   rel="stylehseet"> and <style> nodes to exclude from those
    *                   matches by options.include
+   * @param {boolean}  [options.allowMultiple=false] Enables processing :root rules
+   *                   which target multiple selectors. Only applies the declarations
+   *                   to :root in legacy browsers but allows secondary selectors to
+   *                   apply to compliant browsers.
    * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
    *                   for legacy browser compatibility.
    * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -1054,6 +1062,7 @@
    *     rootElement  : document,
    *     include      : 'style,link[rel="stylesheet"]',
    *     exclude      : '',
+   *     allowMultiple: false,
    *     fixNestedCalc: true,
    *     onlyLegacy   : true,
    *     onlyVars     : false,
@@ -1169,6 +1178,7 @@
                         }).join("");
                         try {
                             cssText = transformVars(cssText, {
+                                allowMultiple: settings.allowMultiple,
                                 fixNestedCalc: settings.fixNestedCalc,
                                 onlyVars: settings.onlyVars,
                                 persist: settings.updateDOM,

@@ -3,6 +3,7 @@ declare module 'css-vars-ponyfill' {
         rootElement?: HTMLElement|Node;
         include?: string;
         exclude?: string;
+        allowMultiple?:boolean;
         fixNestedCalc?: boolean;
         onlyLegacy?: boolean;
         onlyVars?: boolean;

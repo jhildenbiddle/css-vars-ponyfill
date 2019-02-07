@@ -187,6 +187,44 @@ describe('transform-css', function() {
     // Tests: Options
     // -------------------------------------------------------------------------
     describe('Options', function() {
+        describe('allowMultiple', function() {
+            it('false', function() {
+                const cssIn = `
+                    :root { --color: red; }
+                    :root, .test { --color: blue; }
+                    p { color: var(--color); }
+                `;
+                const cssOut    = transformCss(cssIn, { allowMultiple: false });
+                const expectCss = ':root,.test{--color:blue;}p{color:red;}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+
+            it('true (no collisions)', function() {
+                const cssIn = `
+                    :root, .test { --color: blue; }
+                    p { color: var(--color); }
+                `;
+                const cssOut    = transformCss(cssIn, { allowMultiple: true });
+                const expectCss = 'p{color:blue;}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+
+            // The latest :root rule should apply globally
+            it('true (with collisions)', function() {
+                const cssIn = `
+                    :root, .test1 { --color: red; }
+                    :root, .test2 { --color: blue; }
+                    p { color: var(--color); }
+                `;
+                const cssOut    = transformCss(cssIn, { allowMultiple: true });
+                const expectCss = 'p{color:blue;}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+        });
+
         describe('fixNestedCalc', function() {
             it('true (without vars)', function() {
                 const cssIn = 'p { margin: calc(1px + calc(2px + calc(3px + 3px))); }';
