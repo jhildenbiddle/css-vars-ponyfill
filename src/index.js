@@ -17,6 +17,7 @@ const defaults = {
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
     // Options
+    allowMultiple: false, // transformCss
     fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
     onlyVars     : false, // cssVars, parseCSS
@@ -44,7 +45,7 @@ const regex = {
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable :root declarations and var() function values
-    cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
+    cssVars: /(?:(?::root[^{]*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 
 // Mutation observer referece created via options.watch
@@ -74,6 +75,10 @@ let isShadowDOMReady = false;
  * @param {string}   [options.exclude] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
+ * @param {boolean}  [options.allowMultiple=false] Enables processing :root rules
+ *                   which target multiple selectors. Only applies the declarations
+ *                   to :root in legacy browsers but allows secondary selectors to
+ *                   apply to compliant browsers.
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -128,6 +133,7 @@ let isShadowDOMReady = false;
  *     rootElement  : document,
  *     include      : 'style,link[rel="stylesheet"]',
  *     exclude      : '',
+ *     allowMultiple: false,
  *     fixNestedCalc: true,
  *     onlyLegacy   : true,
  *     onlyVars     : false,
@@ -305,6 +311,7 @@ function cssVars(options = {}) {
 
                     try {
                         cssText = transformCss(cssText, {
+                            allowMultiple: settings.allowMultiple,
                             fixNestedCalc: settings.fixNestedCalc,
                             onlyVars     : settings.onlyVars,
                             persist      : settings.updateDOM,

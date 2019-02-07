@@ -34,6 +34,10 @@ const variableStore       = {
  *
  * @param {object}   cssText CSS containing variable definitions and functions
  * @param {object}   [options] Options object
+ * @param {boolean}  [options.allowMultiple=false] Enables processing :root rules
+ *                   which target multiple selectors. Only applies the declarations
+ *                   to :root in legacy browsers but allows secondary selectors to
+ *                   apply to compliant browsers.
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyVars=false] Remove declarations that do not
@@ -56,6 +60,7 @@ const variableStore       = {
  */
 function transformVars(cssText, options = {}) {
     const defaults = {
+        allowMultiple: false,
         fixNestedCalc: true,
         onlyVars     : false,
         persist      : false,
@@ -80,7 +85,10 @@ function transformVars(cssText, options = {}) {
         }
 
         // only variables declared for `:root` are supported
-        if (rule.selectors.length !== 1 || rule.selectors[0] !== ':root') {
+        if (!settings.allowMultiple && rule.selectors.length !== 1 || rule.selectors[0] !== ':root') {
+            return;
+        }
+        else if (settings.allowMultiple && rule.selectors.indexOf(':root') < 0) {
             return;
         }
 
