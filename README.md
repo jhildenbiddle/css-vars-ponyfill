@@ -178,6 +178,7 @@ Values will be updated in both legacy and modern browsers:
 - [rootElement](#optionsrootelement)
 - [include](#optionsinclude)
 - [exclude](#optionsexclude)
+- [allowMultiple](#optionsallowmultiple)
 - [fixNestedCalc](#optionsfixnestedcalc)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
@@ -311,6 +312,78 @@ cssVars({
 });
 
 ```
+
+### options.allowMultiple
+
+- Type: `boolean`
+- Default: `false`
+
+Determines if variables declared in rules which target multiple selectors should be processed by the ponyfill as long as one of the selectors is `:root`.
+
+This can be used to allow targeting CSS variables to a class in modern browsers with a fallback to target global variables in legacy browsers.
+
+**Example**
+
+CSS:
+
+```css
+:root {
+  --color: red;
+}
+:root, .theme1 {
+  --color: green;
+}
+:root, .theme2 {
+  --color: blue;
+}
+p {
+  background-color: var(--color);
+}
+.theme1 {
+  background-color: var(--color);
+}
+.theme2 {
+  background-color: var(--color);
+}
+```
+
+Javascript:
+
+```javascript
+cssVars({
+  allowMultiple: false // default
+});
+```
+
+Output when `allowMultiple: false`:
+
+```css
+p {
+  background-color: red;
+}
+.theme1 {
+  background-color: red;
+}
+.theme2 {
+  background-color: red;
+}
+```
+
+Output when `allowMultiple: true`:
+
+```css
+p {
+  background-color: blue;
+}
+.theme1 {
+  background-color: blue; /* The last :root declaration */
+}
+.theme2 {
+  background-color: blue;
+}
+```
+
+In modern browsers, an element with the class `.theme1` would be styled with a green background while elements with the class `.theme2` would be styled with a blue background. `p` elements would be styled with a red background.
 
 ### options.fixNestedCalc
 
