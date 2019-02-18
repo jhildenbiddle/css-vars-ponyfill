@@ -269,7 +269,7 @@ function cssVars(options = {}) {
                     // Convert relative url(...) values to absolute
                     if (settings.updateURLs) {
                         const cssUrls = cssText
-                            // Remove comments to avoid processing @import in comments
+                        // Remove comments to avoid processing @import in comments
                             .replace(regex.cssComments, '')
                             // Match url(...) values
                             .match(regex.cssUrls) || [];
@@ -420,8 +420,6 @@ function addMutationObserver(settings, ignoreId) {
     const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
     const isStyle = node => node.tagName === 'STYLE' && (ignoreId ? node.id !== ignoreId : true);
 
-    let debounceTimer = null;
-
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
     }
@@ -431,7 +429,9 @@ function addMutationObserver(settings, ignoreId) {
     cssVarsObserver = new MutationObserver(function(mutations) {
         let isUpdateMutation = false;
 
-        mutations.forEach(mutation => {
+        for (let i = 0; i < mutations.length; i++) {
+            const mutation = mutations[i];
+
             if (mutation.type === 'attributes') {
                 isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
             }
@@ -447,19 +447,15 @@ function addMutationObserver(settings, ignoreId) {
                 });
             }
 
-            if (isUpdateMutation) {
-                clearTimeout(debounceTimer);
-
-                debounceTimer = setTimeout(function() {
-                    cssVars(settings);
-                }, 1);
+            if (isUpdateMutation || (i+1 === mutations.length)) {
+                cssVars(settings);
             }
-        });
+        }
     });
 
     cssVarsObserver.observe(document.documentElement, {
         attributes     : true,
-        attributeFilter: ['disabled', 'href'],
+        attributeFilter: ['style', 'class'],
         childList      : true,
         subtree        : true
     });
@@ -525,7 +521,6 @@ function getFullUrl(url, base = location.href) {
 
     return a.href;
 }
-
 
 // Export
 // =============================================================================

@@ -1268,14 +1268,14 @@ function addMutationObserver(settings, ignoreId) {
     var isStyle = function isStyle(node) {
         return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
     };
-    var debounceTimer = null;
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
     }
     settings.watch = defaults.watch;
     cssVarsObserver = new MutationObserver(function(mutations) {
         var isUpdateMutation = false;
-        mutations.forEach(function(mutation) {
+        for (var i = 0; i < mutations.length; i++) {
+            var mutation = mutations[i];
             if (mutation.type === "attributes") {
                 isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
             } else if (mutation.type === "childList") {
@@ -1287,17 +1287,14 @@ function addMutationObserver(settings, ignoreId) {
                     return isValidLink || isValidStyle;
                 });
             }
-            if (isUpdateMutation) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(function() {
-                    cssVars(settings);
-                }, 1);
+            if (isUpdateMutation || i + 1 === mutations.length) {
+                cssVars(settings);
             }
-        });
+        }
     });
     cssVarsObserver.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: [ "disabled", "href" ],
+        attributeFilter: [ "style", "class" ],
         childList: true,
         subtree: true
     });
