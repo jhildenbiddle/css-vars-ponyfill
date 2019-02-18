@@ -455,7 +455,7 @@ function addMutationObserver(settings, ignoreId) {
 
     cssVarsObserver.observe(document.documentElement, {
         attributes     : true,
-        attributeFilter: ['style', 'class'],
+        attributeFilter: ['disabled', 'href'],
         childList      : true,
         subtree        : true
     });
