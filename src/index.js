@@ -47,8 +47,11 @@ const regex = {
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 
-// Mutation observer referece created via options.watch
-let cssVarsObserver  = null;
+// Mutation observer reference created via options.watch
+let cssVarsObserver = null;
+
+// Debounce timer used with options.watch
+let debounceTimer = null;
 
 // Indicates if document-level custom property values have been parsed, stored,
 // and ready for use with options.shadowDOM
@@ -136,25 +139,13 @@ let isShadowDOMReady = false;
  *     silent       : false,
  *     updateDOM    : true,
  *     updateURLs   : true,
- *     variables    : {
- *       // ...
- *     },
+ *     variables    : {},
  *     watch        : false,
- *     onBeforeSend(xhr, node, url) {
- *       // ...
- *     }
- *     onSuccess(cssText, node, url) {
- *       // ...
- *     },
- *     onWarning(message) {
- *       // ...
- *     },
- *     onError(message, node) {
- *       // ...
- *     },
- *     onComplete(cssText, styleNode) {
- *       // ...
- *     }
+ *     onBeforeSend(xhr, node, url) {},
+ *     onSuccess(cssText, node, url) {},
+ *     onWarning(message) {},
+ *     onError(message, node, xhr, url) {},
+ *     onComplete(cssText, styleNode, cssVariables) {}
  *   });
  */
 function cssVars(options = {}) {
@@ -190,8 +181,18 @@ function cssVars(options = {}) {
         return;
     }
 
+    // Disconnect existing MutationObserver
+    if (settings.watch === false && cssVarsObserver) {
+        cssVarsObserver.disconnect();
+    }
+
+    // Add / recreate MutationObserver
+    if (settings.watch) {
+        addMutationObserver(settings, styleNodeId);
+        cssVarsDebounced(settings);
+    }
     // Verify readyState to ensure all <link> and <style> nodes are available
-    if (document.readyState !== 'loading') {
+    else if (document.readyState !== 'loading') {
         const isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
 
         // Native support
@@ -243,15 +244,6 @@ function cssVars(options = {}) {
         }
         // Ponyfill: Process CSS
         else {
-            // Add / recreate MutationObserver
-            if (settings.watch) {
-                addMutationObserver(settings, styleNodeId);
-            }
-            // Disconnect existing
-            else if (settings.watch === false && cssVarsObserver) {
-                cssVarsObserver.disconnect();
-            }
-
             getCssData({
                 rootElement: settings.rootElement,
                 include: settings.include,
@@ -389,7 +381,6 @@ function cssVars(options = {}) {
                 }
             });
         }
-
     }
     // Delay function until DOMContentLoaded event is fired
     /* istanbul ignore next */
@@ -400,6 +391,19 @@ function cssVars(options = {}) {
             document.removeEventListener('DOMContentLoaded', init);
         });
     }
+}
+
+/**
+ * Debounces cssVars() calls
+ *
+ * @param {object} settings
+ */
+function cssVarsDebounced(settings) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function() {
+        settings._benchmark = null;
+        cssVars(settings);
+    }, 100);
 }
 
 
@@ -420,8 +424,6 @@ function addMutationObserver(settings, ignoreId) {
     const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
     const isStyle = node => node.tagName === 'STYLE' && (ignoreId ? node.id !== ignoreId : true);
 
-    let debounceTimer = null;
-
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
     }
@@ -429,32 +431,30 @@ function addMutationObserver(settings, ignoreId) {
     settings.watch = defaults.watch;
 
     cssVarsObserver = new MutationObserver(function(mutations) {
-        let isUpdateMutation = false;
+        const hasCSSMutation = mutations.some((mutation) => {
+            let isCSSMutation = false;
 
-        mutations.forEach(mutation => {
             if (mutation.type === 'attributes') {
-                isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
+                isCSSMutation = isLink(mutation.target) || isStyle(mutation.target);
             }
             else if (mutation.type === 'childList') {
                 const addedNodes   = Array.apply(null, mutation.addedNodes);
                 const removedNodes = Array.apply(null, mutation.removedNodes);
 
-                isUpdateMutation = [].concat(addedNodes, removedNodes).some(node => {
+                isCSSMutation = [].concat(addedNodes, removedNodes).some(node => {
                     const isValidLink  = isLink(node) && !node.disabled;
-                    const isValidStyle = isStyle(node) && !node.disabled && regex.cssVars.test(node.textContent);
+                    const isValidStyle = isStyle(node) && regex.cssVars.test(node.textContent);
 
                     return (isValidLink || isValidStyle);
                 });
             }
 
-            if (isUpdateMutation) {
-                clearTimeout(debounceTimer);
-
-                debounceTimer = setTimeout(function() {
-                    cssVars(settings);
-                }, 1);
-            }
+            return isCSSMutation;
         });
+
+        if (hasCSSMutation) {
+            cssVarsDebounced(settings);
+        }
     });
 
     cssVarsObserver.observe(document.documentElement, {
