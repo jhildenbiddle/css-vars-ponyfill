@@ -982,6 +982,7 @@
         cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
     var cssVarsObserver = null;
+    var debounceTimer = null;
     var isShadowDOMReady = false;
     /**
    * Fetches, parses, and transforms CSS custom properties from specified
@@ -1045,8 +1046,9 @@
    *                   processed, legacy-compatible CSS has been generated, and
    *                   (optionally) the DOM has been updated. Passes 1) a CSS
    *                   string with CSS variable values resolved, 2) a reference to
-   *                   the appended <style> node, and 3) an object containing all
-   *                   custom properies names and values.
+   *                   the appended <style> node, 3) an object containing all
+   *                   custom properies names and values, and 4) the ponyfill
+   *                   execution time in milliseconds.
    *
    * @example
    *
@@ -1062,31 +1064,20 @@
    *     silent       : false,
    *     updateDOM    : true,
    *     updateURLs   : true,
-   *     variables    : {
-   *       // ...
-   *     },
+   *     variables    : {},
    *     watch        : false,
-   *     onBeforeSend(xhr, node, url) {
-   *       // ...
-   *     }
-   *     onSuccess(cssText, node, url) {
-   *       // ...
-   *     },
-   *     onWarning(message) {
-   *       // ...
-   *     },
-   *     onError(message, node) {
-   *       // ...
-   *     },
-   *     onComplete(cssText, styleNode) {
-   *       // ...
-   *     }
+   *     onBeforeSend(xhr, node, url) {},
+   *     onSuccess(cssText, node, url) {},
+   *     onWarning(message) {},
+   *     onError(message, node, xhr, url) {},
+   *     onComplete(cssText, styleNode, cssVariables, benchmark) {}
    *   });
    */    function cssVars() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
         var settings = _extends({}, defaults, options);
         var styleNodeId = name;
         settings.exclude = "#".concat(styleNodeId) + (settings.exclude ? ",".concat(settings.exclude) : "");
+        settings._benchmark = !settings._benchmark ? getTimeStamp() : settings._benchmark;
         function handleError(message, sourceNode, xhr, url) {
             if (!settings.silent) {
                 console.error("".concat(message, "\n"), sourceNode);
@@ -1102,7 +1093,13 @@
         if (!isBrowser) {
             return;
         }
-        if (document.readyState !== "loading") {
+        if (settings.watch === false && cssVarsObserver) {
+            cssVarsObserver.disconnect();
+        }
+        if (settings.watch) {
+            addMutationObserver(settings, styleNodeId);
+            cssVarsDebounced(settings);
+        } else if (document.readyState !== "loading") {
             var isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
             if (isNativeSupport && settings.onlyLegacy) {
                 if (settings.updateDOM) {
@@ -1131,11 +1128,6 @@
                     }
                 });
             } else {
-                if (settings.watch) {
-                    addMutationObserver(settings, styleNodeId);
-                } else if (settings.watch === false && cssVarsObserver) {
-                    cssVarsObserver.disconnect();
-                }
                 getCssData({
                     rootElement: settings.rootElement,
                     include: settings.include,
@@ -1221,7 +1213,7 @@
                                 }
                             }
                         }
-                        settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)));
+                        settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings._benchmark);
                     }
                 });
             }
@@ -1231,6 +1223,13 @@
                 document.removeEventListener("DOMContentLoaded", init);
             });
         }
+    }
+    function cssVarsDebounced(settings) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+            settings._benchmark = null;
+            cssVars(settings);
+        }, 100);
     }
     function addMutationObserver(settings, ignoreId) {
         if (!window.MutationObserver) {
@@ -1242,32 +1241,29 @@
         var isStyle = function isStyle(node) {
             return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
         };
-        var debounceTimer = null;
         if (cssVarsObserver) {
             cssVarsObserver.disconnect();
         }
         settings.watch = defaults.watch;
         cssVarsObserver = new MutationObserver(function(mutations) {
-            var isUpdateMutation = false;
-            mutations.forEach(function(mutation) {
+            var hasCSSMutation = mutations.some(function(mutation) {
+                var isCSSMutation = false;
                 if (mutation.type === "attributes") {
-                    isUpdateMutation = isLink(mutation.target) || isStyle(mutation.target);
+                    isCSSMutation = isLink(mutation.target) || isStyle(mutation.target);
                 } else if (mutation.type === "childList") {
                     var addedNodes = Array.apply(null, mutation.addedNodes);
                     var removedNodes = Array.apply(null, mutation.removedNodes);
-                    isUpdateMutation = [].concat(addedNodes, removedNodes).some(function(node) {
+                    isCSSMutation = [].concat(addedNodes, removedNodes).some(function(node) {
                         var isValidLink = isLink(node) && !node.disabled;
-                        var isValidStyle = isStyle(node) && !node.disabled && regex.cssVars.test(node.textContent);
+                        var isValidStyle = isStyle(node) && regex.cssVars.test(node.textContent);
                         return isValidLink || isValidStyle;
                     });
                 }
-                if (isUpdateMutation) {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(function() {
-                        cssVars(settings);
-                    }, 1);
-                }
+                return isCSSMutation;
             });
+            if (hasCSSMutation) {
+                cssVarsDebounced(settings);
+            }
         });
         cssVarsObserver.observe(document.documentElement, {
             attributes: true,
@@ -1309,6 +1305,9 @@
         b.href = base;
         a.href = url;
         return a.href;
+    }
+    function getTimeStamp() {
+        return isBrowser && performance ? performance.now() : new Date().getTime();
     }
     return cssVars;
 });

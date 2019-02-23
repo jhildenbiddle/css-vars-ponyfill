@@ -226,7 +226,7 @@ cssVars({
   onError(message, node, xhr, url) {
     // ...
   },
-  onComplete(cssText, styleNode, cssVariables) {
+  onComplete(cssText, styleNode, cssVariables, benchmark) {
     // ...
   }
 });
@@ -822,6 +822,7 @@ cssVars({
   1. **cssText**: A `string` of concatenated CSS text from all nodes in DOM order
   1. **styleNode**: An `object` reference to the appended `<style>` node
   1. **cssVariables**: An `object` containing CSS custom property names and values
+  1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
 
 Callback after all CSS has been processed, legacy-compatible CSS has been generated, and (optionally) the DOM has been updated.
 
@@ -829,7 +830,7 @@ Callback after all CSS has been processed, legacy-compatible CSS has been genera
 
 ```javascript
 cssVars({
-  onComplete(cssText, styleNode, cssVariables) {
+  onComplete(cssText, styleNode, cssVariables, benchmark) {
     // ...
   }
 });

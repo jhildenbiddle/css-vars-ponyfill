@@ -122,8 +122,9 @@ let isShadowDOMReady = false;
  *                   processed, legacy-compatible CSS has been generated, and
  *                   (optionally) the DOM has been updated. Passes 1) a CSS
  *                   string with CSS variable values resolved, 2) a reference to
- *                   the appended <style> node, and 3) an object containing all
- *                   custom properies names and values.
+ *                   the appended <style> node, 3) an object containing all
+ *                   custom properies names and values, and 4) the ponyfill
+ *                   execution time in milliseconds.
  *
  * @example
  *
@@ -145,7 +146,7 @@ let isShadowDOMReady = false;
  *     onSuccess(cssText, node, url) {},
  *     onWarning(message) {},
  *     onError(message, node, xhr, url) {},
- *     onComplete(cssText, styleNode, cssVariables) {}
+ *     onComplete(cssText, styleNode, cssVariables, benchmark) {}
  *   });
  */
 function cssVars(options = {}) {
@@ -155,6 +156,9 @@ function cssVars(options = {}) {
     // Always exclude styleNodeId element, which is the generated <style> node
     // containing previously transformed CSS.
     settings.exclude = `#${styleNodeId}` + (settings.exclude ? `,${settings.exclude}` : '');
+
+    // Store benchmark start time
+    settings._benchmark = !settings._benchmark ? getTimeStamp() : settings._benchmark;
 
     function handleError(message, sourceNode, xhr, url) {
         /* istanbul ignore next */
@@ -377,7 +381,12 @@ function cssVars(options = {}) {
                         }
                     }
 
-                    settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)));
+                    settings.onComplete(
+                        cssText,
+                        styleNode,
+                        JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
+                        getTimeStamp() - settings._benchmark
+                    );
                 }
             });
         }
@@ -524,6 +533,15 @@ function getFullUrl(url, base = location.href) {
     a.href = url;
 
     return a.href;
+}
+
+/**
+ * Returns a time stamp in milliseconds
+ *
+ * @returns {number}
+ */
+function getTimeStamp() {
+    return isBrowser && performance ? performance.now() : new Date().getTime();
 }
 
 
