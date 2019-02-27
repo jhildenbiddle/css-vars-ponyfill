@@ -935,7 +935,6 @@ function resolveValue(value, map) {
         return value;
     }
     var valueData = balancedMatch("(", ")", value);
-    var warningIntro = "CSS transform warning:";
     function resolveFunc(value) {
         var name = value.split(",")[0].replace(/[\s\n\t]/g, "");
         var fallback = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
@@ -943,7 +942,7 @@ function resolveValue(value, map) {
         var replacement = match || (fallback ? String(fallback) : undefined);
         var unresolvedFallback = __recursiveFallback || value;
         if (!match) {
-            settings.onWarning("".concat(warningIntro, ' variable "').concat(name, '" is undefined'));
+            settings.onWarning('variable "'.concat(name, '" is undefined'));
         }
         if (replacement && replacement !== "undefined" && replacement.length > 0) {
             return resolveValue(replacement, map, settings, unresolvedFallback);
@@ -953,13 +952,13 @@ function resolveValue(value, map) {
     }
     if (!valueData) {
         if (value.indexOf("var(") !== -1) {
-            settings.onWarning("".concat(warningIntro, ' missing closing ")" in the value "').concat(value, '"'));
+            settings.onWarning('missing closing ")" in the value "'.concat(value, '"'));
         }
         return value;
     } else if (valueData.pre.slice(-3) === "var") {
         var isEmptyVarFunc = valueData.body.trim().length === 0;
         if (isEmptyVarFunc) {
-            settings.onWarning("".concat(warningIntro, " var() must contain a non-whitespace string"));
+            settings.onWarning("var() must contain a non-whitespace string");
             return value;
         } else {
             return valueData.pre.slice(0, -3) + resolveFunc(valueData.body) + resolveValue(valueData.post, map, settings);
@@ -975,19 +974,21 @@ var isBrowser = typeof window !== "undefined";
 
 var isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
 
+var consoleMsgPrefix = "cssVars(): ";
+
 var defaults = {
     rootElement: isBrowser ? document : null,
+    shadowDOM: false,
     include: "style,link[rel=stylesheet]",
     exclude: "",
+    variables: {},
     fixNestedCalc: true,
     onlyLegacy: true,
     onlyVars: false,
     preserve: false,
-    shadowDOM: false,
     silent: false,
     updateDOM: true,
     updateURLs: true,
-    variables: {},
     watch: null,
     onBeforeSend: function onBeforeSend() {},
     onSuccess: function onSuccess() {},
@@ -1021,12 +1022,18 @@ var isShadowDOMReady = false;
  * @param {object}   [options] Options object
  * @param {object}   [options.rootElement=document] Root element to traverse for
  *                   <link> and <style> nodes.
+ * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
+ *                   and <style> nodes will be processed.
  * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
  *                   matching <link re="stylesheet"> and <style> nodes to
  *                   process
  * @param {string}   [options.exclude] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
+ * @param {object}   [options.variables] A map of custom property name/value
+ *                   pairs. Property names can omit or include the leading
+ *                   double-hyphen (—), and values specified will override
+ *                   previous values.
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -1038,18 +1045,12 @@ var isShadowDOMReady = false;
  * @param {boolean}  [options.preserve=false] Determines if the original CSS
  *                   custom property declaration will be retained in the
  *                   ponyfill-generated CSS.
- * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
- *                   and <style> nodes will be processed.
  * @param {boolean}  [options.silent=false] Determines if warning and error
  *                   messages will be displayed on the console
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
  * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
  *                   convert relative url() paths to absolute urls.
- * @param {object}   [options.variables] A map of custom property name/value
- *                   pairs. Property names can omit or include the leading
- *                   double-hyphen (—), and values specified will override
- *                   previous values.
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed.
@@ -1080,17 +1081,17 @@ var isShadowDOMReady = false;
  *
  *   cssVars({
  *     rootElement  : document,
+ *     shadowDOM    : false,
  *     include      : 'style,link[rel="stylesheet"]',
  *     exclude      : '',
+ *     variables    : {},
  *     fixNestedCalc: true,
  *     onlyLegacy   : true,
  *     onlyVars     : false,
  *     preserve     : false,
- *     shadowDOM    : false,
  *     silent       : false,
  *     updateDOM    : true,
  *     updateURLs   : true,
- *     variables    : {},
  *     watch        : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onSuccess(cssText, node, url) {},
@@ -1106,13 +1107,13 @@ var isShadowDOMReady = false;
     settings._benchmark = !settings._benchmark ? getTimeStamp() : settings._benchmark;
     function handleError(message, sourceNode, xhr, url) {
         if (!settings.silent) {
-            console.error("".concat(message, "\n"), sourceNode);
+            console.error("".concat(consoleMsgPrefix).concat(message, "\n"), sourceNode);
         }
         settings.onError(message, sourceNode, xhr, url);
     }
     function handleWarning(message) {
         if (!settings.silent) {
-            console.warn(message);
+            console.warn("".concat(consoleMsgPrefix).concat(message));
         }
         settings.onWarning(message);
     }
@@ -1181,50 +1182,62 @@ var isShadowDOMReady = false;
                 },
                 onComplete: function onComplete(cssText, cssArray, nodeArray) {
                     var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
-                    var styleNode = null;
-                    cssText = cssArray.map(function(css, i) {
-                        return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
-                    }).join("");
-                    try {
-                        cssText = transformVars(cssText, {
-                            fixNestedCalc: settings.fixNestedCalc,
-                            onlyVars: settings.onlyVars,
-                            persist: settings.updateDOM,
-                            preserve: settings.preserve,
-                            variables: settings.variables,
-                            onWarning: handleWarning
-                        });
-                        var hasKeyframes = regex.cssKeyframes.test(cssText);
-                        cssText = cssText.replace(cssMarker, function(match, group1) {
-                            return cssArray[group1];
-                        });
-                        if (settings.updateDOM && nodeArray && nodeArray.length) {
-                            var lastNode = nodeArray[nodeArray.length - 1];
-                            styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
-                            styleNode.setAttribute("id", styleNodeId);
-                            if (styleNode.textContent !== cssText) {
-                                styleNode.textContent = cssText;
-                            }
-                            if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
-                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                            }
-                            if (hasKeyframes) {
-                                fixKeyframes(settings.rootElement);
-                            }
+                    var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
+                    var prevData = styleNode.__cssVars || {};
+                    var isSameData = prevData.cssText === cssText && prevData.settings === JSON.stringify(settings);
+                    if (isSameData) {
+                        cssText = styleNode.textContent;
+                        if (!settings.silent) {
+                            console.info("".concat(consoleMsgPrefix, "CSS source is unchanged"));
                         }
-                    } catch (err) {
-                        var errorThrown = false;
-                        cssArray.forEach(function(cssText, i) {
-                            try {
-                                cssText = transformVars(cssText, settings);
-                            } catch (err) {
-                                var errorNode = nodeArray[i - 0];
-                                errorThrown = true;
-                                handleError(err.message, errorNode);
+                    } else {
+                        styleNode.setAttribute("id", styleNodeId);
+                        styleNode.__cssVars = {
+                            cssText: cssText,
+                            settings: JSON.stringify(settings)
+                        };
+                        cssText = cssArray.map(function(css, i) {
+                            return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
+                        }).join("");
+                        try {
+                            cssText = transformVars(cssText, {
+                                fixNestedCalc: settings.fixNestedCalc,
+                                onlyVars: settings.onlyVars,
+                                persist: settings.updateDOM,
+                                preserve: settings.preserve,
+                                variables: settings.variables,
+                                onWarning: handleWarning
+                            });
+                            var hasKeyframes = regex.cssKeyframes.test(cssText);
+                            cssText = cssText.replace(cssMarker, function(match, group1) {
+                                return cssArray[group1];
+                            });
+                            if (settings.updateDOM && nodeArray && nodeArray.length) {
+                                var lastNode = nodeArray[nodeArray.length - 1];
+                                if (styleNode.textContent !== cssText) {
+                                    styleNode.textContent = cssText;
+                                }
+                                if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
+                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                }
+                                if (hasKeyframes) {
+                                    fixKeyframes(settings.rootElement);
+                                }
                             }
-                        });
-                        if (!errorThrown) {
-                            handleError(err.message || err);
+                        } catch (err) {
+                            var errorThrown = false;
+                            cssArray.forEach(function(cssText, i) {
+                                try {
+                                    cssText = transformVars(cssText, settings);
+                                } catch (err) {
+                                    var errorNode = nodeArray[i - 0];
+                                    errorThrown = true;
+                                    handleError(err.message, errorNode);
+                                }
+                            });
+                            if (!errorThrown) {
+                                handleError(err.message || err);
+                            }
                         }
                     }
                     if (settings.shadowDOM) {
@@ -1239,7 +1252,7 @@ var isShadowDOMReady = false;
                             }
                         }
                     }
-                    settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings._benchmark);
+                    settings.onComplete(cssText, settings.updateDOM && styleNode.parentNode ? styleNode : null, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings._benchmark);
                 }
             });
         }

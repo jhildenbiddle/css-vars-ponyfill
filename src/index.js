@@ -289,74 +289,93 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray) {
-                    const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
-                    let   styleNode = null;
+                    const cssMarker  = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                    const styleNode  = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
+                    const prevData   = styleNode.__cssVars || {};
+                    const isSameData = prevData.cssText === cssText && prevData.settings === JSON.stringify(settings);
 
-                    // Concatenate cssArray items, replacing those that do not
-                    // contain a CSS custom property declaraion or function with
-                    // a temporary marker . After the CSS is transformed, the
-                    // markers will be replaced with the matching cssArray item.
-                    // This optimization is done to avoid processing CSS that
-                    // will not change as a results of the ponyfill.
-                    cssText = cssArray.map((css, i) => regex.cssVars.test(css) ? css : `/*__CSSVARSPONYFILL-${i}__*/`).join('');
+                    if (isSameData) {
+                        // Set cssText to existing transformed CSS
+                        cssText = styleNode.textContent;
 
-                    try {
-                        cssText = transformCss(cssText, {
-                            fixNestedCalc: settings.fixNestedCalc,
-                            onlyVars     : settings.onlyVars,
-                            persist      : settings.updateDOM,
-                            preserve     : settings.preserve,
-                            variables    : settings.variables,
-                            onWarning    : handleWarning
-                        });
-
-                        const hasKeyframes = regex.cssKeyframes.test(cssText);
-
-                        // Replace markers with appropriate cssArray item
-                        cssText = cssText.replace(cssMarker, (match, group1) => cssArray[group1]);
-
-                        if (settings.updateDOM && nodeArray && nodeArray.length) {
-                            const lastNode = nodeArray[nodeArray.length - 1];
-
-                            styleNode = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
-                            styleNode.setAttribute('id', styleNodeId);
-
-                            if (styleNode.textContent !== cssText) {
-                                styleNode.textContent = cssText;
-                            }
-
-                            // Insert <style> element after last nodeArray item
-                            if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
-                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                            }
-
-                            if (hasKeyframes) {
-                                fixKeyframes(settings.rootElement);
-                            }
+                        /* istanbul ignore next */
+                        if (!settings.silent) {
+                            // eslint-disable-next-line
+                            console.info(`${consoleMsgPrefix}CSS source is unchanged`);
                         }
                     }
-                    catch(err) {
-                        let errorThrown = false;
+                    else {
+                        styleNode.setAttribute('id', styleNodeId);
 
-                        // Iterate cssArray to detect CSS text and node(s)
-                        // responsibile for error.
-                        cssArray.forEach((cssText, i) => {
-                            try {
-                                cssText = transformCss(cssText, settings);
+                        // Store data for comparison on subsequent calls
+                        styleNode.__cssVars = {
+                            cssText,
+                            settings: JSON.stringify(settings)
+                        };
+
+                        // Concatenate cssArray items, replacing those that do not
+                        // contain a CSS custom property declaraion or function with
+                        // a temporary marker . After the CSS is transformed, the
+                        // markers will be replaced with the matching cssArray item.
+                        // This optimization is done to avoid processing CSS that
+                        // will not change as a results of the ponyfill.
+                        cssText = cssArray.map((css, i) => regex.cssVars.test(css) ? css : `/*__CSSVARSPONYFILL-${i}__*/`).join('');
+
+                        try {
+                            cssText = transformCss(cssText, {
+                                fixNestedCalc: settings.fixNestedCalc,
+                                onlyVars     : settings.onlyVars,
+                                persist      : settings.updateDOM,
+                                preserve     : settings.preserve,
+                                variables    : settings.variables,
+                                onWarning    : handleWarning
+                            });
+
+                            const hasKeyframes = regex.cssKeyframes.test(cssText);
+
+                            // Replace markers with appropriate cssArray item
+                            cssText = cssText.replace(cssMarker, (match, group1) => cssArray[group1]);
+
+                            if (settings.updateDOM && nodeArray && nodeArray.length) {
+                                const lastNode = nodeArray[nodeArray.length - 1];
+
+                                if (styleNode.textContent !== cssText) {
+                                    styleNode.textContent = cssText;
+                                }
+
+                                // Insert <style> element after last nodeArray item
+                                if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
+                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                }
+
+                                if (hasKeyframes) {
+                                    fixKeyframes(settings.rootElement);
+                                }
                             }
-                            catch(err) {
-                                const errorNode = nodeArray[i - 0];
+                        }
+                        catch(err) {
+                            let errorThrown = false;
 
-                                errorThrown = true;
-                                handleError(err.message, errorNode);
+                            // Iterate cssArray to detect CSS text and node(s)
+                            // responsibile for error.
+                            cssArray.forEach((cssText, i) => {
+                                try {
+                                    cssText = transformCss(cssText, settings);
+                                }
+                                catch(err) {
+                                    const errorNode = nodeArray[i - 0];
+
+                                    errorThrown = true;
+                                    handleError(err.message, errorNode);
+                                }
+                            });
+
+                            // In the event the error thrown was not due to
+                            // transformCss, handle the original error.
+                            /* istanbul ignore next */
+                            if (!errorThrown) {
+                                handleError(err.message || err);
                             }
-                        });
-
-                        // In the event the error thrown was not due to
-                        // transformCss, handle the original error.
-                        /* istanbul ignore next */
-                        if (!errorThrown) {
-                            handleError(err.message || err);
                         }
                     }
 
@@ -384,7 +403,7 @@ function cssVars(options = {}) {
 
                     settings.onComplete(
                         cssText,
-                        styleNode,
+                        settings.updateDOM && styleNode.parentNode ? styleNode : null,
                         JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
                         getTimeStamp() - settings._benchmark
                     );

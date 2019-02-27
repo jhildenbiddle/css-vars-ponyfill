@@ -845,9 +845,9 @@ describe('css-vars', function() {
 
         it('updates inserted <style> location when called multiple times', function() {
             const styleElms1 = createTestElms([
-                { tag: 'style' },
+                { tag: 'style', text: '/* 1 */' },
                 // Not processed by cssVars (used to test insert location)
-                { tag : 'style', attr: { 'data-skip': true }}
+                { tag : 'style', text: '/* 2 */', attr: { 'data-skip': true }}
             ]);
 
             cssVars({
@@ -865,9 +865,9 @@ describe('css-vars', function() {
             });
 
             const styleElms2 = createTestElms([
-                { tag: 'style' },
+                { tag: 'style', text: '/* 3 */' },
                 // Not processed by cssVars (used to test insert location)
-                { tag : 'style', attr: { 'data-skip': true }}
+                { tag : 'style', text: '/* 4 */', attr: { 'data-skip': true }}
             ], { appendTo: 'body' });
 
             cssVars({
