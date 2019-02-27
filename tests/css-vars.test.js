@@ -714,7 +714,6 @@ describe('css-vars', function() {
             ]);
 
             let onWarningCount = 0;
-            let onWarningMsg;
 
             cssVars({
                 include   : '[data-test]',
@@ -722,11 +721,9 @@ describe('css-vars', function() {
                 silent    : true, // remove to display console error messages
                 onWarning(warningMsg) {
                     onWarningCount++;
-                    onWarningMsg = warningMsg;
                 },
                 onComplete(cssText, styleNode, cssVariables) {
                     expect(onWarningCount, 'onWarning count').to.equal(styleElms.length);
-                    expect(onWarningMsg.toLowerCase().indexOf('warning') > -1, 'onWarning message').to.be.true;
                     done();
                 }
             });

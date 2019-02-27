@@ -11,6 +11,7 @@ import { name as pkgName } from '../package.json';
 const isBrowser       = typeof window !== 'undefined';
 const isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 
+const consoleMsgPrefix = 'cssVars(): ';
 const defaults = {
     // Sources
     rootElement  : isBrowser ? document : null,
@@ -164,7 +165,7 @@ function cssVars(options = {}) {
         /* istanbul ignore next */
         if (!settings.silent) {
             // eslint-disable-next-line
-            console.error(`${message}\n`, sourceNode);
+            console.error(`${consoleMsgPrefix}${message}\n`, sourceNode);
         }
 
         settings.onError(message, sourceNode, xhr, url);
@@ -174,7 +175,7 @@ function cssVars(options = {}) {
         /* istanbul ignore next */
         if (!settings.silent) {
             // eslint-disable-next-line
-            console.warn(message);
+            console.warn(`${consoleMsgPrefix}${message}`);
         }
 
         settings.onWarning(message);

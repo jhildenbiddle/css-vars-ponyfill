@@ -258,8 +258,7 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
         return value;
     }
 
-    const valueData    = balanced('(', ')', value);
-    const warningIntro = 'CSS transform warning:';
+    const valueData = balanced('(', ')', value);
 
     /**
      * Resolves contents of CSS custom property function
@@ -283,7 +282,7 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
         const unresolvedFallback = __recursiveFallback || value;
 
         if (!match) {
-            settings.onWarning(`${warningIntro} variable "${name}" is undefined`);
+            settings.onWarning(`variable "${name}" is undefined`);
         }
 
         if (replacement && replacement !== 'undefined' && replacement.length > 0) {
@@ -297,7 +296,7 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
     // No balanced brace data
     if (!valueData) {
         if (value.indexOf('var(') !== -1) {
-            settings.onWarning(`${warningIntro} missing closing ")" in the value "${value}"`);
+            settings.onWarning(`missing closing ")" in the value "${value}"`);
         }
 
         return value;
@@ -307,7 +306,7 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
         const isEmptyVarFunc = valueData.body.trim().length === 0;
 
         if (isEmptyVarFunc) {
-            settings.onWarning(`${warningIntro} var() must contain a non-whitespace string`);
+            settings.onWarning('var() must contain a non-whitespace string');
 
             return value;
         }
