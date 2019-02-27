@@ -450,11 +450,13 @@ cssVars({
 - Type: `boolean`
 - Default: `false`
 
-Determines if CSS rulesets and declarations without a custom property value should be removed from the transformed CSS.
+Determines if CSS rulesets and declarations that do not reference a CSS custom property value should be removed from the transformed CSS.
 
-When `true`, rulesets and declarations without a custom property value will be removed from the generated CSS, reducing CSS output size. This can significantly reduce the amount of CSS processed and output by the ponyfill, but runs the risk of breaking the original cascade order once the transformed values are appended to the DOM. When `false`, all rulesets and declarations will be retained in the generated CSS. This means the ponyfill will process and output more CSS, but it ensures that the original cascade order is maintained after the transformed styles are appended to the DOM.
+When `true`, rulesets and declarations that do not reference a CSS custom property value will be removed from the generated CSS. This can dramatically increase the performance of the polyfill by reducing the amount of CSS that needs to be generated, but doing so runs the risk of breaking the original cascade order once the transformed values are appended to the DOM (see examples below).
 
-**Note:** `@font-face` and `@keyframes` require all declarations to be retained if a CSS custom property is used anywhere within the ruleset.
+When `false`, all rulesets and declarations will be retained in the generated CSS. This means the ponyfill will need to process and will therefore be slower, but doing so ensures that the original cascade order is maintained after the transformed styles are appended to the DOM.
+
+**Note:** `@font-face` and `@keyframes` rulesets require all declarations to be retained if a CSS custom property is used anywhere within the ruleset.
 
 **Example**
 
@@ -469,7 +471,6 @@ h1 {
 }
 p {
   margin: 20px;
-  padding: 10px;
   color: var(--color);
 }
 ```
@@ -498,8 +499,59 @@ h1 {
 }
 p {
   margin: 20px;
-  padding: 10px;
   color: red;
+}
+```
+
+**Example: Broken cascade**
+
+CSS:
+
+```css
+:root {
+  --color: red;
+}
+p {
+  color: var(--color);
+}
+
+@media all (min-width: 800px) {
+  p {
+    color: blue;
+  }
+}
+```
+
+Output when `onlyVars: true`
+
+```css
+p {
+  color: red;
+}
+```
+
+When the above CSS is appended to the DOM, the `color: red;` declaration overrides the `color: blue;` declaration in the media query (they have the same [CSS specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity) so the last one wins).
+
+A workaround for this issue is force the ponyfill to include a declaration by using a bogus CSS custom property with a fallback value:
+
+```css
+@media all (min-width: 800px) {
+  p {
+    color: var(--bogus, blue);
+  }
+}
+```
+
+The ponyfill will include the declaration when `onlyVars` is `true` and resolve to its fallback value, maintaining the original cascade.
+
+```css
+p {
+  color: red;
+}
+@media all (min-width: 800px) {
+  p {
+    color: blue;
+  }
 }
 ```
 
