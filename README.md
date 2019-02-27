@@ -175,19 +175,30 @@ Values will be updated in both legacy and modern browsers:
 
 ## Options
 
+**Targets**
+
 - [rootElement](#optionsrootelement)
+- [shadowDOM](#optionsshadowdom)
+
+**Sources**
+
 - [include](#optionsinclude)
 - [exclude](#optionsexclude)
+- [variables](#optionsvariables)
+
+**Options**
+
 - [fixNestedCalc](#optionsfixnestedcalc)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
-- [shadowDOM](#optionsshadowdom)
 - [silent](#optionssilent)
 - [updateDOM](#optionsupdatedom)
 - [updateURLs](#optionsupdateurls)
-- [variables](#optionsvariables)
 - [watch](#optionswatch)
+
+**Callbacks**
+
 - [onBeforeSend](#optionsonbeforesend)
 - [onSuccess](#optionsonsuccess)
 - [onWarning](#optionsonwarning)
@@ -200,19 +211,17 @@ Values will be updated in both legacy and modern browsers:
 // All options (default values shown)
 cssVars({
   rootElement  : document,
+  shadowDOM    : false,
   include      : 'link[rel=stylesheet],style',
   exclude      : '',
+  variables    : {},
   fixNestedCalc: true,
   onlyLegacy   : true,
   onlyVars     : false,
   preserve     : false,
-  shadowDOM    : false,
   silent       : false,
   updateDOM    : true,
   updateURLs   : true,
-  variables    : {
-    // ...
-  },
   watch        : false,
   onBeforeSend(xhr, node, url) {
     // ...
@@ -250,6 +259,33 @@ cssVars({
 // Shadow DOM
 cssVars({
   rootElement: document.querySelector('custom-element').shadowRoot
+});
+```
+
+### options.shadowDOM
+
+- Type: `boolean`
+- Default: `false`
+
+Determines if shadow DOM tree(s) nested within the [options.rootElement](#optionsrootelement) will be processed.
+
+**Example**
+
+```javascript
+// Do no process shadow DOM trees
+cssVars({
+  shadowDOM: false // default
+});
+
+// Process all shadow DOM trees in document
+cssVars({
+  shadowDOM: true
+});
+
+// Process all shadow DOM trees in custom element
+cssVars({
+  rootElement: document.querySelector('my-element'),
+  shadowDOM  : true
 });
 ```
 
@@ -309,7 +345,28 @@ cssVars({
   // Ex: <style data-cssvarsponyfill="false">...</style>
   include: '[data-cssvarsponyfill="false"]'
 });
+```
 
+### options.variables
+
+- Type: `object`
+- Default: `{}`
+
+A map of custom property name/value pairs to apply to both legacy and modern browsers. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
+
+Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
+
+**Note:** Although this option affects both legacy and modern browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#optionsonlylegacy) is `false`).
+
+**Example**
+
+```javascript
+cssVars({
+  variables: {
+    '--color1': 'red',  // Leading -- included
+    'color2'  : 'green' // Leading -- omitted
+  }
+});
 ```
 
 ### options.fixNestedCalc
@@ -496,33 +553,6 @@ p {
 }
 ```
 
-### options.shadowDOM
-
-- Type: `boolean`
-- Default: `false`
-
-Determines if shadow DOM tree(s) nested within the [options.rootElement](#optionsrootelement) will be processed.
-
-**Example**
-
-```javascript
-// Do no process shadow DOM trees
-cssVars({
-  shadowDOM: false // default
-});
-
-// Process all shadow DOM trees in document
-cssVars({
-  shadowDOM: true
-});
-
-// Process all shadow DOM trees in custom element
-cssVars({
-  rootElement: document.querySelector('my-element'),
-  shadowDOM  : true
-});
-```
-
 ### options.silent
 
 - Type: `boolean`
@@ -647,28 +677,6 @@ Output when `updateURLs: false`
 div {
   background-image: url(image.jpg);
 }
-```
-
-### options.variables
-
-- Type: `object`
-- Default: `{}`
-
-A map of custom property name/value pairs to apply to both legacy and modern browsers. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
-
-Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
-
-**Note:** Although this option affects both legacy and modern browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#optionsonlylegacy) is `false`).
-
-**Example**
-
-```javascript
-cssVars({
-  variables: {
-    '--color1': 'red',  // Leading -- included
-    'color2'  : 'green' // Leading -- omitted
-  }
-});
 ```
 
 ### options.watch

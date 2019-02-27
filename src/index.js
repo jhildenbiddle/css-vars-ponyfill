@@ -13,20 +13,21 @@ const isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window
 
 const consoleMsgPrefix = 'cssVars(): ';
 const defaults = {
-    // Sources
+    // Targets
     rootElement  : isBrowser ? document : null,
+    shadowDOM    : false,
+    // Sources
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
+    variables    : {},    // transformCss
     // Options
     fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
     onlyVars     : false, // cssVars, parseCSS
     preserve     : false, // transformCss
-    shadowDOM    : false, // cssVars
     silent       : false, // cssVars
     updateDOM    : true,  // cssVars
     updateURLs   : true,  // cssVars
-    variables    : {},    // transformCss
     watch        : null,  // cssVars
     // Callbacks
     onBeforeSend() {},    // cssVars
@@ -72,12 +73,18 @@ let isShadowDOMReady = false;
  * @param {object}   [options] Options object
  * @param {object}   [options.rootElement=document] Root element to traverse for
  *                   <link> and <style> nodes.
+ * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
+ *                   and <style> nodes will be processed.
  * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
  *                   matching <link re="stylesheet"> and <style> nodes to
  *                   process
  * @param {string}   [options.exclude] CSS selector matching <link
  *                   rel="stylehseet"> and <style> nodes to exclude from those
  *                   matches by options.include
+ * @param {object}   [options.variables] A map of custom property name/value
+ *                   pairs. Property names can omit or include the leading
+ *                   double-hyphen (—), and values specified will override
+ *                   previous values.
  * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
@@ -89,18 +96,12 @@ let isShadowDOMReady = false;
  * @param {boolean}  [options.preserve=false] Determines if the original CSS
  *                   custom property declaration will be retained in the
  *                   ponyfill-generated CSS.
- * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
- *                   and <style> nodes will be processed.
  * @param {boolean}  [options.silent=false] Determines if warning and error
  *                   messages will be displayed on the console
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
  * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
  *                   convert relative url() paths to absolute urls.
- * @param {object}   [options.variables] A map of custom property name/value
- *                   pairs. Property names can omit or include the leading
- *                   double-hyphen (—), and values specified will override
- *                   previous values.
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed.
@@ -131,17 +132,17 @@ let isShadowDOMReady = false;
  *
  *   cssVars({
  *     rootElement  : document,
+ *     shadowDOM    : false,
  *     include      : 'style,link[rel="stylesheet"]',
  *     exclude      : '',
+ *     variables    : {},
  *     fixNestedCalc: true,
  *     onlyLegacy   : true,
  *     onlyVars     : false,
  *     preserve     : false,
- *     shadowDOM    : false,
  *     silent       : false,
  *     updateDOM    : true,
  *     updateURLs   : true,
- *     variables    : {},
  *     watch        : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onSuccess(cssText, node, url) {},
