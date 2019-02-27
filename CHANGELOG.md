@@ -1,5 +1,28 @@
 # Change Log
 
+## 1.17.0
+
+*2019-02-26*
+
+- Added optimization that prevents reprocessing data when input is unchanged
+  from previous ponyfill call.
+
+- Added console `info` message when input is unchanged from previous ponyfill
+  call.
+
+- Added `benchmark` argument to `options.onComplete` callback which provides
+  the execution time of a ponyfill call in milliseconds.
+
+- Added `cssVars():` prefix to all console messages.
+
+- Changed `options.watch` debounce timer from `1` to `100` milliseconds.
+
+- Fixed `options.watch` MutationObserver performance issue that resulted in
+  unnecessary processing when a large number of DOM mutations occur.
+
+- Fixed `options.watch` performance issue that resulted in unnecessary
+  consecutive ponyfill calls (initial call + first mutation).
+
 ## 1.16.4
 
 *2019-01-30*
@@ -197,8 +220,9 @@
 
 *2018-05-18*
 
-- Improved performance when processing `<link>` and `<style>` data that does not
-  contain a CSS custom property declaration or function. (#9)
+- Added optimization that allows the ponyfill to skip processing of `<link>` and
+  `<style>` data that does not contain a CSS custom property declaration or
+  function. (#9)
 
 ## 1.6.0
 
