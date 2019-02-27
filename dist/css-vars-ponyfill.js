@@ -1319,7 +1319,7 @@
         return a.href;
     }
     function getTimeStamp() {
-        return isBrowser && performance ? performance.now() : new Date().getTime();
+        return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
     }
     return cssVars;
 });
