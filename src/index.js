@@ -290,10 +290,22 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray) {
-                    const cssMarker  = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                    const cssMarker   = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                    const cssSettings = JSON.stringify({
+                        // Sources
+                        include      : settings.include,
+                        exclude      : settings.exclude,
+                        variables    : settings.variables,
+                        // Options
+                        fixNestedCalc: settings.fixNestedCalc,
+                        onlyVars     : settings.onlyVars,
+                        preserve     : settings.preserve,
+                        silent       : settings.silent,
+                        updateURLs   : settings.updateURLs
+                    });
                     const styleNode  = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
                     const prevData   = styleNode.__cssVars || {};
-                    const isSameData = prevData.cssText === cssText && prevData.settings === JSON.stringify(settings);
+                    const isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
 
                     if (isSameData) {
                         // Set cssText to existing transformed CSS
@@ -302,7 +314,7 @@ function cssVars(options = {}) {
                         /* istanbul ignore next */
                         if (!settings.silent) {
                             // eslint-disable-next-line
-                            console.info(`${consoleMsgPrefix}CSS source is unchanged`);
+                            console.info(`${consoleMsgPrefix}No changes`, styleNode);
                         }
                     }
                     else {
@@ -311,7 +323,7 @@ function cssVars(options = {}) {
                         // Store data for comparison on subsequent calls
                         styleNode.__cssVars = {
                             cssText,
-                            settings: JSON.stringify(settings)
+                            settings: cssSettings
                         };
 
                         // Concatenate cssArray items, replacing those that do not

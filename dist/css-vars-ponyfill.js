@@ -1155,19 +1155,29 @@
                     },
                     onComplete: function onComplete(cssText, cssArray, nodeArray) {
                         var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                        var cssSettings = JSON.stringify({
+                            include: settings.include,
+                            exclude: settings.exclude,
+                            variables: settings.variables,
+                            fixNestedCalc: settings.fixNestedCalc,
+                            onlyVars: settings.onlyVars,
+                            preserve: settings.preserve,
+                            silent: settings.silent,
+                            updateURLs: settings.updateURLs
+                        });
                         var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                         var prevData = styleNode.__cssVars || {};
-                        var isSameData = prevData.cssText === cssText && prevData.settings === JSON.stringify(settings);
+                        var isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
                         if (isSameData) {
                             cssText = styleNode.textContent;
                             if (!settings.silent) {
-                                console.info("".concat(consoleMsgPrefix, "CSS source is unchanged"));
+                                console.info("".concat(consoleMsgPrefix, "No changes"), styleNode);
                             }
                         } else {
                             styleNode.setAttribute("id", styleNodeId);
                             styleNode.__cssVars = {
                                 cssText: cssText,
-                                settings: JSON.stringify(settings)
+                                settings: cssSettings
                             };
                             cssText = cssArray.map(function(css, i) {
                                 return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
