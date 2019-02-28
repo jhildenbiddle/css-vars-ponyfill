@@ -24,7 +24,7 @@ import balanced from 'balanced-match';
  *                  object.
  * @returns {object}
  */
-function cssParse(css, options = {}) {
+function parseCss(css, options = {}) {
     const defaults = {
         onlyVars      : false,
         removeComments: false
@@ -380,4 +380,4 @@ function cssParse(css, options = {}) {
 
 // Exports
 // =============================================================================
-export default cssParse;
+export default parseCss;

@@ -396,7 +396,7 @@ function range(a, b, str) {
     return result;
 }
 
-function cssParse(css) {
+function parseCss(css) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     var defaults = {
         onlyVars: false,
@@ -818,7 +818,7 @@ function transformVars(cssText) {
     };
     var settings = _extends({}, defaults, options);
     var map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
-    var cssTree = cssParse(cssText, {
+    var cssTree = parseCss(cssText, {
         onlyVars: settings.onlyVars
     });
     cssTree.stylesheet.rules.forEach(function(rule) {
