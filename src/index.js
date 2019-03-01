@@ -264,6 +264,9 @@ function cssVars(options = {}) {
 
                     cssText = returnVal !== undefined && Boolean(returnVal) === false ? '' : returnVal || cssText;
 
+                    // Set attribute to indicate node has been processed
+                    node.setAttribute('data-cssvars', '');
+
                     // Convert relative url(...) values to absolute
                     if (settings.updateURLs) {
                         const cssUrls = cssText
@@ -307,6 +310,8 @@ function cssVars(options = {}) {
                     const prevData   = styleNode.__cssVars || {};
                     const isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
 
+                    let hasKeyframesWithVars;
+
                     if (isSameData) {
                         // Set cssText to existing transformed CSS
                         cssText = styleNode.textContent;
@@ -318,20 +323,19 @@ function cssVars(options = {}) {
                         }
                     }
                     else {
-                        styleNode.setAttribute('id', styleNodeId);
-
                         // Store data for comparison on subsequent calls
                         styleNode.__cssVars = {
                             cssText,
                             settings: cssSettings
                         };
 
-                        // Concatenate cssArray items, replacing those that do not
-                        // contain a CSS custom property declaraion or function with
-                        // a temporary marker . After the CSS is transformed, the
-                        // markers will be replaced with the matching cssArray item.
-                        // This optimization is done to avoid processing CSS that
-                        // will not change as a results of the ponyfill.
+                        // Concatenate cssArray items, replacing those that do
+                        // not contain a CSS custom property declaraion or
+                        // function with a temporary marker . After the CSS is
+                        // transformed, the markers will be replaced with the
+                        // matching cssArray item. This optimization is done to
+                        // avoid processing CSS that will not change as a
+                        // results of the ponyfill.
                         cssText = cssArray.map((css, i) => regex.cssVars.test(css) ? css : `/*__CSSVARSPONYFILL-${i}__*/`).join('');
 
                         try {
@@ -344,27 +348,10 @@ function cssVars(options = {}) {
                                 onWarning    : handleWarning
                             });
 
-                            const hasKeyframes = regex.cssKeyframes.test(cssText);
+                            hasKeyframesWithVars = regex.cssKeyframes.test(cssText);
 
                             // Replace markers with appropriate cssArray item
                             cssText = cssText.replace(cssMarker, (match, group1) => cssArray[group1]);
-
-                            if (settings.updateDOM && nodeArray && nodeArray.length) {
-                                const lastNode = nodeArray[nodeArray.length - 1];
-
-                                if (styleNode.textContent !== cssText) {
-                                    styleNode.textContent = cssText;
-                                }
-
-                                // Insert <style> element after last nodeArray item
-                                if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
-                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                                }
-
-                                if (hasKeyframes) {
-                                    fixKeyframes(settings.rootElement);
-                                }
-                            }
                         }
                         catch(err) {
                             let errorThrown = false;
@@ -414,12 +401,37 @@ function cssVars(options = {}) {
                         }
                     }
 
-                    settings.onComplete(
-                        cssText,
-                        settings.updateDOM && styleNode.parentNode ? styleNode : null,
-                        JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
-                        getTimeStamp() - settings._benchmark
-                    );
+                    if (!isSameData && nodeArray && nodeArray.length) {
+                        const cssNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]') || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
+                        const lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
+
+                        // Insert ponyfill <style> after last node
+                        if (lastNode) {
+                            lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                        }
+                        // Insert ponyfill <style> after last link/style node
+                        else {
+                            const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+
+                            targetNode.appendChild(styleNode);
+                        }
+
+                        if (settings.updateDOM) {
+                            styleNode.setAttribute('id', styleNodeId);
+                            styleNode.textContent = cssText;
+
+                            if (hasKeyframesWithVars) {
+                                fixKeyframes(settings.rootElement);
+                            }
+                        }
+
+                        settings.onComplete(
+                            cssText,
+                            styleNode,
+                            JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
+                            getTimeStamp() - settings._benchmark
+                        );
+                    }
                 }
             });
         }

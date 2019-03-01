@@ -441,19 +441,20 @@ describe('css-vars', function() {
                 });
             });
 
-            it('false (does not append <style>)', function() {
-                createTestElms({
-                    tag     : 'style',
-                    text    : ':root{--color:red;}p{color:var(--color);}',
-                    appendTo: 'head'
-                });
+            it('false (does not modify <style> textContent)', function() {
+                const styleCss  = ':root{ --color: red; } p{ color: var(--color); }';
+                const expectCss = 'p{color:red;}';
+
+                createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
                     updateDOM : false,
                     onComplete(cssText, styleNode, cssVariables, benchmark) {
-                        expect(styleNode).to.equal(null);
+                        expect(cssText, 'cssText').to.equal(expectCss);
+                        expect(styleNode.textContent, 'styleNode.textContent').to.equal('');
+                        expect(styleNode.parentNode, 'styleNode.parentNode').to.equal(document.head);
                     }
                 });
             });

@@ -1137,6 +1137,7 @@
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
                         cssText = returnVal !== undefined && Boolean(returnVal) === false ? "" : returnVal || cssText;
+                        node.setAttribute("data-cssvars", "");
                         if (settings.updateURLs) {
                             var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
                             cssUrls.forEach(function(cssUrl) {
@@ -1168,13 +1169,13 @@
                         var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                         var prevData = styleNode.__cssVars || {};
                         var isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
+                        var hasKeyframesWithVars;
                         if (isSameData) {
                             cssText = styleNode.textContent;
                             if (!settings.silent) {
                                 console.info("".concat(consoleMsgPrefix, "No changes"), styleNode);
                             }
                         } else {
-                            styleNode.setAttribute("id", styleNodeId);
                             styleNode.__cssVars = {
                                 cssText: cssText,
                                 settings: cssSettings
@@ -1191,22 +1192,10 @@
                                     variables: settings.variables,
                                     onWarning: handleWarning
                                 });
-                                var hasKeyframes = regex.cssKeyframes.test(cssText);
+                                hasKeyframesWithVars = regex.cssKeyframes.test(cssText);
                                 cssText = cssText.replace(cssMarker, function(match, group1) {
                                     return cssArray[group1];
                                 });
-                                if (settings.updateDOM && nodeArray && nodeArray.length) {
-                                    var lastNode = nodeArray[nodeArray.length - 1];
-                                    if (styleNode.textContent !== cssText) {
-                                        styleNode.textContent = cssText;
-                                    }
-                                    if (lastNode.nextSibling !== styleNode && lastNode.parentNode) {
-                                        lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                                    }
-                                    if (hasKeyframes) {
-                                        fixKeyframes(settings.rootElement);
-                                    }
-                                }
                             } catch (err) {
                                 var errorThrown = false;
                                 cssArray.forEach(function(cssText, i) {
@@ -1235,7 +1224,24 @@
                                 }
                             }
                         }
-                        settings.onComplete(cssText, settings.updateDOM && styleNode.parentNode ? styleNode : null, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings._benchmark);
+                        if (!isSameData && nodeArray && nodeArray.length) {
+                            var cssNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]") || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
+                            var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
+                            if (lastNode) {
+                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                            } else {
+                                var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+                                targetNode.appendChild(styleNode);
+                            }
+                            if (settings.updateDOM) {
+                                styleNode.setAttribute("id", styleNodeId);
+                                styleNode.textContent = cssText;
+                                if (hasKeyframesWithVars) {
+                                    fixKeyframes(settings.rootElement);
+                                }
+                            }
+                            settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings._benchmark);
+                        }
                     }
                 });
             }
