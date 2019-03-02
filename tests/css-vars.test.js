@@ -817,7 +817,39 @@ describe('css-vars', function() {
     // Tests: Updates
     // -------------------------------------------------------------------------
     describe('Updates', function() {
-        it('updates value when called multiple times', function() {
+        it('handles progressive update', function() {
+            const expectCss = [
+                'p{color:red;}',
+                'p{color:red;}/* TEST */p{color:red;}'
+            ];
+
+            createTestElms({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                onComplete(cssText, styleNode, cssVariables, benchmark) {
+                    expect(cssText).to.equal(expectCss[0]);
+                    styleNode.textContent += '/* TEST */';
+                }
+            });
+
+            createTestElms({ tag: 'style', text: 'p { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                variables : {
+                    '--bogus': 1
+                },
+                onComplete(cssText, styleNode, cssVariables, benchmark) {
+                    expect(cssText, 'cssText').to.equal(expectCss[0]);
+                    expect(styleNode.textContent, 'styleNode.textContent').to.equal(expectCss[1]);
+                }
+            });
+        });
+
+        it('handled full updates (previous variable declaration in CSS)', function() {
             const expectCss = [
                 'p{color:red;}',
                 'p{color:green;}'
@@ -839,7 +871,37 @@ describe('css-vars', function() {
                 include   : '[data-test]',
                 onlyLegacy: false,
                 onComplete(cssText, styleNode, cssVariables, benchmark) {
-                    expect(cssText).to.equal(expectCss[1]);
+                    expect(cssText, 'cssText').to.equal(expectCss[1]);
+                    expect(styleNode.textContent, 'styleNode.textContent').to.equal(expectCss[1]);
+                }
+            });
+        });
+
+        it('handled full updates (previous variable declaration in settings.variables)', function() {
+            const expectCss = [
+                'p{color:red;}',
+                'p{color:green;}'
+            ];
+
+            createTestElms({ tag: 'style', text: ':root { --color: red; } p { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                onComplete(cssText, styleNode, cssVariables, benchmark) {
+                    expect(cssText).to.equal(expectCss[0]);
+                }
+            });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                variables : {
+                    'color': 'green'
+                },
+                onComplete(cssText, styleNode, cssVariables, benchmark) {
+                    expect(cssText, 'cssText').to.equal(expectCss[1]);
+                    expect(styleNode.textContent, 'styleNode.textContent').to.equal(expectCss[1]);
                 }
             });
         });
@@ -889,7 +951,7 @@ describe('css-vars', function() {
         it('persists options.variables when called multiple times', function() {
             const expectCss = [
                 'p{color:red;}',
-                'p{color:red;}p{width:100px;}',
+                'p{width:100px;}',
                 'p{color:blue;}p{width:200px;}'
             ];
 

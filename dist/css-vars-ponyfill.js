@@ -953,7 +953,6 @@
     var name = "css-vars-ponyfill";
     var isBrowser = typeof window !== "undefined";
     var isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
-    var consoleMsgPrefix = "cssVars(): ";
     var defaults = {
         rootElement: isBrowser ? document : null,
         shadowDOM: false,
@@ -1074,19 +1073,20 @@
    *   });
    */    function cssVars() {
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var msgPrefix = "cssVars(): ";
         var settings = _extends({}, defaults, options);
         var styleNodeId = name;
-        settings.exclude = "#".concat(styleNodeId) + (settings.exclude ? ",".concat(settings.exclude) : "");
-        settings._benchmark = !settings._benchmark ? getTimeStamp() : settings._benchmark;
+        settings.exclude = "#".concat(styleNodeId, ",link[data-cssvars],style[data-cssvars]") + (settings.exclude ? ",".concat(settings.exclude) : "");
+        settings.__benchmark = !settings.__benchmark ? getTimeStamp() : settings.__benchmark;
         function handleError(message, sourceNode, xhr, url) {
             if (!settings.silent) {
-                console.error("".concat(consoleMsgPrefix).concat(message, "\n"), sourceNode);
+                console.error("".concat(msgPrefix).concat(message, "\n"), sourceNode);
             }
             settings.onError(message, sourceNode, xhr, url);
         }
         function handleWarning(message) {
             if (!settings.silent) {
-                console.warn("".concat(consoleMsgPrefix).concat(message));
+                console.warn("".concat(msgPrefix).concat(message));
             }
             settings.onWarning(message);
         }
@@ -1137,7 +1137,6 @@
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
                         cssText = returnVal !== undefined && Boolean(returnVal) === false ? "" : returnVal || cssText;
-                        node.setAttribute("data-cssvars", "");
                         if (settings.updateURLs) {
                             var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
                             cssUrls.forEach(function(cssUrl) {
@@ -1154,32 +1153,31 @@
                         var errorMsg = "CSS XHR Error: ".concat(responseUrl, " ").concat(xhr.status, " ").concat(statusText);
                         handleError(errorMsg, node, xhr, responseUrl);
                     },
-                    onComplete: function onComplete(cssText, cssArray, nodeArray) {
-                        var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
-                        var cssSettings = JSON.stringify({
-                            include: settings.include,
-                            exclude: settings.exclude,
-                            variables: settings.variables,
-                            fixNestedCalc: settings.fixNestedCalc,
-                            onlyVars: settings.onlyVars,
-                            preserve: settings.preserve,
-                            silent: settings.silent,
-                            updateURLs: settings.updateURLs
-                        });
+                    onComplete: function onComplete(cssText, cssArray) {
+                        var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
                         var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
-                        var prevData = styleNode.__cssVars || {};
-                        var isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
-                        var hasKeyframesWithVars;
-                        if (isSameData) {
-                            cssText = styleNode.textContent;
-                            if (!settings.silent) {
-                                console.info("".concat(consoleMsgPrefix, "No changes"), styleNode);
+                        var prevNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]");
+                        var hasPrevVarDecl = prevNodes.length && (Object.keys(settings.variables).some(function(key) {
+                            key = "--".concat(key.replace(/^-+/, ""));
+                            var hasVarDecl = variableStore.dom.hasOwnProperty(key);
+                            return hasVarDecl;
+                        }) || Object.keys(variableStore.dom).some(function(key) {
+                            var reRootVarDecl = new RegExp(":root\\s*{\\s*[^}]*(".concat(key, ")\\s*:[^}]*}"), "g");
+                            var hasVarDecl = reRootVarDecl.test(cssText);
+                            return hasVarDecl;
+                        }));
+                        if (hasPrevVarDecl) {
+                            for (var i = 0, len = prevNodes.length; i < len; i++) {
+                                prevNodes[0].removeAttribute("data-cssvars");
                             }
+                            settings.__fullUpdate = true;
+                            cssVars(settings);
                         } else {
-                            styleNode.__cssVars = {
-                                cssText: cssText,
-                                settings: cssSettings
-                            };
+                            var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                            var hasKeyframesWithVars;
+                            nodeArray.forEach(function(node) {
+                                return node.setAttribute("data-cssvars", "");
+                            });
                             cssText = cssArray.map(function(css, i) {
                                 return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
                             }).join("");
@@ -1211,36 +1209,36 @@
                                     handleError(err.message || err);
                                 }
                             }
-                        }
-                        if (settings.shadowDOM) {
-                            var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
-                            for (var i = 0, elm; elm = elms[i]; ++i) {
-                                if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
-                                    var shadowSettings = _extends({}, settings, {
-                                        rootElement: elm.shadowRoot,
-                                        variables: variableStore.dom
-                                    });
-                                    cssVars(shadowSettings);
+                            if (settings.shadowDOM) {
+                                var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
+                                for (var _i = 0, elm; elm = elms[_i]; ++_i) {
+                                    if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
+                                        var shadowSettings = _extends({}, settings, {
+                                            rootElement: elm.shadowRoot,
+                                            variables: variableStore.dom
+                                        });
+                                        cssVars(shadowSettings);
+                                    }
                                 }
                             }
-                        }
-                        if (!isSameData && nodeArray && nodeArray.length) {
-                            var cssNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]") || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
-                            var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-                            if (lastNode) {
-                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                            } else {
-                                var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
-                                targetNode.appendChild(styleNode);
-                            }
-                            if (settings.updateDOM) {
+                            if (cssText.length || nodeArray.length) {
+                                var cssNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]") || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
+                                var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
                                 styleNode.setAttribute("id", styleNodeId);
-                                styleNode.textContent = cssText;
-                                if (hasKeyframesWithVars) {
-                                    fixKeyframes(settings.rootElement);
+                                if (lastNode) {
+                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                } else {
+                                    var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+                                    targetNode.appendChild(styleNode);
                                 }
+                                if (settings.updateDOM) {
+                                    styleNode.textContent = settings.__fullUpdate ? cssText : styleNode.textContent += cssText;
+                                    if (hasKeyframesWithVars) {
+                                        fixKeyframes(settings.rootElement);
+                                    }
+                                }
+                                settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark);
                             }
-                            settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings._benchmark);
                         }
                     }
                 });
@@ -1255,7 +1253,7 @@
     function cssVarsDebounced(settings) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function() {
-            settings._benchmark = null;
+            settings.__benchmark = null;
             cssVars(settings);
         }, 100);
     }
@@ -1317,8 +1315,8 @@
                 }
             }
             void document.body.offsetHeight;
-            for (var _i = 0, _len = keyframeNodes.length; _i < _len; _i++) {
-                var nodeStyle = keyframeNodes[_i].style;
+            for (var _i2 = 0, _len = keyframeNodes.length; _i2 < _len; _i2++) {
+                var nodeStyle = keyframeNodes[_i2].style;
                 nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, "");
             }
         }

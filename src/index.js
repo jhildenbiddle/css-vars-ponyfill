@@ -11,7 +11,6 @@ import { name as pkgName } from '../package.json';
 const isBrowser       = typeof window !== 'undefined';
 const isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 
-const consoleMsgPrefix = 'cssVars(): ';
 const defaults = {
     // Targets
     rootElement  : isBrowser ? document : null,
@@ -152,21 +151,22 @@ let isShadowDOMReady = false;
  *   });
  */
 function cssVars(options = {}) {
+    const msgPrefix   = 'cssVars(): ';
     const settings    = Object.assign({}, defaults, options);
     const styleNodeId = pkgName;
 
-    // Always exclude styleNodeId element, which is the generated <style> node
-    // containing previously transformed CSS.
-    settings.exclude = `#${styleNodeId}` + (settings.exclude ? `,${settings.exclude}` : '');
+    // Always exclude styleNodeId element (the generated <style> node containing
+    // previously transformed CSS) and previously processed nodes
+    settings.exclude = `#${styleNodeId},link[data-cssvars],style[data-cssvars]` + (settings.exclude ? `,${settings.exclude}` : '');
 
     // Store benchmark start time
-    settings._benchmark = !settings._benchmark ? getTimeStamp() : settings._benchmark;
+    settings.__benchmark = !settings.__benchmark ? getTimeStamp() : settings.__benchmark;
 
     function handleError(message, sourceNode, xhr, url) {
         /* istanbul ignore next */
         if (!settings.silent) {
             // eslint-disable-next-line
-            console.error(`${consoleMsgPrefix}${message}\n`, sourceNode);
+            console.error(`${msgPrefix}${message}\n`, sourceNode);
         }
 
         settings.onError(message, sourceNode, xhr, url);
@@ -176,7 +176,7 @@ function cssVars(options = {}) {
         /* istanbul ignore next */
         if (!settings.silent) {
             // eslint-disable-next-line
-            console.warn(`${consoleMsgPrefix}${message}`);
+            console.warn(`${msgPrefix}${message}`);
         }
 
         settings.onWarning(message);
@@ -264,9 +264,6 @@ function cssVars(options = {}) {
 
                     cssText = returnVal !== undefined && Boolean(returnVal) === false ? '' : returnVal || cssText;
 
-                    // Set attribute to indicate node has been processed
-                    node.setAttribute('data-cssvars', '');
-
                     // Convert relative url(...) values to absolute
                     if (settings.updateURLs) {
                         const cssUrls = cssText
@@ -292,42 +289,45 @@ function cssVars(options = {}) {
 
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
-                onComplete(cssText, cssArray, nodeArray) {
-                    const cssMarker   = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
-                    const cssSettings = JSON.stringify({
-                        // Sources
-                        include      : settings.include,
-                        exclude      : settings.exclude,
-                        variables    : settings.variables,
-                        // Options
-                        fixNestedCalc: settings.fixNestedCalc,
-                        onlyVars     : settings.onlyVars,
-                        preserve     : settings.preserve,
-                        silent       : settings.silent,
-                        updateURLs   : settings.updateURLs
-                    });
-                    const styleNode  = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
-                    const prevData   = styleNode.__cssVars || {};
-                    const isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
+                onComplete(cssText, cssArray, nodeArray = []) {
+                    const styleNode = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
+                    const prevNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]');
+                    const hasPrevVarDecl = prevNodes.length && (
+                        // In settings.variables
+                        Object.keys(settings.variables).some(key => {
+                            key = `--${key.replace(/^-+/, '')}`;
+                            const hasVarDecl = variableStore.dom.hasOwnProperty(key);
 
-                    let hasKeyframesWithVars;
+                            return hasVarDecl;
+                        }) ||
+                        // In cssText
+                        Object.keys(variableStore.dom).some(key => {
+                            const reRootVarDecl  = new RegExp(`:root\\s*{\\s*[^}]*(${key})\\s*:[^}]*}`, 'g');
+                            const hasVarDecl = reRootVarDecl.test(cssText);
 
-                    if (isSameData) {
-                        // Set cssText to existing transformed CSS
-                        cssText = styleNode.textContent;
+                            return hasVarDecl;
+                        })
+                    );
 
-                        /* istanbul ignore next */
-                        if (!settings.silent) {
-                            // eslint-disable-next-line
-                            console.info(`${consoleMsgPrefix}No changes`, styleNode);
+                    // Full Update
+                    if (hasPrevVarDecl) {
+                        // Remove mark from previously processed nodes
+                        for (let i = 0, len = prevNodes.length; i < len; i++) {
+                            prevNodes[0].removeAttribute('data-cssvars');
                         }
+
+                        // Add full update flag
+                        settings.__fullUpdate = true;
+
+                        cssVars(settings);
                     }
+                    // Progressive Update
                     else {
-                        // Store data for comparison on subsequent calls
-                        styleNode.__cssVars = {
-                            cssText,
-                            settings: cssSettings
-                        };
+                        const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
+                        let hasKeyframesWithVars;
+
+                        // Set attribute to indicate node has been processed
+                        nodeArray.forEach(node => node.setAttribute('data-cssvars', ''));
 
                         // Concatenate cssArray items, replacing those that do
                         // not contain a CSS custom property declaraion or
@@ -377,60 +377,61 @@ function cssVars(options = {}) {
                                 handleError(err.message || err);
                             }
                         }
-                    }
 
-                    // Process shadow DOM
-                    if (settings.shadowDOM) {
-                        const elms = [
-                            settings.rootElement,
-                            ...settings.rootElement.querySelectorAll('*')
-                        ];
+                        // Process shadow DOM
+                        if (settings.shadowDOM) {
+                            const elms = [
+                                settings.rootElement,
+                                ...settings.rootElement.querySelectorAll('*')
+                            ];
 
-                        // Iterates over all elements in rootElement and calls
-                        // cssVars on each shadowRoot, passing document-level
-                        // custom properties as options.variables.
-                        for (let i = 0, elm; (elm = elms[i]); ++i) {
-                            if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
-                                const shadowSettings = Object.assign({}, settings, {
-                                    rootElement: elm.shadowRoot,
-                                    variables  : variableStore.dom
-                                });
+                            // Iterates over all elements in rootElement and calls
+                            // cssVars on each shadowRoot, passing document-level
+                            // custom properties as options.variables.
+                            for (let i = 0, elm; (elm = elms[i]); ++i) {
+                                if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
+                                    const shadowSettings = Object.assign({}, settings, {
+                                        rootElement: elm.shadowRoot,
+                                        variables  : variableStore.dom
+                                    });
 
-                                cssVars(shadowSettings);
+                                    cssVars(shadowSettings);
+                                }
                             }
                         }
-                    }
 
-                    if (!isSameData && nodeArray && nodeArray.length) {
-                        const cssNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]') || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
-                        const lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
+                        if (cssText.length || nodeArray.length) {
+                            const cssNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]') || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
+                            const lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
 
-                        // Insert ponyfill <style> after last node
-                        if (lastNode) {
-                            lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                        }
-                        // Insert ponyfill <style> after last link/style node
-                        else {
-                            const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
-
-                            targetNode.appendChild(styleNode);
-                        }
-
-                        if (settings.updateDOM) {
                             styleNode.setAttribute('id', styleNodeId);
-                            styleNode.textContent = cssText;
 
-                            if (hasKeyframesWithVars) {
-                                fixKeyframes(settings.rootElement);
+                            // Insert ponyfill <style> after last node
+                            if (lastNode) {
+                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                             }
-                        }
+                            // Insert ponyfill <style> after last link/style node
+                            else {
+                                const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
 
-                        settings.onComplete(
-                            cssText,
-                            styleNode,
-                            JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
-                            getTimeStamp() - settings._benchmark
-                        );
+                                targetNode.appendChild(styleNode);
+                            }
+
+                            if (settings.updateDOM) {
+                                styleNode.textContent = settings.__fullUpdate ? cssText : styleNode.textContent += cssText;
+
+                                if (hasKeyframesWithVars) {
+                                    fixKeyframes(settings.rootElement);
+                                }
+                            }
+
+                            settings.onComplete(
+                                cssText,
+                                styleNode,
+                                JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
+                                getTimeStamp() - settings.__benchmark
+                            );
+                        }
                     }
                 }
             });
@@ -455,7 +456,7 @@ function cssVars(options = {}) {
 function cssVarsDebounced(settings) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(function() {
-        settings._benchmark = null;
+        settings.__benchmark = null;
         cssVars(settings);
     }, 100);
 }
