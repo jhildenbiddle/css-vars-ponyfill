@@ -801,7 +801,9 @@
             variables: {},
             onWarning: function onWarning() {}
         };
-        var settings = _extends({}, defaults, options);
+        var settings = _extends({}, defaults, options, {
+            variables: fixVarObjNames(options.variables || {})
+        });
         var map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
         var cssTree = parseCss(cssText, {
             onlyVars: settings.onlyVars
@@ -838,16 +840,15 @@
                 type: "rule"
             };
             Object.keys(settings.variables).forEach(function(key) {
-                var prop = "--".concat(key.replace(/^-+/, ""));
                 var value = settings.variables[key];
                 if (settings.persist) {
-                    variableStore.user[prop] = value;
+                    variableStore.user[key] = value;
                 }
-                if (map[prop] !== value) {
-                    map[prop] = value;
+                if (map[key] !== value) {
+                    map[key] = value;
                     newRule.declarations.push({
                         type: "declaration",
-                        property: prop,
+                        property: key,
                         value: value
                     });
                 }
@@ -910,6 +911,21 @@
                 });
             }
         });
+    }
+    function fixVarObjNames(varObj) {
+        var userVarNames = Object.keys(varObj);
+        var reLeadingHyphens = /^-{2}/;
+        var hasMalformedVarName = userVarNames.some(function(key) {
+            return !reLeadingHyphens.test(key);
+        });
+        if (hasMalformedVarName) {
+            varObj = userVarNames.reduce(function(obj, value) {
+                var key = reLeadingHyphens.test(value) ? value : "--".concat(value.replace(/^-+/, ""));
+                obj[key] = varObj[value];
+                return obj;
+            }, {});
+        }
+        return varObj;
     }
     function resolveValue(value, map) {
         var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -1077,6 +1093,9 @@
         var settings = _extends({}, defaults, options);
         var styleNodeId = name;
         settings.exclude = "#".concat(styleNodeId, ",link[data-cssvars],style[data-cssvars]") + (settings.exclude ? ",".concat(settings.exclude) : "");
+        if (!settings.__benchmark) {
+            settings.variables = fixVarObjNames(settings.variables);
+        }
         settings.__benchmark = !settings.__benchmark ? getTimeStamp() : settings.__benchmark;
         function handleError(message, sourceNode, xhr, url) {
             if (!settings.silent) {
@@ -1105,9 +1124,7 @@
                 if (settings.updateDOM) {
                     var targetElm = settings.rootElement.host || (settings.rootElement === document ? document.documentElement : settings.rootElement);
                     Object.keys(settings.variables).forEach(function(key) {
-                        var prop = "--".concat(key.replace(/^-+/, ""));
-                        var value = settings.variables[key];
-                        targetElm.style.setProperty(prop, value);
+                        targetElm.style.setProperty(key, settings.variables[key]);
                     });
                 }
             } else if (isShadowElm && !isShadowDOMReady) {
@@ -1158,9 +1175,7 @@
                         var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                         var prevNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]");
                         var hasPrevVarDecl = prevNodes.length && (Object.keys(settings.variables).some(function(key) {
-                            key = "--".concat(key.replace(/^-+/, ""));
-                            var hasVarDecl = variableStore.dom.hasOwnProperty(key);
-                            return hasVarDecl;
+                            return variableStore.dom.hasOwnProperty(key);
                         }) || Object.keys(variableStore.dom).some(function(key) {
                             var reRootVarDecl = new RegExp(":root\\s*{\\s*[^}]*(".concat(key, ")\\s*:[^}]*}"), "g");
                             var hasVarDecl = reRootVarDecl.test(cssText);

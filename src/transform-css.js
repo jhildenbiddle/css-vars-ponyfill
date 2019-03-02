@@ -63,8 +63,10 @@ function transformVars(cssText, options = {}) {
         variables    : {},
         onWarning() {}
     };
-    const settings = Object.assign({}, defaults, options);
-    const map      = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
+    const settings = Object.assign({}, defaults, options, {
+        variables: fixVarObjNames(options.variables || {})
+    });
+    const map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
 
     // Convert cssText to AST (this could throw errors)
     const cssTree = parseCss(cssText, {
@@ -116,23 +118,21 @@ function transformVars(cssText, options = {}) {
         };
 
         Object.keys(settings.variables).forEach(key => {
-            // Convert all property names to leading '--' style
-            const prop  = `--${key.replace(/^-+/, '')}`;
             const value = settings.variables[key];
 
             // Persist settings.variables values
             if (settings.persist) {
-                variableStore.user[prop] = value;
+                variableStore.user[key] = value;
             }
 
             // Update map value with settings.variables value
-            if (map[prop] !== value) {
-                map[prop] = value;
+            if (map[key] !== value) {
+                map[key] = value;
 
                 // Add new declaration to newRule
                 newRule.declarations.push({
                     type    : 'declaration',
-                    property: prop,
+                    property: key,
                     value   : value
                 });
             }
@@ -233,6 +233,29 @@ function fixNestedCalc(rules) {
 }
 
 /**
+ * Converts all object property names to leading '--' style
+ *
+ * @param {object} varObj Object containing CSS custom property name:value pairs
+ * @returns {object}
+ */
+function fixVarObjNames(varObj) {
+    const userVarNames        = Object.keys(varObj);
+    const reLeadingHyphens    = /^-{2}/;
+    const hasMalformedVarName = userVarNames.some(key => !reLeadingHyphens.test(key));
+
+    if (hasMalformedVarName) {
+        varObj = userVarNames.reduce((obj, value) => {
+            const key = reLeadingHyphens.test(value) ? value : `--${value.replace(/^-+/, '')}`;
+
+            obj[key] = varObj[value];
+
+            return obj;
+        }, {});
+    }
+
+    return varObj;
+}
+/**
  * Resolves CSS var() function(s) with `map` data or fallback value(s). Returns
  * original `value` if unable to resolve.
  *
@@ -332,4 +355,4 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
 // Exports
 // =============================================================================
 export default transformVars;
-export { variableStore };
+export { fixVarObjNames, variableStore };

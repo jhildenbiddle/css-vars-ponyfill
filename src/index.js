@@ -2,6 +2,7 @@
 // =============================================================================
 import getCssData          from 'get-css-data';
 import transformCss        from './transform-css';
+import { fixVarObjNames }  from './transform-css';
 import { variableStore }   from './transform-css';
 import { name as pkgName } from '../package.json';
 
@@ -159,6 +160,11 @@ function cssVars(options = {}) {
     // previously transformed CSS) and previously processed nodes
     settings.exclude = `#${styleNodeId},link[data-cssvars],style[data-cssvars]` + (settings.exclude ? `,${settings.exclude}` : '');
 
+    // If benchmark key is not availalbe, this is the first call (not recursive)
+    if (!settings.__benchmark) {
+        settings.variables = fixVarObjNames(settings.variables);
+    }
+
     // Store benchmark start time
     settings.__benchmark = !settings.__benchmark ? getTimeStamp() : settings.__benchmark;
 
@@ -209,11 +215,7 @@ function cssVars(options = {}) {
 
                 // Set variables using native methods
                 Object.keys(settings.variables).forEach(key => {
-                    // Convert all property names to leading '--' style
-                    const prop  = `--${key.replace(/^-+/, '')}`;
-                    const value = settings.variables[key];
-
-                    targetElm.style.setProperty(prop, value);
+                    targetElm.style.setProperty(key, settings.variables[key]);
                 });
             }
         }
@@ -294,12 +296,7 @@ function cssVars(options = {}) {
                     const prevNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]');
                     const hasPrevVarDecl = prevNodes.length && (
                         // In settings.variables
-                        Object.keys(settings.variables).some(key => {
-                            key = `--${key.replace(/^-+/, '')}`;
-                            const hasVarDecl = variableStore.dom.hasOwnProperty(key);
-
-                            return hasVarDecl;
-                        }) ||
+                        Object.keys(settings.variables).some(key => variableStore.dom.hasOwnProperty(key)) ||
                         // In cssText
                         Object.keys(variableStore.dom).some(key => {
                             const reRootVarDecl  = new RegExp(`:root\\s*{\\s*[^}]*(${key})\\s*:[^}]*}`, 'g');
