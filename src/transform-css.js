@@ -54,7 +54,7 @@ const variableStore       = {
  *                   warning. Passes 1) warningMessage as an argument.
  * @returns {string}
  */
-function transformVars(cssText, options = {}) {
+function transformCss(cssText, options = {}) {
     const defaults = {
         fixNestedCalc: true,
         onlyVars     : false,
@@ -261,7 +261,7 @@ function fixVarObjNames(varObj) {
  *
  * @param {string} value String containing CSS var() functions to resolve
  * @param {object} map CSS custom property key/values
- * @param {object} settings Settings object passed from transformVars()
+ * @param {object} settings Settings object passed from transformCss()
  * @param {string} [__recursiveFallback] Fallback when unable to resolve CSS
  *                 var() function to a map or fallback value. Allows restoring
  *                 original var() function from recursive resolveValue() calls.
@@ -354,5 +354,5 @@ function resolveValue(value, map, settings = {}, __recursiveFallback) {
 
 // Exports
 // =============================================================================
-export default transformVars;
+export default transformCss;
 export { fixVarObjNames, variableStore };

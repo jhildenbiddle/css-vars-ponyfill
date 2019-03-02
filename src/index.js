@@ -45,6 +45,8 @@ const regex = {
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
+    // CSS variable declarations
+    cssVarDecls: /(?:[\s;]*)(-{2}\w+)(?:\s*:\s*)([^;]*);/g,
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
@@ -227,10 +229,10 @@ function cssVars(options = {}) {
                 include: defaults.include,
                 exclude: settings.exclude,
                 onSuccess(cssText, node, url) {
-                    const cssRootDecls = (cssText.match(regex.cssRootRules) || []).join('');
+                    const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
 
                     // Return only matching :root {...} blocks
-                    return cssRootDecls || false;
+                    return cssRootRules || false;
                 },
                 onComplete(cssText, cssArray, nodeArray) {
                     // Transform CSS, which stores custom property values from
@@ -296,14 +298,29 @@ function cssVars(options = {}) {
                     const prevNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]');
                     const hasPrevVarDecl = prevNodes.length && (
                         // In settings.variables
-                        Object.keys(settings.variables).some(key => variableStore.dom.hasOwnProperty(key)) ||
-                        // In cssText
-                        Object.keys(variableStore.dom).some(key => {
-                            const reRootVarDecl  = new RegExp(`:root\\s*{\\s*[^}]*(${key})\\s*:[^}]*}`, 'g');
-                            const hasVarDecl = reRootVarDecl.test(cssText);
+                        Object.keys(settings.variables).some(key => {
+                            const isSameProp  = variableStore.dom.hasOwnProperty(key);
+                            const isSameValue = isSameProp && variableStore.dom[key] !== settings.variables[key];
 
-                            return hasVarDecl;
-                        })
+                            return isSameProp && isSameValue;
+                        }) ||
+                        // In cssText
+                        (function hasPrevVarInCSS() {
+                            const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
+
+                            let cssVarDeclsMatch;
+
+                            while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssRootRules)) !== null) {
+                                const prop        = cssVarDeclsMatch[1];
+                                const value       = cssVarDeclsMatch[2];
+                                const isSameProp  = variableStore.dom.hasOwnProperty(prop);
+                                const isSameValue = isSameProp && variableStore.dom[prop] !== value;
+
+                                if (isSameProp && isSameValue) {
+                                    return true;
+                                }
+                            }
+                        })()
                     );
 
                     // Full Update

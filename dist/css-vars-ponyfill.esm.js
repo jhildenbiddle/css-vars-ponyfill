@@ -806,7 +806,7 @@ var variableStore = {
     user: {}
 };
 
-function transformVars(cssText) {
+function transformCss(cssText) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     var defaults = {
         fixNestedCalc: true,
@@ -1017,6 +1017,7 @@ var regex = {
     cssKeyframes: /@(?:-\w*-)?keyframes/,
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
+    cssVarDecls: /(?:[\s;]*)(-{2}\w+)(?:\s*:\s*)([^;]*);/g,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 
@@ -1160,11 +1161,11 @@ var isShadowDOMReady = false;
                 include: defaults.include,
                 exclude: settings.exclude,
                 onSuccess: function onSuccess(cssText, node, url) {
-                    var cssRootDecls = (cssText.match(regex.cssRootRules) || []).join("");
-                    return cssRootDecls || false;
+                    var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
+                    return cssRootRules || false;
                 },
                 onComplete: function onComplete(cssText, cssArray, nodeArray) {
-                    transformVars(cssText, {
+                    transformCss(cssText, {
                         persist: true
                     });
                     isShadowDOMReady = true;
@@ -1202,12 +1203,22 @@ var isShadowDOMReady = false;
                     var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                     var prevNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]");
                     var hasPrevVarDecl = prevNodes.length && (Object.keys(settings.variables).some(function(key) {
-                        return variableStore.dom.hasOwnProperty(key);
-                    }) || Object.keys(variableStore.dom).some(function(key) {
-                        var reRootVarDecl = new RegExp(":root\\s*{\\s*[^}]*(".concat(key, ")\\s*:[^}]*}"), "g");
-                        var hasVarDecl = reRootVarDecl.test(cssText);
-                        return hasVarDecl;
-                    }));
+                        var isSameProp = variableStore.dom.hasOwnProperty(key);
+                        var isSameValue = isSameProp && variableStore.dom[key] !== settings.variables[key];
+                        return isSameProp && isSameValue;
+                    }) || function hasPrevVarInCSS() {
+                        var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
+                        var cssVarDeclsMatch;
+                        while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssRootRules)) !== null) {
+                            var prop = cssVarDeclsMatch[1];
+                            var value = cssVarDeclsMatch[2];
+                            var isSameProp = variableStore.dom.hasOwnProperty(prop);
+                            var isSameValue = isSameProp && variableStore.dom[prop] !== value;
+                            if (isSameProp && isSameValue) {
+                                return true;
+                            }
+                        }
+                    }());
                     if (hasPrevVarDecl) {
                         for (var i = 0, len = prevNodes.length; i < len; i++) {
                             prevNodes[0].removeAttribute("data-cssvars");
@@ -1224,7 +1235,7 @@ var isShadowDOMReady = false;
                             return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
                         }).join("");
                         try {
-                            cssText = transformVars(cssText, {
+                            cssText = transformCss(cssText, {
                                 fixNestedCalc: settings.fixNestedCalc,
                                 onlyVars: settings.onlyVars,
                                 persist: settings.updateDOM,
@@ -1240,7 +1251,7 @@ var isShadowDOMReady = false;
                             var errorThrown = false;
                             cssArray.forEach(function(cssText, i) {
                                 try {
-                                    cssText = transformVars(cssText, settings);
+                                    cssText = transformCss(cssText, settings);
                                 } catch (err) {
                                     var errorNode = nodeArray[i - 0];
                                     errorThrown = true;
