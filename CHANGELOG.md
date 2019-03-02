@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.17.1
+
+*2019-03-01*
+
+- Added `data-cssvars` attribute to processed `<link>` and `<style>` nodes
+
+- Changed ponyfill `<style>` injection logic so that the element is always
+  available in the correct DOM postiion (even when `updateDOM` is `false`) and
+  a reference is always returned with the `options.onComplete` callback.
+
+- Fixed detection of unchanged source CSS and ponyfill options
+
 ## 1.17.0
 
 *2019-02-26*
