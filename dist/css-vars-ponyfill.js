@@ -966,7 +966,6 @@
             return valueData.pre + "(".concat(resolveValue(valueData.body, map, settings), ")") + resolveValue(valueData.post, map, settings);
         }
     }
-    var name = "css-vars-ponyfill";
     var isBrowser = typeof window !== "undefined";
     var isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
     var defaults = {
@@ -997,6 +996,9 @@
         cssVarDecls: /(?:[\s;]*)(-{2}\w+)(?:\s*:\s*)([^;]*);/g,
         cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
+    var styleNodeAttr = "data-cssvars";
+    var styleNodeAttrInVal = "in";
+    var styleNodeAttrOutVal = "out";
     var cssVarsObserver = null;
     var debounceTimer = null;
     var isShadowDOMReady = false;
@@ -1092,8 +1094,7 @@
         var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
         var msgPrefix = "cssVars(): ";
         var settings = _extends({}, defaults, options);
-        var styleNodeId = name;
-        settings.exclude = "#".concat(styleNodeId, ",link[data-cssvars],style[data-cssvars]") + (settings.exclude ? ",".concat(settings.exclude) : "");
+        settings.exclude = "[".concat(styleNodeAttr, "]") + (settings.exclude ? ",".concat(settings.exclude) : "");
         if (!settings.__benchmark) {
             settings.variables = fixVarObjNames(settings.variables);
         }
@@ -1117,7 +1118,7 @@
             cssVarsObserver.disconnect();
         }
         if (settings.watch) {
-            addMutationObserver(settings, styleNodeId);
+            addMutationObserver(settings);
             cssVarsDebounced(settings);
         } else if (document.readyState !== "loading") {
             var isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
@@ -1173,9 +1174,8 @@
                     },
                     onComplete: function onComplete(cssText, cssArray) {
                         var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-                        var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
-                        var prevNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]");
-                        var hasPrevVarDecl = prevNodes.length && (Object.keys(settings.variables).some(function(key) {
+                        var prevInNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrInVal, '"]'));
+                        var hasPrevVarDecl = prevInNodes.length && (Object.keys(settings.variables).some(function(key) {
                             var isSameProp = variableStore.dom.hasOwnProperty(key);
                             var isSameValue = isSameProp && variableStore.dom[key] !== settings.variables[key];
                             return isSameProp && isSameValue;
@@ -1193,8 +1193,8 @@
                             }
                         }());
                         if (hasPrevVarDecl) {
-                            for (var i = 0, len = prevNodes.length; i < len; i++) {
-                                prevNodes[0].removeAttribute("data-cssvars");
+                            for (var i = 0, len = prevInNodes.length; i < len; i++) {
+                                prevInNodes[i].removeAttribute(styleNodeAttr);
                             }
                             settings.__fullUpdate = true;
                             cssVars(settings);
@@ -1202,7 +1202,7 @@
                             var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                             var hasKeyframesWithVars;
                             nodeArray.forEach(function(node) {
-                                return node.setAttribute("data-cssvars", "");
+                                return node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
                             });
                             cssText = cssArray.map(function(css, i) {
                                 return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
@@ -1248,22 +1248,30 @@
                                 }
                             }
                             if (cssText.length || nodeArray.length) {
-                                var cssNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]") || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
+                                var cssNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrInVal, '"]')) || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
                                 var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-                                styleNode.setAttribute("id", styleNodeId);
+                                var styleNode = document.createElement("style");
                                 if (lastNode) {
                                     lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                                 } else {
                                     var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
                                     targetNode.appendChild(styleNode);
                                 }
+                                cssText = settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark) || cssText;
                                 if (settings.updateDOM) {
-                                    styleNode.textContent = settings.__fullUpdate ? cssText : styleNode.textContent += cssText;
+                                    styleNode.textContent = cssText;
+                                    if (settings.__fullUpdate) {
+                                        var prevOutNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrOutVal, '"]'));
+                                        for (var _i2 = 0, _len = prevOutNodes.length; _i2 < _len; _i2++) {
+                                            var node = prevOutNodes[_i2];
+                                            node.parentNode.removeChild(node);
+                                        }
+                                    }
                                     if (hasKeyframesWithVars) {
                                         fixKeyframes(settings.rootElement);
                                     }
                                 }
-                                settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark);
+                                styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
                             }
                         }
                     }
@@ -1276,14 +1284,7 @@
             });
         }
     }
-    function cssVarsDebounced(settings) {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function() {
-            settings.__benchmark = null;
-            cssVars(settings);
-        }, 100);
-    }
-    function addMutationObserver(settings, ignoreId) {
+    function addMutationObserver(settings) {
         if (!window.MutationObserver) {
             return;
         }
@@ -1291,7 +1292,7 @@
             return node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
         };
         var isStyle = function isStyle(node) {
-            return node.tagName === "STYLE" && (ignoreId ? node.id !== ignoreId : true);
+            return node.tagName === "STYLE" && !node.hasAttribute(styleNodeAttr);
         };
         if (cssVarsObserver) {
             cssVarsObserver.disconnect();
@@ -1324,6 +1325,13 @@
             subtree: true
         });
     }
+    function cssVarsDebounced(settings) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+            settings.__benchmark = null;
+            cssVars(settings);
+        }, 100);
+    }
     function fixKeyframes(rootElement) {
         var animationNameProp = [ "animation-name", "-moz-animation-name", "-webkit-animation-name" ].filter(function(prop) {
             return getComputedStyle(document.body)[prop];
@@ -1341,8 +1349,8 @@
                 }
             }
             void document.body.offsetHeight;
-            for (var _i2 = 0, _len = keyframeNodes.length; _i2 < _len; _i2++) {
-                var nodeStyle = keyframeNodes[_i2].style;
+            for (var _i3 = 0, _len2 = keyframeNodes.length; _i3 < _len2; _i3++) {
+                var nodeStyle = keyframeNodes[_i3].style;
                 nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, "");
             }
         }

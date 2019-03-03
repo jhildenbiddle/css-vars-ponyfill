@@ -4,7 +4,6 @@ import getCssData          from 'get-css-data';
 import transformCss        from './transform-css';
 import { fixVarObjNames }  from './transform-css';
 import { variableStore }   from './transform-css';
-import { name as pkgName } from '../package.json';
 
 
 // Constants & Variables
@@ -50,6 +49,9 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
+const styleNodeAttr       = 'data-cssvars';
+const styleNodeAttrInVal  = 'in';
+const styleNodeAttrOutVal = 'out';
 
 // Mutation observer reference created via options.watch
 let cssVarsObserver = null;
@@ -154,13 +156,12 @@ let isShadowDOMReady = false;
  *   });
  */
 function cssVars(options = {}) {
-    const msgPrefix   = 'cssVars(): ';
-    const settings    = Object.assign({}, defaults, options);
-    const styleNodeId = pkgName;
+    const msgPrefix = 'cssVars(): ';
+    const settings  = Object.assign({}, defaults, options);
 
-    // Always exclude styleNodeId element (the generated <style> node containing
-    // previously transformed CSS) and previously processed nodes
-    settings.exclude = `#${styleNodeId},link[data-cssvars],style[data-cssvars]` + (settings.exclude ? `,${settings.exclude}` : '');
+    // Always exclude styleNodeAttr elements (the generated <style> nodes
+    // containing previously transformed CSS and previously processed nodes)
+    settings.exclude = `[${styleNodeAttr}]` + (settings.exclude ? `,${settings.exclude}` : '');
 
     // If benchmark key is not availalbe, this is the first call (not recursive)
     if (!settings.__benchmark) {
@@ -202,7 +203,7 @@ function cssVars(options = {}) {
 
     // Add / recreate MutationObserver
     if (settings.watch) {
-        addMutationObserver(settings, styleNodeId);
+        addMutationObserver(settings);
         cssVarsDebounced(settings);
     }
     // Verify readyState to ensure all <link> and <style> nodes are available
@@ -294,9 +295,8 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
-                    const styleNode = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
-                    const prevNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]');
-                    const hasPrevVarDecl = prevNodes.length && (
+                    const prevInNodes    = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrInVal}"]`);
+                    const hasPrevVarDecl = prevInNodes.length && (
                         // In settings.variables
                         Object.keys(settings.variables).some(key => {
                             const isSameProp  = variableStore.dom.hasOwnProperty(key);
@@ -326,8 +326,8 @@ function cssVars(options = {}) {
                     // Full Update
                     if (hasPrevVarDecl) {
                         // Remove mark from previously processed nodes
-                        for (let i = 0, len = prevNodes.length; i < len; i++) {
-                            prevNodes[0].removeAttribute('data-cssvars');
+                        for (let i = 0, len = prevInNodes.length; i < len; i++) {
+                            prevInNodes[i].removeAttribute(styleNodeAttr);
                         }
 
                         // Add full update flag
@@ -341,7 +341,7 @@ function cssVars(options = {}) {
                         let hasKeyframesWithVars;
 
                         // Set attribute to indicate node has been processed
-                        nodeArray.forEach(node => node.setAttribute('data-cssvars', ''));
+                        nodeArray.forEach(node => node.setAttribute(styleNodeAttr, styleNodeAttrInVal));
 
                         // Concatenate cssArray items, replacing those that do
                         // not contain a CSS custom property declaraion or
@@ -415,10 +415,9 @@ function cssVars(options = {}) {
                         }
 
                         if (cssText.length || nodeArray.length) {
-                            const cssNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]') || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
-                            const lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-
-                            styleNode.setAttribute('id', styleNodeId);
+                            const cssNodes  = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrInVal}"]`) || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
+                            const lastNode  = cssNodes ? cssNodes[cssNodes.length - 1] : null;
+                            const styleNode = document.createElement('style');
 
                             // Insert ponyfill <style> after last node
                             if (lastNode) {
@@ -431,20 +430,33 @@ function cssVars(options = {}) {
                                 targetNode.appendChild(styleNode);
                             }
 
+                            // Callback and get (optional) return value
+                            cssText = settings.onComplete(
+                                cssText,
+                                styleNode,
+                                JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
+                                getTimeStamp() - settings.__benchmark
+                            ) || cssText;
+
                             if (settings.updateDOM) {
-                                styleNode.textContent = settings.__fullUpdate ? cssText : styleNode.textContent += cssText;
+                                styleNode.textContent = cssText;
+
+                                if (settings.__fullUpdate) {
+                                    const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrOutVal}"]`);
+
+                                    // Remove previous output <style> nodes
+                                    for (let i = 0, len = prevOutNodes.length; i < len; i++) {
+                                        const node = prevOutNodes[i];
+                                        node.parentNode.removeChild(node);
+                                    }
+                                }
 
                                 if (hasKeyframesWithVars) {
                                     fixKeyframes(settings.rootElement);
                                 }
                             }
 
-                            settings.onComplete(
-                                cssText,
-                                styleNode,
-                                JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
-                                getTimeStamp() - settings.__benchmark
-                            );
+                            styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
                         }
                     }
                 }
@@ -462,19 +474,6 @@ function cssVars(options = {}) {
     }
 }
 
-/**
- * Debounces cssVars() calls
- *
- * @param {object} settings
- */
-function cssVarsDebounced(settings) {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(function() {
-        settings.__benchmark = null;
-        cssVars(settings);
-    }, 100);
-}
-
 
 // Functions (Private)
 // =============================================================================
@@ -483,15 +482,14 @@ function cssVarsDebounced(settings) {
  * DOM mutation is observed.
  *
  * @param {object} settings
- * @param {string} ignoreId
  */
-function addMutationObserver(settings, ignoreId) {
+function addMutationObserver(settings) {
     if (!window.MutationObserver) {
         return;
     }
 
     const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
-    const isStyle = node => node.tagName === 'STYLE' && (ignoreId ? node.id !== ignoreId : true);
+    const isStyle = node => node.tagName === 'STYLE' && !node.hasAttribute(styleNodeAttr);
 
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
@@ -532,6 +530,19 @@ function addMutationObserver(settings, ignoreId) {
         childList      : true,
         subtree        : true
     });
+}
+
+/**
+ * Debounces cssVars() calls
+ *
+ * @param {object} settings
+ */
+function cssVarsDebounced(settings) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function() {
+        settings.__benchmark = null;
+        cssVars(settings);
+    }, 100);
 }
 
 /**
