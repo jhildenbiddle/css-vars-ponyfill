@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.0.0
+
+*Unreleased*
+
+- Progressive updates (multiple stylesheets, data-attr used instead of ID)
+- onChange return value
+
 ## 1.17.1
 
 *2019-03-01*
