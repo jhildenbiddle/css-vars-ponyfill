@@ -298,36 +298,23 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
-                    const prevInNodes    = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrInVal}"]`);
-                    const hasPrevVarDecl = Boolean(
-                        // In settings.variables
-                        Object.keys(settings.variables).some(key => {
-                            const isSameProp  = variableStore.dom.hasOwnProperty(key);
-                            const isSameValue = isSameProp && variableStore.dom[key] !== settings.variables[key];
+                    const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
+                    const isIncrUpdate = !settings.__fullUpdate && hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
+                    const isFullUpdate = settings.__fullUpdate || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
 
-                            return isSameProp && isSameValue;
-                        }) ||
-                        // In cssText
-                        (function hasPrevVarInCSS() {
-                            const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
-
-                            let cssVarDeclsMatch;
-
-                            while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssRootRules)) !== null) {
-                                const prop        = cssVarDeclsMatch[1];
-                                const value       = cssVarDeclsMatch[2];
-                                const isSameProp  = variableStore.dom.hasOwnProperty(prop);
-                                const isSameValue = isSameProp && variableStore.dom[prop] !== value;
-
-                                if (isSameProp && isSameValue) {
-                                    return true;
-                                }
-                            }
-                        })()
-                    );
-
+                    // Skip
+                    if (!isFullUpdate && !isIncrUpdate) {
+                        if (nodeArray.length) {
+                            // Mark as "skip" nodes
+                            nodeArray.forEach(node => {
+                                node.setAttribute(styleNodeAttr, 'skip');
+                            });
+                        }
+                    }
                     // Full Update
-                    if (hasPrevVarDecl) {
+                    else if (isFullUpdate && !settings.__fullUpdate) {
+                        const prevInNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}="${styleNodeAttrInVal}"]`);
+
                         // Remove mark from previously processed nodes
                         for (let i = 0, len = prevInNodes.length; i < len; i++) {
                             prevInNodes[i].removeAttribute(styleNodeAttr);
@@ -415,11 +402,11 @@ function cssVars(options = {}) {
                         }
 
                         if (cssText.length || nodeArray.length) {
-                            const cssNodes  = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
-                            const lastNode  = cssNodes ? cssNodes[cssNodes.length - 1] : null;
                             let styleNode = null;
 
                             if (settings.updateDOM) {
+                                const cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
+
                                 // Increment ponyfill counter
                                 cssVarsCounter++;
 
@@ -434,7 +421,9 @@ function cssVars(options = {}) {
                                 });
 
                                 // Insert ponyfill <style> after last node
-                                if (lastNode) {
+                                if (cssNodes) {
+                                    const lastNode = cssNodes[cssNodes.length - 1];
+
                                     lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                                 }
                                 // Insert ponyfill <style> after last link/style node
@@ -445,7 +434,7 @@ function cssVars(options = {}) {
                                 }
 
                                 if (settings.__fullUpdate) {
-                                    const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrOutVal}"]`);
+                                    const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}="${styleNodeAttrOutVal}"]`);
 
                                     // Remove previous output <style> nodes
                                     for (let i = 0, len = prevOutNodes.length; i < len; i++) {
@@ -631,6 +620,46 @@ function getTimeStamp() {
     return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
 }
 
+function hasNewVarDecl(oldVarsObj, newVarsObj = {}, cssText = '') {
+    return Boolean(
+        // New declaration in newVarsObj
+        Object.keys(newVarsObj).some(key => !oldVarsObj.hasOwnProperty(key)) ||
+        // New declaration in cssText
+        (function hasNewVarDeclInCSS() {
+            let cssVarDeclsMatch;
+
+            while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
+                const prop      = cssVarDeclsMatch[1];
+                const isNewDecl = !oldVarsObj.hasOwnProperty(prop);
+
+                if (isNewDecl) {
+                    return true;
+                }
+            }
+        })()
+    );
+}
+
+function hasNewVarVal(oldVarsObj, newVarsObj = {}, cssText = '') {
+    return Boolean(
+        // Check newVarsObj
+        Object.keys(newVarsObj).some(key => newVarsObj[key] !== oldVarsObj[key]) ||
+        // Check cssText
+        (function hasNewVarValInCSS() {
+            let cssVarDeclsMatch;
+
+            while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
+                const prop       = cssVarDeclsMatch[1];
+                const value      = cssVarDeclsMatch[2];
+                const isNewValue = oldVarsObj[prop] !== value;
+
+                if (isNewValue) {
+                    return true;
+                }
+            }
+        })()
+    );
+}
 
 // Export
 // =============================================================================

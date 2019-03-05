@@ -1175,25 +1175,17 @@
                     },
                     onComplete: function onComplete(cssText, cssArray) {
                         var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-                        var prevInNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrInVal, '"]'));
-                        var hasPrevVarDecl = Boolean(Object.keys(settings.variables).some(function(key) {
-                            var isSameProp = variableStore.dom.hasOwnProperty(key);
-                            var isSameValue = isSameProp && variableStore.dom[key] !== settings.variables[key];
-                            return isSameProp && isSameValue;
-                        }) || function hasPrevVarInCSS() {
-                            var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
-                            var cssVarDeclsMatch;
-                            while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssRootRules)) !== null) {
-                                var prop = cssVarDeclsMatch[1];
-                                var value = cssVarDeclsMatch[2];
-                                var isSameProp = variableStore.dom.hasOwnProperty(prop);
-                                var isSameValue = isSameProp && variableStore.dom[prop] !== value;
-                                if (isSameProp && isSameValue) {
-                                    return true;
-                                }
+                        var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
+                        var isIncrUpdate = !settings.__fullUpdate && hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
+                        var isFullUpdate = settings.__fullUpdate || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
+                        if (!isFullUpdate && !isIncrUpdate) {
+                            if (nodeArray.length) {
+                                nodeArray.forEach(function(node) {
+                                    node.setAttribute(styleNodeAttr, "skip");
+                                });
                             }
-                        }());
-                        if (hasPrevVarDecl) {
+                        } else if (isFullUpdate && !settings.__fullUpdate) {
+                            var prevInNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '="').concat(styleNodeAttrInVal, '"]'));
                             for (var i = 0, len = prevInNodes.length; i < len; i++) {
                                 prevInNodes[i].removeAttribute(styleNodeAttr);
                             }
@@ -1246,10 +1238,9 @@
                                 }
                             }
                             if (cssText.length || nodeArray.length) {
-                                var cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
-                                var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
                                 var styleNode = null;
                                 if (settings.updateDOM) {
+                                    var cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
                                     cssVarsCounter++;
                                     styleNode = document.createElement("style");
                                     styleNode.setAttribute("".concat(styleNodeAttr, "-job"), cssVarsCounter);
@@ -1258,14 +1249,15 @@
                                         node.setAttribute("".concat(styleNodeAttr, "-job"), cssVarsCounter);
                                         node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
                                     });
-                                    if (lastNode) {
+                                    if (cssNodes) {
+                                        var lastNode = cssNodes[cssNodes.length - 1];
                                         lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                                     } else {
                                         var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
                                         targetNode.appendChild(styleNode);
                                     }
                                     if (settings.__fullUpdate) {
-                                        var prevOutNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrOutVal, '"]'));
+                                        var prevOutNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '="').concat(styleNodeAttrOutVal, '"]'));
                                         for (var _i2 = 0, _len = prevOutNodes.length; _i2 < _len; _i2++) {
                                             var node = prevOutNodes[_i2];
                                             if (node !== styleNode) {
@@ -1377,6 +1369,39 @@
     }
     function getTimeStamp() {
         return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
+    }
+    function hasNewVarDecl(oldVarsObj) {
+        var newVarsObj = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var cssText = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        return Boolean(Object.keys(newVarsObj).some(function(key) {
+            return !oldVarsObj.hasOwnProperty(key);
+        }) || function hasNewVarDeclInCSS() {
+            var cssVarDeclsMatch;
+            while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
+                var prop = cssVarDeclsMatch[1];
+                var isNewDecl = !oldVarsObj.hasOwnProperty(prop);
+                if (isNewDecl) {
+                    return true;
+                }
+            }
+        }());
+    }
+    function hasNewVarVal(oldVarsObj) {
+        var newVarsObj = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var cssText = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        return Boolean(Object.keys(newVarsObj).some(function(key) {
+            return newVarsObj[key] !== oldVarsObj[key];
+        }) || function hasNewVarValInCSS() {
+            var cssVarDeclsMatch;
+            while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
+                var prop = cssVarDeclsMatch[1];
+                var value = cssVarDeclsMatch[2];
+                var isNewValue = oldVarsObj[prop] !== value;
+                if (isNewValue) {
+                    return true;
+                }
+            }
+        }());
     }
     return cssVars;
 });
