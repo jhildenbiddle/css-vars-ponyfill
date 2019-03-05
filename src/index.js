@@ -45,13 +45,16 @@ const regex = {
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable declarations
-    cssVarDecls: /(?:[\s;]*)(-{2}\w+)(?:\s*:\s*)([^;]*);/g,
+    cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 const styleNodeAttr       = 'data-cssvars';
 const styleNodeAttrInVal  = 'in';
 const styleNodeAttrOutVal = 'out';
+
+// Counter used to track ponyfill executions and generate date attribute values
+let cssVarsCounter = 0;
 
 // Mutation observer reference created via options.watch
 let cssVarsObserver = null;
@@ -296,7 +299,7 @@ function cssVars(options = {}) {
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
                     const prevInNodes    = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrInVal}"]`);
-                    const hasPrevVarDecl = prevInNodes.length && (
+                    const hasPrevVarDecl = Boolean(
                         // In settings.variables
                         Object.keys(settings.variables).some(key => {
                             const isSameProp  = variableStore.dom.hasOwnProperty(key);
@@ -339,9 +342,6 @@ function cssVars(options = {}) {
                     else {
                         const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                         let hasKeyframesWithVars;
-
-                        // Set attribute to indicate node has been processed
-                        nodeArray.forEach(node => node.setAttribute(styleNodeAttr, styleNodeAttrInVal));
 
                         // Concatenate cssArray items, replacing those that do
                         // not contain a CSS custom property declaraion or
@@ -415,19 +415,47 @@ function cssVars(options = {}) {
                         }
 
                         if (cssText.length || nodeArray.length) {
-                            const cssNodes  = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrInVal}"]`) || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
+                            const cssNodes  = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
                             const lastNode  = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-                            const styleNode = document.createElement('style');
+                            let styleNode = null;
 
-                            // Insert ponyfill <style> after last node
-                            if (lastNode) {
-                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                            }
-                            // Insert ponyfill <style> after last link/style node
-                            else {
-                                const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+                            if (settings.updateDOM) {
+                                // Increment ponyfill counter
+                                cssVarsCounter++;
 
-                                targetNode.appendChild(styleNode);
+                                styleNode = document.createElement('style');
+
+                                // Set in/out and job number as data attributes
+                                styleNode.setAttribute(`${styleNodeAttr}-job`, cssVarsCounter);
+                                styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
+                                nodeArray.forEach(node => {
+                                    node.setAttribute(`${styleNodeAttr}-job`, cssVarsCounter);
+                                    node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
+                                });
+
+                                // Insert ponyfill <style> after last node
+                                if (lastNode) {
+                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                }
+                                // Insert ponyfill <style> after last link/style node
+                                else {
+                                    const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+
+                                    targetNode.appendChild(styleNode);
+                                }
+
+                                if (settings.__fullUpdate) {
+                                    const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrOutVal}"]`);
+
+                                    // Remove previous output <style> nodes
+                                    for (let i = 0, len = prevOutNodes.length; i < len; i++) {
+                                        const node = prevOutNodes[i];
+
+                                        if (node !== styleNode) {
+                                            node.parentNode.removeChild(node);
+                                        }
+                                    }
+                                }
                             }
 
                             // Callback and get (optional) return value
@@ -441,22 +469,10 @@ function cssVars(options = {}) {
                             if (settings.updateDOM) {
                                 styleNode.textContent = cssText;
 
-                                if (settings.__fullUpdate) {
-                                    const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}*="${styleNodeAttrOutVal}"]`);
-
-                                    // Remove previous output <style> nodes
-                                    for (let i = 0, len = prevOutNodes.length; i < len; i++) {
-                                        const node = prevOutNodes[i];
-                                        node.parentNode.removeChild(node);
-                                    }
-                                }
-
                                 if (hasKeyframesWithVars) {
                                     fixKeyframes(settings.rootElement);
                                 }
                             }
-
-                            styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
                         }
                     }
                 }

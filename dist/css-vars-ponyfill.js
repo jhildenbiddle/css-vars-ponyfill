@@ -993,12 +993,13 @@
         cssKeyframes: /@(?:-\w*-)?keyframes/,
         cssRootRules: /(?::root\s*{\s*[^}]*})/g,
         cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
-        cssVarDecls: /(?:[\s;]*)(-{2}\w+)(?:\s*:\s*)([^;]*);/g,
+        cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
         cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
     var styleNodeAttr = "data-cssvars";
     var styleNodeAttrInVal = "in";
     var styleNodeAttrOutVal = "out";
+    var cssVarsCounter = 0;
     var cssVarsObserver = null;
     var debounceTimer = null;
     var isShadowDOMReady = false;
@@ -1175,7 +1176,7 @@
                     onComplete: function onComplete(cssText, cssArray) {
                         var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
                         var prevInNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrInVal, '"]'));
-                        var hasPrevVarDecl = prevInNodes.length && (Object.keys(settings.variables).some(function(key) {
+                        var hasPrevVarDecl = Boolean(Object.keys(settings.variables).some(function(key) {
                             var isSameProp = variableStore.dom.hasOwnProperty(key);
                             var isSameValue = isSameProp && variableStore.dom[key] !== settings.variables[key];
                             return isSameProp && isSameValue;
@@ -1201,9 +1202,6 @@
                         } else {
                             var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                             var hasKeyframesWithVars;
-                            nodeArray.forEach(function(node) {
-                                return node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
-                            });
                             cssText = cssArray.map(function(css, i) {
                                 return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
                             }).join("");
@@ -1248,30 +1246,41 @@
                                 }
                             }
                             if (cssText.length || nodeArray.length) {
-                                var cssNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrInVal, '"]')) || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
+                                var cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
                                 var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-                                var styleNode = document.createElement("style");
-                                if (lastNode) {
-                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                                } else {
-                                    var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
-                                    targetNode.appendChild(styleNode);
-                                }
-                                cssText = settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark) || cssText;
+                                var styleNode = null;
                                 if (settings.updateDOM) {
-                                    styleNode.textContent = cssText;
+                                    cssVarsCounter++;
+                                    styleNode = document.createElement("style");
+                                    styleNode.setAttribute("".concat(styleNodeAttr, "-job"), cssVarsCounter);
+                                    styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
+                                    nodeArray.forEach(function(node) {
+                                        node.setAttribute("".concat(styleNodeAttr, "-job"), cssVarsCounter);
+                                        node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
+                                    });
+                                    if (lastNode) {
+                                        lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                                    } else {
+                                        var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+                                        targetNode.appendChild(styleNode);
+                                    }
                                     if (settings.__fullUpdate) {
                                         var prevOutNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '*="').concat(styleNodeAttrOutVal, '"]'));
                                         for (var _i2 = 0, _len = prevOutNodes.length; _i2 < _len; _i2++) {
                                             var node = prevOutNodes[_i2];
-                                            node.parentNode.removeChild(node);
+                                            if (node !== styleNode) {
+                                                node.parentNode.removeChild(node);
+                                            }
                                         }
                                     }
+                                }
+                                cssText = settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark) || cssText;
+                                if (settings.updateDOM) {
+                                    styleNode.textContent = cssText;
                                     if (hasKeyframesWithVars) {
                                         fixKeyframes(settings.rootElement);
                                     }
                                 }
-                                styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
                             }
                         }
                     }
