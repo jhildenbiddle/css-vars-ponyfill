@@ -1019,12 +1019,6 @@ var regex = {
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 
-var styleNodeAttr = "data-cssvars";
-
-var styleNodeAttrInVal = "in";
-
-var styleNodeAttrOutVal = "out";
-
 var cssVarsCounter = 0;
 
 var cssVarsObserver = null;
@@ -1125,7 +1119,7 @@ var isShadowDOMReady = false;
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     var msgPrefix = "cssVars(): ";
     var settings = _extends({}, defaults, options);
-    settings.exclude = "[".concat(styleNodeAttr, "]") + (settings.exclude ? ",".concat(settings.exclude) : "");
+    settings.exclude = "[data-cssvars]" + (settings.exclude ? ",".concat(settings.exclude) : "");
     if (!settings.__benchmark) {
         settings.variables = fixVarObjNames(settings.variables);
     }
@@ -1209,10 +1203,15 @@ var isShadowDOMReady = false;
                     var isReset = settings.hasOwnProperty("__isReset");
                     var isNewVarVal = isReset || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
                     var isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
+                    if (!isNewVarDecl && !isNewVarVal && nodeArray.length) {
+                        for (var i = 0, len = nodeArray.length; i < len; i++) {
+                            nodeArray[i].setAttribute("data-cssvars", "skip");
+                        }
+                    }
                     if (!isReset && isNewVarVal) {
-                        var prevInNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '="').concat(styleNodeAttrInVal, '"]'));
-                        for (var i = 0, len = prevInNodes.length; i < len; i++) {
-                            prevInNodes[i].removeAttribute(styleNodeAttr);
+                        var prevInNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"]');
+                        for (var _i = 0, _len = prevInNodes.length; _i < _len; _i++) {
+                            prevInNodes[_i].removeAttribute("data-cssvars");
                         }
                         settings.__isReset = true;
                         cssVars(settings);
@@ -1252,7 +1251,7 @@ var isShadowDOMReady = false;
                         }
                         if (settings.shadowDOM) {
                             var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
-                            for (var _i = 0, elm; elm = elms[_i]; ++_i) {
+                            for (var _i2 = 0, elm; elm = elms[_i2]; ++_i2) {
                                 if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
                                     var shadowSettings = _extends({}, settings, {
                                         rootElement: elm.shadowRoot,
@@ -1268,11 +1267,11 @@ var isShadowDOMReady = false;
                                 var cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
                                 cssVarsCounter++;
                                 styleNode = document.createElement("style");
-                                styleNode.setAttribute("".concat(styleNodeAttr, "-job"), cssVarsCounter);
-                                styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
+                                styleNode.setAttribute("data-cssvars-job", cssVarsCounter);
+                                styleNode.setAttribute("data-cssvars", "out");
                                 nodeArray.forEach(function(node) {
-                                    node.setAttribute("".concat(styleNodeAttr, "-job"), cssVarsCounter);
-                                    node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
+                                    node.setAttribute("data-cssvars-job", cssVarsCounter);
+                                    node.setAttribute("data-cssvars", "in");
                                 });
                                 if (cssNodes) {
                                     var lastNode = cssNodes[cssNodes.length - 1];
@@ -1282,9 +1281,9 @@ var isShadowDOMReady = false;
                                     targetNode.appendChild(styleNode);
                                 }
                                 if (settings.__isReset) {
-                                    var prevOutNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '="').concat(styleNodeAttrOutVal, '"]'));
-                                    for (var _i2 = 0, _len = prevOutNodes.length; _i2 < _len; _i2++) {
-                                        var node = prevOutNodes[_i2];
+                                    var prevOutNodes = settings.rootElement.querySelectorAll('[data-cssvars="out"]');
+                                    for (var _i3 = 0, _len2 = prevOutNodes.length; _i3 < _len2; _i3++) {
+                                        var node = prevOutNodes[_i3];
                                         if (node !== styleNode) {
                                             node.parentNode.removeChild(node);
                                         }
@@ -1319,7 +1318,7 @@ function addMutationObserver(settings) {
         return node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
     };
     var isStyle = function isStyle(node) {
-        return node.tagName === "STYLE" && !node.hasAttribute(styleNodeAttr);
+        return node.tagName === "STYLE" && !node.hasAttribute("data-cssvars");
     };
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
@@ -1378,8 +1377,8 @@ function fixKeyframes(rootElement) {
             }
         }
         void document.body.offsetHeight;
-        for (var _i3 = 0, _len2 = keyframeNodes.length; _i3 < _len2; _i3++) {
-            var nodeStyle = keyframeNodes[_i3].style;
+        for (var _i4 = 0, _len3 = keyframeNodes.length; _i4 < _len3; _i4++) {
+            var nodeStyle = keyframeNodes[_i4].style;
             nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, "");
         }
     }
@@ -1408,6 +1407,7 @@ function hasNewVarDecl(oldVarsObj) {
         return !oldVarsObj.hasOwnProperty(key);
     }) || function hasNewVarDeclInCSS() {
         var cssVarDeclsMatch;
+        regex.cssVarDecls.lastIndex = 0;
         while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
             var prop = cssVarDeclsMatch[1];
             var isNewDecl = !oldVarsObj.hasOwnProperty(prop);
@@ -1425,6 +1425,7 @@ function hasNewVarVal(oldVarsObj) {
         return newVarsObj[key] !== oldVarsObj[key];
     }) || function hasNewVarValInCSS() {
         var cssVarDeclsMatch;
+        regex.cssVarDecls.lastIndex = 0;
         while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
             var prop = cssVarDeclsMatch[1];
             var value = cssVarDeclsMatch[2];

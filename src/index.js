@@ -49,9 +49,6 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
-const styleNodeAttr       = 'data-cssvars';
-const styleNodeAttrInVal  = 'in';
-const styleNodeAttrOutVal = 'out';
 
 // Counter used to track ponyfill executions and generate date attribute values
 let cssVarsCounter = 0;
@@ -164,7 +161,7 @@ function cssVars(options = {}) {
 
     // Always exclude styleNodeAttr elements (the generated <style> nodes
     // containing previously transformed CSS and previously processed nodes)
-    settings.exclude = `[${styleNodeAttr}]` + (settings.exclude ? `,${settings.exclude}` : '');
+    settings.exclude = '[data-cssvars]' + (settings.exclude ? `,${settings.exclude}` : '');
 
     // If benchmark key is not availalbe, this is the first call (not recursive)
     if (!settings.__benchmark) {
@@ -303,13 +300,20 @@ function cssVars(options = {}) {
                     const isNewVarVal  = isReset || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
                     const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
 
+                    // Skip
+                    if (!isNewVarDecl && !isNewVarVal && nodeArray.length) {
+                        // Add skip mark
+                        for (let i = 0, len = nodeArray.length; i < len; i++) {
+                            nodeArray[i].setAttribute('data-cssvars', 'skip');
+                        }
+                    }
                     // Reset marked CSS nodes and rerun ponyfill
                     if (!isReset && isNewVarVal) {
-                        const prevInNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}="${styleNodeAttrInVal}"]`);
+                        const prevInNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"]');
 
                         // Remove mark from previously processed nodes
                         for (let i = 0, len = prevInNodes.length; i < len; i++) {
-                            prevInNodes[i].removeAttribute(styleNodeAttr);
+                            prevInNodes[i].removeAttribute('data-cssvars');
                         }
 
                         settings.__isReset = true;
@@ -404,11 +408,11 @@ function cssVars(options = {}) {
                                 styleNode = document.createElement('style');
 
                                 // Set in/out and job number as data attributes
-                                styleNode.setAttribute(`${styleNodeAttr}-job`, cssVarsCounter);
-                                styleNode.setAttribute(styleNodeAttr, styleNodeAttrOutVal);
+                                styleNode.setAttribute('data-cssvars-job', cssVarsCounter);
+                                styleNode.setAttribute('data-cssvars', 'out');
                                 nodeArray.forEach(node => {
-                                    node.setAttribute(`${styleNodeAttr}-job`, cssVarsCounter);
-                                    node.setAttribute(styleNodeAttr, styleNodeAttrInVal);
+                                    node.setAttribute('data-cssvars-job', cssVarsCounter);
+                                    node.setAttribute('data-cssvars', 'in');
                                 });
 
                                 // Insert ponyfill <style> after last node
@@ -425,7 +429,7 @@ function cssVars(options = {}) {
                                 }
 
                                 if (settings.__isReset) {
-                                    const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}="${styleNodeAttrOutVal}"]`);
+                                    const prevOutNodes = settings.rootElement.querySelectorAll('[data-cssvars="out"]');
 
                                     // Remove previous output <style> nodes
                                     for (let i = 0, len = prevOutNodes.length; i < len; i++) {
@@ -485,7 +489,7 @@ function addMutationObserver(settings) {
     }
 
     const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
-    const isStyle = node => node.tagName === 'STYLE' && !node.hasAttribute(styleNodeAttr);
+    const isStyle = node => node.tagName === 'STYLE' && !node.hasAttribute('data-cssvars');
 
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
