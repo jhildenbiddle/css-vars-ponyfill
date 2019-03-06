@@ -619,6 +619,9 @@ function hasNewVarDecl(oldVarsObj, newVarsObj = {}, cssText = '') {
         (function hasNewVarDeclInCSS() {
             let cssVarDeclsMatch;
 
+            // Reset regex
+            regex.cssVarDecls.lastIndex = 0;
+
             while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
                 const prop      = cssVarDeclsMatch[1];
                 const isNewDecl = !oldVarsObj.hasOwnProperty(prop);
@@ -638,6 +641,9 @@ function hasNewVarVal(oldVarsObj, newVarsObj = {}, cssText = '') {
         // Check cssText
         (function hasNewVarValInCSS() {
             let cssVarDeclsMatch;
+
+            // Reset regex
+            regex.cssVarDecls.lastIndex = 0;
 
             while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
                 const prop       = cssVarDeclsMatch[1];
