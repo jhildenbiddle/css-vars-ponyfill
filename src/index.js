@@ -299,20 +299,12 @@ function cssVars(options = {}) {
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
                     const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
-                    const isIncrUpdate = !settings.__fullUpdate && hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
-                    const isFullUpdate = settings.__fullUpdate || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
+                    const isReset      = settings.hasOwnProperty('__isReset');
+                    const isNewVarVal  = isReset || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
+                    const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
 
-                    // Skip
-                    if (!isFullUpdate && !isIncrUpdate) {
-                        if (nodeArray.length) {
-                            // Mark as "skip" nodes
-                            nodeArray.forEach(node => {
-                                node.setAttribute(styleNodeAttr, 'skip');
-                            });
-                        }
-                    }
-                    // Full Update
-                    else if (isFullUpdate && !settings.__fullUpdate) {
+                    // Reset marked CSS nodes and rerun ponyfill
+                    if (!isReset && isNewVarVal) {
                         const prevInNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}="${styleNodeAttrInVal}"]`);
 
                         // Remove mark from previously processed nodes
@@ -320,13 +312,12 @@ function cssVars(options = {}) {
                             prevInNodes[i].removeAttribute(styleNodeAttr);
                         }
 
-                        // Add full update flag
-                        settings.__fullUpdate = true;
+                        settings.__isReset = true;
 
                         cssVars(settings);
                     }
-                    // Progressive Update
-                    else {
+                    // Update (full or incremental)
+                    else if (isNewVarDecl || isNewVarVal) {
                         const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                         let hasKeyframesWithVars;
 
@@ -433,7 +424,7 @@ function cssVars(options = {}) {
                                     targetNode.appendChild(styleNode);
                                 }
 
-                                if (settings.__fullUpdate) {
+                                if (settings.__isReset) {
                                     const prevOutNodes = settings.rootElement.querySelectorAll(`[${styleNodeAttr}="${styleNodeAttrOutVal}"]`);
 
                                     // Remove previous output <style> nodes
@@ -651,7 +642,7 @@ function hasNewVarVal(oldVarsObj, newVarsObj = {}, cssText = '') {
             while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
                 const prop       = cssVarDeclsMatch[1];
                 const value      = cssVarDeclsMatch[2];
-                const isNewValue = oldVarsObj[prop] !== value;
+                const isNewValue = oldVarsObj.hasOwnProperty(prop) && oldVarsObj[prop] !== value;
 
                 if (isNewValue) {
                     return true;

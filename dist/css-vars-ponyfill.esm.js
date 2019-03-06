@@ -1206,22 +1206,17 @@ var isShadowDOMReady = false;
                 onComplete: function onComplete(cssText, cssArray) {
                     var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
                     var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
-                    var isIncrUpdate = !settings.__fullUpdate && hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
-                    var isFullUpdate = settings.__fullUpdate || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
-                    if (!isFullUpdate && !isIncrUpdate) {
-                        if (nodeArray.length) {
-                            nodeArray.forEach(function(node) {
-                                node.setAttribute(styleNodeAttr, "skip");
-                            });
-                        }
-                    } else if (isFullUpdate && !settings.__fullUpdate) {
+                    var isReset = settings.hasOwnProperty("__isReset");
+                    var isNewVarVal = isReset || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
+                    var isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
+                    if (!isReset && isNewVarVal) {
                         var prevInNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '="').concat(styleNodeAttrInVal, '"]'));
                         for (var i = 0, len = prevInNodes.length; i < len; i++) {
                             prevInNodes[i].removeAttribute(styleNodeAttr);
                         }
-                        settings.__fullUpdate = true;
+                        settings.__isReset = true;
                         cssVars(settings);
-                    } else {
+                    } else if (isNewVarDecl || isNewVarVal) {
                         var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                         var hasKeyframesWithVars;
                         cssText = cssArray.map(function(css, i) {
@@ -1286,7 +1281,7 @@ var isShadowDOMReady = false;
                                     var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
                                     targetNode.appendChild(styleNode);
                                 }
-                                if (settings.__fullUpdate) {
+                                if (settings.__isReset) {
                                     var prevOutNodes = settings.rootElement.querySelectorAll("[".concat(styleNodeAttr, '="').concat(styleNodeAttrOutVal, '"]'));
                                     for (var _i2 = 0, _len = prevOutNodes.length; _i2 < _len; _i2++) {
                                         var node = prevOutNodes[_i2];
@@ -1433,7 +1428,7 @@ function hasNewVarVal(oldVarsObj) {
         while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
             var prop = cssVarDeclsMatch[1];
             var value = cssVarDeclsMatch[2];
-            var isNewValue = oldVarsObj[prop] !== value;
+            var isNewValue = oldVarsObj.hasOwnProperty(prop) && oldVarsObj[prop] !== value;
             if (isNewValue) {
                 return true;
             }
