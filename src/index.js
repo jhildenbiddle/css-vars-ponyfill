@@ -484,12 +484,54 @@ function cssVars(options = {}) {
  * @param {object} settings
  */
 function addMutationObserver(settings) {
+    function isLink (node) {
+        const isStylesheet = node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
+
+        return isStylesheet && !node.disabled;
+    }
+    function isStyle(node) {
+        return node.tagName === 'STYLE' && !node.disabled;
+    }
+    function isValidAddMutation(mutationNodes) {
+        return Array.apply(null, mutationNodes).some(node => {
+            const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
+
+            return isLink(node) || isStyleWithVars;
+        });
+    }
+    function isValidRemoveMutation(mutationNodes) {
+        return Array.apply(null, mutationNodes).some(node => {
+            const hasAttr = node.hasAttribute && node.hasAttribute('data-cssvars');
+            const isSkip  = hasAttr && node.getAttribute('data-cssvars') !== 'skip';
+            const isValid = hasAttr && !isSkip && (isStyle(node) || isLink(node));
+
+            if (isValid) {
+                const dataInOut = node.getAttribute('data-cssvars');
+                const dataJob   = node.getAttribute('data-cssvars-job');
+                const jobNodes  = settings.rootElement.querySelectorAll(`[data-cssvars-job="${dataJob}"]`);
+
+                if (dataInOut === 'in') {
+                    // Remove ponyfill-generated output <style> nodes
+                    Array.apply(null, jobNodes).forEach(node => {
+                        node.parentNode.removeChild(node);
+                    });
+                }
+                else if (dataInOut === 'out') {
+                    // Remove ponyfill-related attributes from input nodes
+                    Array.apply(null, jobNodes).forEach(node => {
+                        node.removeAttribute('data-cssvars');
+                        node.removeAttribute('data-cssvars-job');
+                    });
+                }
+            }
+
+            return isValid;
+        });
+    }
+
     if (!window.MutationObserver) {
         return;
     }
-
-    const isLink  = node => node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
-    const isStyle = node => node.tagName === 'STYLE' && !node.hasAttribute('data-cssvars');
 
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
@@ -498,28 +540,20 @@ function addMutationObserver(settings) {
     settings.watch = defaults.watch;
 
     cssVarsObserver = new MutationObserver(function(mutations) {
-        const hasCSSMutation = mutations.some((mutation) => {
-            let isCSSMutation = false;
+        const hasValidMutation = mutations.some((mutation) => {
+            let isValid = false;
 
             if (mutation.type === 'attributes') {
-                isCSSMutation = isLink(mutation.target) || isStyle(mutation.target);
+                isValid = isLink(mutation.target);
             }
             else if (mutation.type === 'childList') {
-                const addedNodes   = Array.apply(null, mutation.addedNodes);
-                const removedNodes = Array.apply(null, mutation.removedNodes);
-
-                isCSSMutation = [].concat(addedNodes, removedNodes).some(node => {
-                    const isValidLink  = isLink(node) && !node.disabled;
-                    const isValidStyle = isStyle(node) && regex.cssVars.test(node.textContent);
-
-                    return (isValidLink || isValidStyle);
-                });
+                isValid = isValidAddMutation(mutation.addedNodes) || isValidRemoveMutation(mutation.removedNodes);
             }
 
-            return isCSSMutation;
+            return isValid;
         });
 
-        if (hasCSSMutation) {
+        if (hasValidMutation) {
             cssVarsDebounced(settings);
         }
     });

@@ -1311,36 +1311,60 @@ var isShadowDOMReady = false;
 }
 
 function addMutationObserver(settings) {
+    function isLink(node) {
+        var isStylesheet = node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
+        return isStylesheet && !node.disabled;
+    }
+    function isStyle(node) {
+        return node.tagName === "STYLE" && !node.disabled;
+    }
+    function isValidAddMutation(mutationNodes) {
+        return Array.apply(null, mutationNodes).some(function(node) {
+            var isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
+            return isLink(node) || isStyleWithVars;
+        });
+    }
+    function isValidRemoveMutation(mutationNodes) {
+        return Array.apply(null, mutationNodes).some(function(node) {
+            var hasAttr = node.hasAttribute && node.hasAttribute("data-cssvars");
+            var isSkip = hasAttr && node.getAttribute("data-cssvars") !== "skip";
+            var isValid = hasAttr && !isSkip && (isStyle(node) || isLink(node));
+            if (isValid) {
+                var dataInOut = node.getAttribute("data-cssvars");
+                var dataJob = node.getAttribute("data-cssvars-job");
+                var jobNodes = settings.rootElement.querySelectorAll('[data-cssvars-job="'.concat(dataJob, '"]'));
+                if (dataInOut === "in") {
+                    Array.apply(null, jobNodes).forEach(function(node) {
+                        node.parentNode.removeChild(node);
+                    });
+                } else if (dataInOut === "out") {
+                    Array.apply(null, jobNodes).forEach(function(node) {
+                        node.removeAttribute("data-cssvars");
+                        node.removeAttribute("data-cssvars-job");
+                    });
+                }
+            }
+            return isValid;
+        });
+    }
     if (!window.MutationObserver) {
         return;
     }
-    var isLink = function isLink(node) {
-        return node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
-    };
-    var isStyle = function isStyle(node) {
-        return node.tagName === "STYLE" && !node.hasAttribute("data-cssvars");
-    };
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
     }
     settings.watch = defaults.watch;
     cssVarsObserver = new MutationObserver(function(mutations) {
-        var hasCSSMutation = mutations.some(function(mutation) {
-            var isCSSMutation = false;
+        var hasValidMutation = mutations.some(function(mutation) {
+            var isValid = false;
             if (mutation.type === "attributes") {
-                isCSSMutation = isLink(mutation.target) || isStyle(mutation.target);
+                isValid = isLink(mutation.target);
             } else if (mutation.type === "childList") {
-                var addedNodes = Array.apply(null, mutation.addedNodes);
-                var removedNodes = Array.apply(null, mutation.removedNodes);
-                isCSSMutation = [].concat(addedNodes, removedNodes).some(function(node) {
-                    var isValidLink = isLink(node) && !node.disabled;
-                    var isValidStyle = isStyle(node) && regex.cssVars.test(node.textContent);
-                    return isValidLink || isValidStyle;
-                });
+                isValid = isValidAddMutation(mutation.addedNodes) || isValidRemoveMutation(mutation.removedNodes);
             }
-            return isCSSMutation;
+            return isValid;
         });
-        if (hasCSSMutation) {
+        if (hasValidMutation) {
             cssVarsDebounced(settings);
         }
     });
