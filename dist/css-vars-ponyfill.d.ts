@@ -4,6 +4,7 @@ declare module 'css-vars-ponyfill' {
         include?: string;
         exclude?: string;
         fixNestedCalc?: boolean;
+        incremental?: boolean;
         onlyLegacy?: boolean;
         onlyVars?: boolean;
         preserve?: boolean;
@@ -17,6 +18,6 @@ declare module 'css-vars-ponyfill' {
         onSuccess?(cssText: string, node: HTMLLinkElement|HTMLStyleElement, url: string): void;
         onError?(message: string, node: HTMLLinkElement|HTMLStyleElement, xhr: XMLHttpRequest, url: string): void;
         onWarning?(message: string): void;
-        onComplete?(cssText: string, styleNode: HTMLStyleElement, cssVariables: {[key: string]: string}): void;
+        onComplete?(cssText: string, styleNode: HTMLStyleElement, cssVariables: {[key: string]: string}, benchmark: number): void;
     }): void;
 }

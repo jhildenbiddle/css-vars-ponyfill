@@ -1054,8 +1054,9 @@ var isShadowDOMReady = false;
  * @param {boolean}  [options.fixNestedCalc=true] Remove nested 'calc' keywords
  *                   for legacy browser compatibility.
  * @param {boolean}  [options.incremental=true] Determines if the ponyfill will
- *                   generate CSS for new <link> and <style> nodes only unless
- *                   reprocessing all nodes is required.
+ *                   ignore previously processed `<link>` and `<style>` nodes
+ *                   and generate CSS only for new nodes unless a new node
+ *                   contains CSS that necessitates processing all nodes
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)

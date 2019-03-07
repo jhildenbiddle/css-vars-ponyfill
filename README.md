@@ -31,6 +31,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 - Transforms `<link>`, `<style>`, and `@import` CSS
 - Transforms shadow DOM `<link>` and `<style>` CSS
 - Transforms relative `url()` paths to absolute URLs
+- Fixes nested `calc()` functions
 - Supports chained custom property references
 - Supports complex values
 - Supports fallback values
@@ -127,11 +128,13 @@ The ponyfill will:
 1. Parse the CSS and convert it to an abstract syntax tree
 1. Transform CSS custom properties to static values
 1. Transforms relative `url()` paths to absolute URLs
+1. Fix nested `calc()` functions
 1. Convert the AST back to CSS
 1. Append legacy-compatible CSS to the DOM
 
 ```html
-<style id="css-vars-ponyfill">
+<!-- Output -->
+<style>
   div {
     color: black;
     margin: 20px;
@@ -157,7 +160,8 @@ Values will be updated in both legacy and modern browsers:
   legacy-compatible CSS to the DOM once again.
 
    ```html
-   <style id="css-vars-ponyfill">
+   <!-- Output -->
+   <style>
      div {
        color: red;
        margin: 5px;
@@ -189,6 +193,7 @@ Values will be updated in both legacy and modern browsers:
 **Options**
 
 - [fixNestedCalc](#optionsfixnestedcalc)
+- [incremental](#optionsincremental)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
@@ -216,6 +221,7 @@ cssVars({
   exclude      : '',
   variables    : {},
   fixNestedCalc: true,
+  incremental  : true,
   onlyLegacy   : true,
   onlyVars     : false,
   preserve     : false,
@@ -310,11 +316,11 @@ cssVars({
 
 // Example 2: Include via data attribute
 cssVars({
-  // Include ony CSS from <link> and <style> nodes with
-  // a "data-cssvarsponyfill" attribute set to "true"
-  // Ex: <link data-cssvarsponyfill="true" rel="stylesheet" href="...">
-  // Ex: <style data-cssvarsponyfill="true">...</style>
-  include: '[data-cssvarsponyfill="true"]'
+  // Include only CSS from <link> and <style> nodes with
+  // a "data-include" attribute
+  // Ex: <link data-include rel="stylesheet" href="...">
+  // Ex: <style data-include>...</style>
+  include: '[data-include]'
 });
 ```
 
@@ -340,10 +346,10 @@ cssVars({
 // Example 2: Exclude via data attribute
 cssVars({
   // Of the matched 'include' nodes, exclude any node
-  // with a "data-cssvarsponyfill" attribute set to "false"
-  // Ex: <link data-cssvarsponyfill="false" rel="stylesheet" href="...">
-  // Ex: <style data-cssvarsponyfill="false">...</style>
-  include: '[data-cssvarsponyfill="false"]'
+  // with a "data-exclude" attribute
+  // Ex: <link data-exclude rel="stylesheet" href="...">
+  // Ex: <style data-exclude>...</style>
+  include: '[data-exclude]'
 });
 ```
 
@@ -417,6 +423,79 @@ p {
   margin: calc(1px + calc(2px + calc(3px + 4)));
 }
 ```
+
+### options.incremental
+
+- Type: `boolean`
+- Default: `true`
+
+Determines how the ponyfill handles processing new `<link>` and `<style>` nodes on subsequent calls.
+
+When `true`, the ponyfill will ignore previously processed `<link>` and `<style>` nodes and generate CSS only for new nodes *unless* a new node contains CSS that requires the ponyfill to process all nodes. This can dramatically increase the performance of the polyfill by reducing the amount of CSS that needs to be generated on subsequent calls. For example, if new `<link>` and `<style>` nodes do not modify existing custom property values, then the ponyfill only needs to process the CSS from these new nodes (i.e. an "incremental" update). However, if custom property values are modified by a new node, then all `<link>` and `<style>` nodes must be processed to ensure that the new value is applied everywhere the custom property is used.
+
+When `false`, the ponyfill will process all `<link>` and `<style>` nodes on each ponyfill call, regardless of the CSS content they contain.
+
+**Example**
+
+JavaScript:
+
+```javascript
+cssVars({
+  incremental: true // default
+});
+```
+
+CSS:
+
+
+
+1. Before the first ponyfill call:
+
+   ```css
+   <style>/* ... */</style>
+   ```
+
+1. After the first ponyfill call:
+
+   ```css
+   <style data-cssvars-job="1" data-cssvars="in">/* Source 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="out">/* Output 1 */</style>
+   ```
+
+1. When a new `<link>` or `<style>` node is injected and the ponyfill is called,
+   the new node's CSS content is checked to determine if an incremental update
+   is possible.
+
+   ```css
+   <style data-cssvars-job="1" data-cssvars="in">/* Source 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="out">/* Output 1 */</style>
+   <style>/* Source 2 (New) */</style>
+   ```
+
+1. If an incremental update is possible:
+
+   - Previously processed nodes are ignored
+   - Only CSS from new nodes is processed
+   - A `<style>` node with transformed CSS from new nodes is appended
+
+   ```css
+   <style data-cssvars-job="1" data-cssvars="in">/* Source 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="out">/* Output 1 */</style>
+   <style data-cssvars-job="2" data-cssvars="in">/* Source 2 */</style>
+   <style data-cssvars-job="2" data-cssvars="out">/* Output 2 */</style>
+   ```
+
+1. If an incremental update is not possible (or when `incremental: false`):
+
+   - Existing ponyfill-generated CSS is removed
+   - CSS from all nodes is processed
+   - A `<style>` node with transformed CSS from all nodes is appended
+
+   ```css
+   <style data-cssvars-job="2" data-cssvars="in">/* Source 1 */</style>
+   <style data-cssvars-job="2" data-cssvars="in">/* Source 2 */</style>
+   <style data-cssvars-job="2" data-cssvars="out">/* Output 2 */</style>
+   ```
 
 ### options.onlyLegacy
 
@@ -680,7 +759,7 @@ Result when `updateDOM: true`
 <head>
   <title>Title</title>
   <link rel="stylesheet" href="style.css">
-  <style id="css-vars-ponyfill">
+  <style>
     /* Transformed CSS ... */
   </style>
 </head>
