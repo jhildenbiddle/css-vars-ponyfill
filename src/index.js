@@ -21,6 +21,7 @@ const defaults = {
     variables    : {},    // transformCss
     // Options
     fixNestedCalc: true,  // transformCss
+    incremental  : true,  // cssVars
     onlyLegacy   : true,  // cssVars
     onlyVars     : false, // cssVars, parseCSS
     preserve     : false, // transformCss
@@ -89,8 +90,11 @@ let isShadowDOMReady = false;
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values.
- * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
+ * @param {boolean}  [options.fixNestedCalc=true] Remove nested 'calc' keywords
  *                   for legacy browser compatibility.
+ * @param {boolean}  [options.incremental=true] Determines if the ponyfill will
+ *                   generate CSS for new <link> and <style> nodes only unless
+ *                   reprocessing all nodes is required.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -141,6 +145,7 @@ let isShadowDOMReady = false;
  *     exclude      : '',
  *     variables    : {},
  *     fixNestedCalc: true,
+ *     incremental  : true,
  *     onlyLegacy   : true,
  *     onlyVars     : false,
  *     preserve     : false,
@@ -158,18 +163,6 @@ let isShadowDOMReady = false;
 function cssVars(options = {}) {
     const msgPrefix = 'cssVars(): ';
     const settings  = Object.assign({}, defaults, options);
-
-    // Always exclude styleNodeAttr elements (the generated <style> nodes
-    // containing previously transformed CSS and previously processed nodes)
-    settings.exclude = '[data-cssvars]' + (settings.exclude ? `,${settings.exclude}` : '');
-
-    // If benchmark key is not availalbe, this is the first call (not recursive)
-    if (!settings.__benchmark) {
-        settings.variables = fixVarObjNames(settings.variables);
-    }
-
-    // Store benchmark start time
-    settings.__benchmark = !settings.__benchmark ? getTimeStamp() : settings.__benchmark;
 
     function handleError(message, sourceNode, xhr, url) {
         /* istanbul ignore next */
@@ -194,6 +187,28 @@ function cssVars(options = {}) {
     // Exit if non-browser environment (e.g. Node)
     if (!isBrowser) {
         return;
+    }
+
+    // If benchmark key is not availalbe, this is a non-recursive call
+    if (!settings.__benchmark) {
+        // Store benchmark start time
+        settings.__benchmark = getTimeStamp();
+
+        // Fix malformed custom property names (e.g. "color" or "-color")
+        settings.variables = fixVarObjNames(settings.variables);
+    }
+
+    // Always exclude nodes marked by the ponyfill on previous calls
+    settings.exclude = `[data-cssvars],[data-cssvars-remove]${settings.exclude ? ',' + settings.exclude : ''}`;
+
+    // Prepare for full update
+    if (!settings.incremental) {
+        const prevNodes = settings.rootElement.querySelectorAll('[data-cssvars]');
+
+        // Remove main ponyfill attribute from input nodes
+        Array.apply(null, prevNodes).forEach(node => {
+            node.removeAttribute('data-cssvars');
+        });
     }
 
     // Disconnect existing MutationObserver
@@ -295,33 +310,41 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
-                    const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
-                    const isReset      = settings.hasOwnProperty('__isReset');
-                    const isNewVarVal  = isReset || hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
-                    const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
+                    let doUpdate = true;
 
-                    // Skip
-                    if (!isNewVarDecl && !isNewVarVal && nodeArray.length) {
-                        // Add skip mark
-                        for (let i = 0, len = nodeArray.length; i < len; i++) {
-                            nodeArray[i].setAttribute('data-cssvars', 'skip');
-                        }
-                    }
-                    // Reset marked CSS nodes and rerun ponyfill
-                    if (!isReset && isNewVarVal) {
-                        const prevInNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"]');
+                    if (settings.incremental) {
+                        const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
+                        const isNewVarVal  = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
+                        const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
+                        const isSkip       = !isNewVarDecl && !isNewVarVal && nodeArray.length;
 
-                        // Remove mark from previously processed nodes
-                        for (let i = 0, len = prevInNodes.length; i < len; i++) {
-                            prevInNodes[i].removeAttribute('data-cssvars');
+                        // Abort update
+                        if (isSkip || isNewVarVal) {
+                            doUpdate = false;
                         }
 
-                        settings.__isReset = true;
+                        // Skip
+                        if (isSkip) {
+                            // Add skip mark
+                            for (let i = 0, len = nodeArray.length; i < len; i++) {
+                                nodeArray[i].setAttribute('data-cssvars', 'skip');
+                            }
+                        }
 
-                        cssVars(settings);
+                        // Force full update
+                        if (isNewVarVal) {
+                            const prevOutNodes = settings.rootElement.querySelectorAll('style[data-cssvars="out"]');
+
+                            Array.apply(null, prevOutNodes).forEach(node => {
+                                node.setAttribute('data-cssvars-remove', '');
+                            });
+
+                            settings.incremental = false;
+                            cssVars(settings);
+                        }
                     }
-                    // Update (full or incremental)
-                    else if (isNewVarDecl || isNewVarVal) {
+
+                    if (doUpdate) {
                         const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                         let hasKeyframesWithVars;
 
@@ -427,19 +450,6 @@ function cssVars(options = {}) {
 
                                     targetNode.appendChild(styleNode);
                                 }
-
-                                if (settings.__isReset) {
-                                    const prevOutNodes = settings.rootElement.querySelectorAll('[data-cssvars="out"]');
-
-                                    // Remove previous output <style> nodes
-                                    for (let i = 0, len = prevOutNodes.length; i < len; i++) {
-                                        const node = prevOutNodes[i];
-
-                                        if (node !== styleNode) {
-                                            node.parentNode.removeChild(node);
-                                        }
-                                    }
-                                }
                             }
 
                             // Callback and get (optional) return value
@@ -452,6 +462,14 @@ function cssVars(options = {}) {
 
                             if (settings.updateDOM) {
                                 styleNode.textContent = cssText;
+
+                                if (!settings.incremental) {
+                                    const removeNodes = settings.rootElement.querySelectorAll('style[data-cssvars-remove]');
+
+                                    Array.apply(null, removeNodes).forEach(node => {
+                                        node.parentNode.removeChild(node);
+                                    });
+                                }
 
                                 if (hasKeyframesWithVars) {
                                     fixKeyframes(settings.rootElement);
@@ -484,7 +502,7 @@ function cssVars(options = {}) {
  * @param {object} settings
  */
 function addMutationObserver(settings) {
-    function isLink (node) {
+    function isLink(node) {
         const isStylesheet = node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
 
         return isStylesheet && !node.disabled;
@@ -494,29 +512,44 @@ function addMutationObserver(settings) {
     }
     function isValidAddMutation(mutationNodes) {
         return Array.apply(null, mutationNodes).some(node => {
+            const isElm           = node.nodeType === 1;
+            const hasAttr         = isElm && node.hasAttribute('data-cssvars');
             const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
 
-            return isLink(node) || isStyleWithVars;
+            return !hasAttr && (isLink(node) || isStyleWithVars);
         });
     }
     function isValidRemoveMutation(mutationNodes) {
         return Array.apply(null, mutationNodes).some(node => {
-            const hasAttr = node.hasAttribute && node.hasAttribute('data-cssvars');
-            const isSkip  = hasAttr && node.getAttribute('data-cssvars') !== 'skip';
-            const isValid = hasAttr && !isSkip && (isStyle(node) || isLink(node));
+            const isElm    = node.nodeType === 1;
+            const hasAttr  = isElm && node.hasAttribute('data-cssvars');
+            const isRemove = isElm && node.hasAttribute('data-cssvars-remove');
+            const isSkip   = isElm && node.getAttribute('data-cssvars') === 'skip';
+            const isValid  = hasAttr && !isRemove && !isSkip && (isStyle(node) || isLink(node));
 
             if (isValid) {
                 const dataInOut = node.getAttribute('data-cssvars');
                 const dataJob   = node.getAttribute('data-cssvars-job');
-                const jobNodes  = settings.rootElement.querySelectorAll(`[data-cssvars-job="${dataJob}"]`);
+                const jobNodes  = Array.apply(null, settings.rootElement.querySelectorAll(`style[data-cssvars-job="${dataJob}"]`));
 
                 if (dataInOut === 'in') {
-                    // Remove ponyfill-generated output <style> nodes
-                    Array.apply(null, jobNodes).forEach(node => {
-                        node.parentNode.removeChild(node);
-                    });
+                    const inNodes = jobNodes.filter(node => node.getAttribute('data-cssvars') === 'in');
+                    const outNode = jobNodes.filter(node => node.getAttribute('data-cssvars') === 'out')[0];
+
+                    // Force full update if "in" nodes from the same job exist
+                    if (inNodes.length) {
+                        settings.incremental = false;
+                    }
+
+                    // Remove output <style> node
+                    if (outNode) {
+                        outNode.parentNode.removeChild(outNode);
+                    }
                 }
                 else if (dataInOut === 'out') {
+                    // Force full update
+                    settings.incremental = false;
+
                     // Remove ponyfill-related attributes from input nodes
                     Array.apply(null, jobNodes).forEach(node => {
                         node.removeAttribute('data-cssvars');
