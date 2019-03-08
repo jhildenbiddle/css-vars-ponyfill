@@ -1146,7 +1146,7 @@ var isShadowDOMReady = false;
     }
     settings.exclude = "[data-cssvars],[data-cssvars-remove]".concat(settings.exclude ? "," + settings.exclude : "");
     if (!settings.incremental) {
-        var prevNodes = settings.rootElement.querySelectorAll("[data-cssvars]");
+        var prevNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="skip"])');
         Array.apply(null, prevNodes).forEach(function(node) {
             node.removeAttribute("data-cssvars");
         });
@@ -1309,9 +1309,9 @@ var isShadowDOMReady = false;
                             if (settings.updateDOM) {
                                 styleNode.textContent = cssText;
                                 if (!settings.incremental) {
-                                    var removeNodes = settings.rootElement.querySelectorAll("style[data-cssvars-remove]");
-                                    Array.apply(null, removeNodes).forEach(function(node) {
-                                        node.parentNode.removeChild(node);
+                                    var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll("style[data-cssvars-remove]"));
+                                    removeNodes.forEach(function(node) {
+                                        return node.parentNode.removeChild(node);
                                     });
                                 }
                                 if (hasKeyframesWithVars) {
@@ -1373,8 +1373,8 @@ function addMutationObserver(settings) {
                     }
                 } else if (dataInOut === "out") {
                     settings.incremental = false;
-                    Array.apply(null, jobNodes).forEach(function(node) {
-                        node.removeAttribute("data-cssvars");
+                    jobNodes.forEach(function(node) {
+                        return node.removeAttribute("data-cssvars");
                     });
                 }
             }

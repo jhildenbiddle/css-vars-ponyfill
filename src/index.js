@@ -204,7 +204,7 @@ function cssVars(options = {}) {
 
     // Prepare for full update
     if (!settings.incremental) {
-        const prevNodes = settings.rootElement.querySelectorAll('[data-cssvars]');
+        const prevNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="skip"])');
 
         // Remove main ponyfill attribute from input nodes
         Array.apply(null, prevNodes).forEach(node => {
@@ -467,11 +467,9 @@ function cssVars(options = {}) {
                                 styleNode.textContent = cssText;
 
                                 if (!settings.incremental) {
-                                    const removeNodes = settings.rootElement.querySelectorAll('style[data-cssvars-remove]');
+                                    const removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars-remove]'));
 
-                                    Array.apply(null, removeNodes).forEach(node => {
-                                        node.parentNode.removeChild(node);
-                                    });
+                                    removeNodes.forEach(node => node.parentNode.removeChild(node));
                                 }
 
                                 if (hasKeyframesWithVars) {
@@ -554,9 +552,7 @@ function addMutationObserver(settings) {
                     settings.incremental = false;
 
                     // Remove ponyfill-related attributes from input nodes
-                    Array.apply(null, jobNodes).forEach(node => {
-                        node.removeAttribute('data-cssvars');
-                    });
+                    jobNodes.forEach(node => node.removeAttribute('data-cssvars'));
                 }
             }
 
