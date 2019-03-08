@@ -1214,21 +1214,26 @@ var isShadowDOMReady = false;
                     var doUpdate = true;
                     if (settings.incremental) {
                         var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
+                        var outNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]'));
+                        var isBeforeLastOut = nodeArray.length && function isBeforeLastOut() {
+                            var cssNodes = Array.apply(null, settings.rootElement.querySelectorAll(defaults.include));
+                            var lastArrayNode = nodeArray[nodeArray.length - 1];
+                            var lastOutNode = outNodes[outNodes.length - 1];
+                            return outNodes.length && cssNodes.indexOf(lastArrayNode) < cssNodes.indexOf(lastOutNode);
+                        }();
                         var isNewVarVal = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
                         var isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
                         var isSkip = !isNewVarDecl && !isNewVarVal && nodeArray.length;
-                        if (isSkip || isNewVarVal) {
+                        if (isSkip || isBeforeLastOut || isNewVarVal) {
                             doUpdate = false;
                         }
                         if (isSkip) {
                             for (var i = 0, len = nodeArray.length; i < len; i++) {
                                 nodeArray[i].setAttribute("data-cssvars", "skip");
                             }
-                        }
-                        if (isNewVarVal) {
-                            var prevOutNodes = settings.rootElement.querySelectorAll('style[data-cssvars="out"]');
-                            Array.apply(null, prevOutNodes).forEach(function(node) {
-                                node.setAttribute("data-cssvars-remove", "");
+                        } else if (isBeforeLastOut || isNewVarVal) {
+                            outNodes.forEach(function(node) {
+                                return node.setAttribute("data-cssvars-remove", "");
                             });
                             settings.incremental = false;
                             cssVars(settings);
@@ -1370,7 +1375,6 @@ function addMutationObserver(settings) {
                     settings.incremental = false;
                     Array.apply(null, jobNodes).forEach(function(node) {
                         node.removeAttribute("data-cssvars");
-                        node.removeAttribute("data-cssvars-job");
                     });
                 }
             }

@@ -314,13 +314,21 @@ function cssVars(options = {}) {
                     let doUpdate = true;
 
                     if (settings.incremental) {
-                        const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
+                        const cssRootRules    = (cssText.match(regex.cssRootRules) || []).join('');
+                        const outNodes        = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]'));
+                        const isBeforeLastOut = nodeArray.length && (function isBeforeLastOut() {
+                            const cssNodes      = Array.apply(null, settings.rootElement.querySelectorAll(defaults.include));
+                            const lastArrayNode = nodeArray[nodeArray.length - 1];
+                            const lastOutNode   = outNodes[outNodes.length - 1];
+
+                            return outNodes.length && cssNodes.indexOf(lastArrayNode) < cssNodes.indexOf(lastOutNode);
+                        })();
                         const isNewVarVal  = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
                         const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
                         const isSkip       = !isNewVarDecl && !isNewVarVal && nodeArray.length;
 
                         // Abort update
-                        if (isSkip || isNewVarVal) {
+                        if (isSkip || isBeforeLastOut || isNewVarVal) {
                             doUpdate = false;
                         }
 
@@ -331,15 +339,9 @@ function cssVars(options = {}) {
                                 nodeArray[i].setAttribute('data-cssvars', 'skip');
                             }
                         }
-
                         // Force full update
-                        if (isNewVarVal) {
-                            const prevOutNodes = settings.rootElement.querySelectorAll('style[data-cssvars="out"]');
-
-                            Array.apply(null, prevOutNodes).forEach(node => {
-                                node.setAttribute('data-cssvars-remove', '');
-                            });
-
+                        else if (isBeforeLastOut || isNewVarVal) {
+                            outNodes.forEach(node => node.setAttribute('data-cssvars-remove', ''));
                             settings.incremental = false;
                             cssVars(settings);
                         }
@@ -554,7 +556,6 @@ function addMutationObserver(settings) {
                     // Remove ponyfill-related attributes from input nodes
                     Array.apply(null, jobNodes).forEach(node => {
                         node.removeAttribute('data-cssvars');
-                        node.removeAttribute('data-cssvars-job');
                     });
                 }
             }
