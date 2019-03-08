@@ -1117,9 +1117,9 @@
             settings.__benchmark = getTimeStamp();
             settings.variables = fixVarObjNames(settings.variables);
         }
-        settings.exclude = "[data-cssvars],[data-cssvars-remove]".concat(settings.exclude ? "," + settings.exclude : "");
+        settings.exclude = "[data-cssvars]".concat(settings.exclude ? "," + settings.exclude : "");
         if (!settings.incremental) {
-            var prevNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="skip"])');
+            var prevNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"],[data-cssvars="out"]');
             Array.apply(null, prevNodes).forEach(function(node) {
                 node.removeAttribute("data-cssvars");
             });
@@ -1206,7 +1206,7 @@
                                 }
                             } else if (isBeforeLastOut || isNewVarVal) {
                                 outNodes.forEach(function(node) {
-                                    return node.setAttribute("data-cssvars-remove", "");
+                                    return node.setAttribute("data-cssvars", "remove");
                                 });
                                 settings.incremental = false;
                                 cssVars(settings);
@@ -1282,7 +1282,7 @@
                                 if (settings.updateDOM) {
                                     styleNode.textContent = cssText;
                                     if (!settings.incremental) {
-                                        var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll("style[data-cssvars-remove]"));
+                                        var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="remove"]'));
                                         removeNodes.forEach(function(node) {
                                             return node.parentNode.removeChild(node);
                                         });
@@ -1323,7 +1323,7 @@
             return Array.apply(null, mutationNodes).some(function(node) {
                 var isElm = node.nodeType === 1;
                 var hasAttr = isElm && node.hasAttribute("data-cssvars");
-                var isRemove = isElm && node.hasAttribute("data-cssvars-remove");
+                var isRemove = isElm && node.getAttribute("data-cssvars") === "remove";
                 var isSkip = isElm && node.getAttribute("data-cssvars") === "skip";
                 var isValid = hasAttr && !isRemove && !isSkip && (isStyle(node) || isLink(node));
                 if (isValid) {
@@ -1345,9 +1345,6 @@
                         }
                     } else if (dataInOut === "out") {
                         settings.incremental = false;
-                        jobNodes.forEach(function(node) {
-                            return node.removeAttribute("data-cssvars");
-                        });
                     }
                 }
                 return isValid;

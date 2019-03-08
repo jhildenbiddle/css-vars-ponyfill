@@ -200,11 +200,11 @@ function cssVars(options = {}) {
     }
 
     // Always exclude nodes marked by the ponyfill on previous calls
-    settings.exclude = `[data-cssvars],[data-cssvars-remove]${settings.exclude ? ',' + settings.exclude : ''}`;
+    settings.exclude = `[data-cssvars]${settings.exclude ? ',' + settings.exclude : ''}`;
 
     // Prepare for full update
     if (!settings.incremental) {
-        const prevNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="skip"])');
+        const prevNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"],[data-cssvars="out"]');
 
         // Remove main ponyfill attribute from input nodes
         Array.apply(null, prevNodes).forEach(node => {
@@ -341,7 +341,7 @@ function cssVars(options = {}) {
                         }
                         // Force full update
                         else if (isBeforeLastOut || isNewVarVal) {
-                            outNodes.forEach(node => node.setAttribute('data-cssvars-remove', ''));
+                            outNodes.forEach(node => node.setAttribute('data-cssvars', 'remove'));
                             settings.incremental = false;
                             cssVars(settings);
                         }
@@ -467,7 +467,7 @@ function cssVars(options = {}) {
                                 styleNode.textContent = cssText;
 
                                 if (!settings.incremental) {
-                                    const removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars-remove]'));
+                                    const removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="remove"]'));
 
                                     removeNodes.forEach(node => node.parentNode.removeChild(node));
                                 }
@@ -524,7 +524,7 @@ function addMutationObserver(settings) {
         return Array.apply(null, mutationNodes).some(node => {
             const isElm    = node.nodeType === 1;
             const hasAttr  = isElm && node.hasAttribute('data-cssvars');
-            const isRemove = isElm && node.hasAttribute('data-cssvars-remove');
+            const isRemove = isElm && node.getAttribute('data-cssvars') === 'remove';
             const isSkip   = isElm && node.getAttribute('data-cssvars') === 'skip';
             const isValid  = hasAttr && !isRemove && !isSkip && (isStyle(node) || isLink(node));
 
@@ -550,9 +550,6 @@ function addMutationObserver(settings) {
                 else if (dataInOut === 'out') {
                     // Force full update
                     settings.incremental = false;
-
-                    // Remove ponyfill-related attributes from input nodes
-                    jobNodes.forEach(node => node.removeAttribute('data-cssvars'));
                 }
             }
 
