@@ -1116,13 +1116,24 @@
         if (!settings.__benchmark) {
             settings.__benchmark = getTimeStamp();
             settings.variables = fixVarObjNames(settings.variables);
+            if (!settings.watch) {
+                settings.exclude = "[data-cssvars]" + (settings.exclude ? ",".concat(settings.exclude) : "");
+            }
         }
-        settings.exclude = "[data-cssvars]".concat(settings.exclude ? "," + settings.exclude : "");
         if (!settings.incremental) {
-            var prevNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"],[data-cssvars="out"]');
-            Array.apply(null, prevNodes).forEach(function(node) {
-                node.removeAttribute("data-cssvars");
+            var prevInNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="in"]'));
+            var orphanNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="orphan"]'));
+            prevInNodes.forEach(function(node) {
+                return node.removeAttribute("data-cssvars");
             });
+            if (!settings.watch) {
+                settings.exclude = settings.exclude.replace(/(\[data-cssvars\]),/g, '$1:not([data-cssvars="orphan"]),');
+            }
+            if (orphanNodes.length) {
+                Object.keys(variableStore.dom).forEach(function(key) {
+                    variableStore.dom[key] = undefined;
+                });
+            }
         }
         if (settings.watch === false && cssVarsObserver) {
             cssVarsObserver.disconnect();
@@ -1205,9 +1216,6 @@
                                     nodeArray[i].setAttribute("data-cssvars", "skip");
                                 }
                             } else if (isBeforeLastOut || isNewVarVal) {
-                                outNodes.forEach(function(node) {
-                                    return node.setAttribute("data-cssvars", "remove");
-                                });
                                 settings.incremental = false;
                                 cssVars(settings);
                             }
@@ -1282,7 +1290,9 @@
                                 if (settings.updateDOM) {
                                     styleNode.textContent = cssText;
                                     if (!settings.incremental) {
-                                        var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="remove"]'));
+                                        var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]')).filter(function(node) {
+                                            return Number(node.getAttribute("data-cssvars-job")) < cssVarsCounter;
+                                        });
                                         removeNodes.forEach(function(node) {
                                             return node.parentNode.removeChild(node);
                                         });
@@ -1316,21 +1326,20 @@
                 var isElm = node.nodeType === 1;
                 var hasAttr = isElm && node.hasAttribute("data-cssvars");
                 var isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
-                return !hasAttr && (isLink(node) || isStyleWithVars);
+                var isValid = !hasAttr && (isLink(node) || isStyleWithVars);
+                return isValid;
             });
         }
         function isValidRemoveMutation(mutationNodes) {
             return Array.apply(null, mutationNodes).some(function(node) {
                 var isElm = node.nodeType === 1;
-                var hasAttr = isElm && node.hasAttribute("data-cssvars");
-                var isRemove = isElm && node.getAttribute("data-cssvars") === "remove";
-                var isSkip = isElm && node.getAttribute("data-cssvars") === "skip";
-                var isValid = hasAttr && !isRemove && !isSkip && (isStyle(node) || isLink(node));
-                if (isValid) {
-                    var dataInOut = node.getAttribute("data-cssvars");
-                    var dataJob = node.getAttribute("data-cssvars-job");
+                var isInNode = isElm && node.getAttribute("data-cssvars") === "in";
+                var isOutNode = isElm && node.getAttribute("data-cssvars") === "out";
+                var isValid = isInNode;
+                if (isInNode || isOutNode) {
+                    var dataJob = isElm && node.getAttribute("data-cssvars-job");
                     var jobNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars-job="'.concat(dataJob, '"]')));
-                    if (dataInOut === "in") {
+                    if (isInNode) {
                         var inNodes = jobNodes.filter(function(node) {
                             return node.getAttribute("data-cssvars") === "in";
                         });
@@ -1343,8 +1352,10 @@
                         if (outNode) {
                             outNode.parentNode.removeChild(outNode);
                         }
-                    } else if (dataInOut === "out") {
-                        settings.incremental = false;
+                    } else {
+                        jobNodes.forEach(function(node) {
+                            return node.setAttribute("data-cssvars", "orphan");
+                        });
                     }
                 }
                 return isValid;

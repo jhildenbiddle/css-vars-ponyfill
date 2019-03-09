@@ -197,19 +197,32 @@ function cssVars(options = {}) {
 
         // Fix malformed custom property names (e.g. "color" or "-color")
         settings.variables = fixVarObjNames(settings.variables);
-    }
 
-    // Always exclude nodes marked by the ponyfill on previous calls
-    settings.exclude = `[data-cssvars]${settings.exclude ? ',' + settings.exclude : ''}`;
+        // Exclude all previously processed elements
+        if (!settings.watch) {
+            settings.exclude = '[data-cssvars]' + (settings.exclude ? `,${settings.exclude}` : '');
+        }
+    }
 
     // Prepare for full update
     if (!settings.incremental) {
-        const prevNodes = settings.rootElement.querySelectorAll('[data-cssvars="in"],[data-cssvars="out"]');
+        const prevInNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="in"]'));
+        const orphanNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="orphan"]'));
 
-        // Remove main ponyfill attribute from input nodes
-        Array.apply(null, prevNodes).forEach(node => {
-            node.removeAttribute('data-cssvars');
-        });
+        // Remove main ponyfill attribute from previous nodes
+        prevInNodes.forEach(node => node.removeAttribute('data-cssvars'));
+
+        // Remove "orphan" nodes from the exclude list
+        if (!settings.watch) {
+            settings.exclude = settings.exclude.replace(/(\[data-cssvars\]),/g, '$1:not([data-cssvars="orphan"]),');
+        }
+
+        // Reset custom property cache
+        if (orphanNodes.length) {
+            Object.keys(variableStore.dom).forEach(key => {
+                variableStore.dom[key] = undefined;
+            });
+        }
     }
 
     // Disconnect existing MutationObserver
@@ -341,7 +354,6 @@ function cssVars(options = {}) {
                         }
                         // Force full update
                         else if (isBeforeLastOut || isNewVarVal) {
-                            outNodes.forEach(node => node.setAttribute('data-cssvars', 'remove'));
                             settings.incremental = false;
                             cssVars(settings);
                         }
@@ -467,7 +479,10 @@ function cssVars(options = {}) {
                                 styleNode.textContent = cssText;
 
                                 if (!settings.incremental) {
-                                    const removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="remove"]'));
+                                    // Remove old "out" nodes from previous jobs
+                                    const removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]')).filter(node => {
+                                        return Number(node.getAttribute('data-cssvars-job')) < cssVarsCounter;
+                                    });
 
                                     removeNodes.forEach(node => node.parentNode.removeChild(node));
                                 }
@@ -516,24 +531,23 @@ function addMutationObserver(settings) {
             const isElm           = node.nodeType === 1;
             const hasAttr         = isElm && node.hasAttribute('data-cssvars');
             const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
+            const isValid         = !hasAttr && (isLink(node) || isStyleWithVars);
 
-            return !hasAttr && (isLink(node) || isStyleWithVars);
+            return isValid;
         });
     }
     function isValidRemoveMutation(mutationNodes) {
         return Array.apply(null, mutationNodes).some(node => {
-            const isElm    = node.nodeType === 1;
-            const hasAttr  = isElm && node.hasAttribute('data-cssvars');
-            const isRemove = isElm && node.getAttribute('data-cssvars') === 'remove';
-            const isSkip   = isElm && node.getAttribute('data-cssvars') === 'skip';
-            const isValid  = hasAttr && !isRemove && !isSkip && (isStyle(node) || isLink(node));
+            const isElm     = node.nodeType === 1;
+            const isInNode  = isElm && node.getAttribute('data-cssvars') === 'in';
+            const isOutNode = isElm && node.getAttribute('data-cssvars') === 'out';
+            const isValid   = isInNode;
 
-            if (isValid) {
-                const dataInOut = node.getAttribute('data-cssvars');
-                const dataJob   = node.getAttribute('data-cssvars-job');
-                const jobNodes  = Array.apply(null, settings.rootElement.querySelectorAll(`style[data-cssvars-job="${dataJob}"]`));
+            if (isInNode || isOutNode) {
+                const dataJob  = isElm && node.getAttribute('data-cssvars-job');
+                const jobNodes = Array.apply(null, settings.rootElement.querySelectorAll(`style[data-cssvars-job="${dataJob}"]`));
 
-                if (dataInOut === 'in') {
+                if (isInNode) {
                     const inNodes = jobNodes.filter(node => node.getAttribute('data-cssvars') === 'in');
                     const outNode = jobNodes.filter(node => node.getAttribute('data-cssvars') === 'out')[0];
 
@@ -547,9 +561,13 @@ function addMutationObserver(settings) {
                         outNode.parentNode.removeChild(outNode);
                     }
                 }
-                else if (dataInOut === 'out') {
-                    // Force full update
-                    settings.incremental = false;
+                else {
+                    // Set orphan indicator on remaining "in" nodes. These nodes
+                    // will be ignored until the next non-incremental update is
+                    // initiated, at which time the "orphan" flag will trigger
+                    // the custom property cache to be reset so that these nodes
+                    // can be reprocessed.
+                    jobNodes.forEach(node => node.setAttribute('data-cssvars', 'orphan'));
                 }
             }
 
