@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.17.2
+
+*2019-03-08*
+
+- Fixed TypeScript definitions by adding `benchmark` to `options.onComplete`
+
 ## 1.17.1
 
 *2019-03-01*
