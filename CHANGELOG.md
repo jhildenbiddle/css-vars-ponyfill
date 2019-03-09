@@ -6,6 +6,8 @@
 
 - Progressive updates (multiple stylesheets, data-attr used instead of ID)
 - onChange return value
+- Back to returning null when `updateDOM:false`
+- styleNode returned with onComplete is empty until after callback is complete
 
 ## 1.17.1
 
