@@ -90,12 +90,12 @@ const settings = {
     browserDisconnectTimeout  : 1000*10, // default 2000
     browserDisconnectTolerance: 1,       // default 0
     browserNoActivityTimeout  : 1000*30, // default 10000
-    captureTimeout            : 1000*60, // default 60000
-    client: {
-        mocha: {
-            timeout: 1000*20 // default 2000
-        }
-    }
+    captureTimeout            : 1000*60  // default 60000
+    // client: {
+    //     mocha: {
+    //         timeout: 1000*20 // default 2000
+    //     }
+    // }
 };
 
 
