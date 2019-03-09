@@ -1335,7 +1335,7 @@
         return a.href;
     }
     function getTimeStamp() {
-        return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
+        return isBrowser && (window.performance || {}).now ? window.performance.now() : new Date().getTime();
     }
     return cssVars;
 });

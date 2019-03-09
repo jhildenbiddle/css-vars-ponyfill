@@ -1367,7 +1367,7 @@ function getFullUrl$1(url) {
 }
 
 function getTimeStamp() {
-    return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
+    return isBrowser && (window.performance || {}).now ? window.performance.now() : new Date().getTime();
 }
 
 export default cssVars;

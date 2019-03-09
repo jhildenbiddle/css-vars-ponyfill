@@ -809,6 +809,7 @@ describe('css-vars', function() {
                     expect(cssText).to.equal(expectCss);
                     expect(cssVariables).to.have.property('--color');
                     expect(cssVariables['--color']).to.equal('red');
+                    expect(typeof benchmark).to.equal('number');
                 }
             });
         });

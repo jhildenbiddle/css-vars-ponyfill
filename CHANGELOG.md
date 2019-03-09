@@ -4,6 +4,7 @@
 
 *2019-03-08*
 
+- Fixed error in legacy browsers caused by improper `performance.now()` check
 - Fixed TypeScript definitions by adding `benchmark` to `options.onComplete`
 
 ## 1.17.1
