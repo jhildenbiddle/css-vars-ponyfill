@@ -45,8 +45,10 @@ const regex = {
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
     // CSS url(...) values
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
-    // CSS variable declarations
+    // CSS variable declarations (e.g. --color: red;)
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
+    // CSS variable function (e.g. var(--color))
+    cssVarFunc: /var\(\s*--[\w-]/,
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
@@ -338,7 +340,8 @@ function cssVars(options = {}) {
                         })();
                         const isNewVarVal  = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
                         const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
-                        const isSkip       = !isNewVarDecl && !isNewVarVal && nodeArray.length;
+                        const isVarFunc    = (isNewVarVal || isNewVarDecl) ? null : regex.cssVarFunc.test(cssText);
+                        const isSkip       = !isNewVarDecl && !isNewVarVal && !isVarFunc && nodeArray.length;
 
                         // Abort update
                         if (isSkip || isBeforeLastOut || isNewVarVal) {

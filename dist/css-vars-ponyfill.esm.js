@@ -1017,6 +1017,7 @@ var regex = {
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
+    cssVarFunc: /var\(\s*--[\w-]/,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 
@@ -1234,7 +1235,8 @@ var isShadowDOMReady = false;
                         }();
                         var isNewVarVal = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
                         var isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
-                        var isSkip = !isNewVarDecl && !isNewVarVal && nodeArray.length;
+                        var isVarFunc = isNewVarVal || isNewVarDecl ? null : regex.cssVarFunc.test(cssText);
+                        var isSkip = !isNewVarDecl && !isNewVarVal && !isVarFunc && nodeArray.length;
                         if (isSkip || isBeforeLastOut || isNewVarVal) {
                             doUpdate = false;
                         }
