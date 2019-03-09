@@ -431,9 +431,9 @@ p {
 
 Determines how the ponyfill handles processing new `<link>` and `<style>` nodes on subsequent calls.
 
-When `true`, the ponyfill will ignore previously processed `<link>` and `<style>` nodes and generate CSS only for new nodes *unless* a new node contains CSS that requires the ponyfill to process all nodes. This can dramatically increase the performance of the polyfill by reducing the amount of CSS that needs to be generated on subsequent calls. For example, if new `<link>` and `<style>` nodes do not modify existing custom property values, then the ponyfill only needs to process the CSS from these new nodes (i.e. an "incremental" update). However, if custom property values are modified by a new node, then all `<link>` and `<style>` nodes must be processed to ensure that the new value is applied everywhere the custom property is used.
+When `true`, the ponyfill will attempt a fast, incremental update by processing CSS from new `<link>` and `<style>` nodes only. This is sufficient when new CSS does not invalidate previously generated CSS, which allows for significantly faster ponyfill and browser style recalculation times. When the ponyfill determines that new CSS does invalidate previously generated CSS (e.g. a custom property value is changed), a "full" update will be performed automatically.
 
-When `false`, the ponyfill will process all `<link>` and `<style>` nodes on each ponyfill call, regardless of the CSS content they contain.
+When `false`, the ponyfill will perform a slower, "full" update on every call, resulting in all `<link>` and `<style>` nodes being processed.
 
 **Example**
 
@@ -447,54 +447,50 @@ cssVars({
 
 CSS:
 
-
-
 1. Before the first ponyfill call:
 
    ```css
-   <style>/* ... */</style>
+   <style>/* Original 1 */</style>
    ```
 
-1. After the first ponyfill call:
+1. After the first ponyfill call, `<link>` and `<style>` nodes are marked with a job number and node type ("in" nodes contains original CSS, "out" nodes contain ponyfill-generated CSS).
 
    ```css
-   <style data-cssvars-job="1" data-cssvars="in">/* Source 1 */</style>
-   <style data-cssvars-job="1" data-cssvars="out">/* Output 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
    ```
 
-1. When a new `<link>` or `<style>` node is injected and the ponyfill is called,
-   the new node's CSS content is checked to determine if an incremental update
-   is possible.
+1. When a new `<link>` or `<style>` node is added:
 
    ```css
-   <style data-cssvars-job="1" data-cssvars="in">/* Source 1 */</style>
-   <style data-cssvars-job="1" data-cssvars="out">/* Output 1 */</style>
-   <style>/* Source 2 (New) */</style>
+   <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
+   <style>/* Original 2 (New) */</style>
    ```
 
-1. If an incremental update is possible:
+1. The new node's CSS content is checked to determine if an incremental update is possible. If it is:
 
    - Previously processed nodes are ignored
    - Only CSS from new nodes is processed
    - A `<style>` node with transformed CSS from new nodes is appended
 
    ```css
-   <style data-cssvars-job="1" data-cssvars="in">/* Source 1 */</style>
-   <style data-cssvars-job="1" data-cssvars="out">/* Output 1 */</style>
-   <style data-cssvars-job="2" data-cssvars="in">/* Source 2 */</style>
-   <style data-cssvars-job="2" data-cssvars="out">/* Output 2 */</style>
+   <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
+   <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
+   <style data-cssvars-job="2" data-cssvars="in">/* Original 2 */</style>
+   <style data-cssvars-job="2" data-cssvars="out">/* Ponyfill 2 */</style>
    ```
 
-1. If an incremental update is not possible (or when `incremental: false`):
+1. If an incremental update is not possible (or when `options.incremental` is `false`):
 
    - Existing ponyfill-generated CSS is removed
    - CSS from all nodes is processed
    - A `<style>` node with transformed CSS from all nodes is appended
 
    ```css
-   <style data-cssvars-job="2" data-cssvars="in">/* Source 1 */</style>
-   <style data-cssvars-job="2" data-cssvars="in">/* Source 2 */</style>
-   <style data-cssvars-job="2" data-cssvars="out">/* Output 2 */</style>
+   <style data-cssvars-job="2" data-cssvars="in">/* Original 1 */</style>
+   <style data-cssvars-job="2" data-cssvars="in">/* Original 2 */</style>
+   <style data-cssvars-job="2" data-cssvars="out">/* Ponyfill 1+2 */</style>
    ```
 
 ### options.onlyLegacy
@@ -502,7 +498,7 @@ CSS:
 - Type: `boolean`
 - Default: `true`
 
-Determines if the ponyfill will ignore modern browsers with native CSS custom property support.
+Determines how the ponyfill handles modern browsers with native CSS custom property support.
 
 When `true`, the ponyfill will only transform custom properties, generate CSS, and trigger callbacks in legacy browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
 
