@@ -1274,6 +1274,7 @@
                                     var cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
                                     cssVarsCounter++;
                                     styleNode = document.createElement("style");
+                                    styleNode.textContent = cssText;
                                     styleNode.setAttribute("data-cssvars-job", cssVarsCounter);
                                     styleNode.setAttribute("data-cssvars", "out");
                                     nodeArray.forEach(function(node) {
@@ -1287,10 +1288,6 @@
                                         var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
                                         targetNode.appendChild(styleNode);
                                     }
-                                }
-                                cssText = settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark) || cssText;
-                                if (settings.updateDOM) {
-                                    styleNode.textContent = cssText;
                                     if (!settings.incremental) {
                                         var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]')).filter(function(node) {
                                             return Number(node.getAttribute("data-cssvars-job")) < cssVarsCounter;
@@ -1299,6 +1296,12 @@
                                             return node.parentNode.removeChild(node);
                                         });
                                     }
+                                }
+                                var returnValue = settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark);
+                                if (returnValue) {
+                                    styleNode.textContent = returnValue;
+                                }
+                                if (settings.updateDOM) {
                                     if (hasKeyframesWithVars) {
                                         fixKeyframes(settings.rootElement);
                                     }

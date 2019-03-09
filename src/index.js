@@ -447,6 +447,7 @@ function cssVars(options = {}) {
                                 cssVarsCounter++;
 
                                 styleNode = document.createElement('style');
+                                styleNode.textContent = cssText;
 
                                 // Set in/out and job number as data attributes
                                 styleNode.setAttribute('data-cssvars-job', cssVarsCounter);
@@ -468,18 +469,6 @@ function cssVars(options = {}) {
 
                                     targetNode.appendChild(styleNode);
                                 }
-                            }
-
-                            // Callback and get (optional) return value
-                            cssText = settings.onComplete(
-                                cssText,
-                                styleNode,
-                                JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
-                                getTimeStamp() - settings.__benchmark
-                            ) || cssText;
-
-                            if (settings.updateDOM) {
-                                styleNode.textContent = cssText;
 
                                 if (!settings.incremental) {
                                     // Remove old "out" nodes from previous jobs
@@ -489,7 +478,21 @@ function cssVars(options = {}) {
 
                                     removeNodes.forEach(node => node.parentNode.removeChild(node));
                                 }
+                            }
 
+                            // Callback and get (optional) return value
+                            const returnValue = settings.onComplete(
+                                cssText,
+                                styleNode,
+                                JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
+                                getTimeStamp() - settings.__benchmark
+                            );
+
+                            if (returnValue) {
+                                styleNode.textContent = returnValue;
+                            }
+
+                            if (settings.updateDOM) {
                                 if (hasKeyframesWithVars) {
                                     fixKeyframes(settings.rootElement);
                                 }
