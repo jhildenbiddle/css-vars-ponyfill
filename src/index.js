@@ -56,6 +56,9 @@ const regex = {
 // Counter used to track ponyfill executions and generate date attribute values
 let cssVarsCounter = 0;
 
+// Flag used to prevent successive ponyfill calls from stacking
+let cssVarsIsRunning = false;
+
 // Mutation observer reference created via options.watch
 let cssVarsObserver = null;
 
@@ -192,6 +195,12 @@ function cssVars(options = {}) {
         return;
     }
 
+    // Check flag and debounce to prevent successive call from stacking
+    if (cssVarsIsRunning === settings.rootElement) {
+        cssVarsDebounced(options);
+        return;
+    }
+
     // If benchmark key is not availalbe, this is a non-recursive call
     if (!settings.__benchmark) {
         // Store benchmark start time
@@ -286,6 +295,11 @@ function cssVars(options = {}) {
         }
         // Ponyfill: Process CSS
         else {
+            // Set flag to prevent successive call from stacking. Using the
+            // rootElement insead of `true` allows recursive calls to complete
+            // when processing shadowDOM nodes.
+            cssVarsIsRunning = settings.rootElement;
+
             getCssData({
                 rootElement: settings.rootElement,
                 include: settings.include,
@@ -499,6 +513,8 @@ function cssVars(options = {}) {
                             }
                         }
                     }
+
+                    cssVarsIsRunning = false;
                 }
             });
         }
@@ -606,7 +622,7 @@ function addMutationObserver(settings) {
         });
 
         if (hasValidMutation) {
-            cssVarsDebounced(settings);
+            cssVars(settings);
         }
     });
 
@@ -623,12 +639,12 @@ function addMutationObserver(settings) {
  *
  * @param {object} settings
  */
-function cssVarsDebounced(settings) {
+function cssVarsDebounced(settings, delay = 100) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(function() {
         settings.__benchmark = null;
         cssVars(settings);
-    }, 100);
+    }, delay);
 }
 
 /**

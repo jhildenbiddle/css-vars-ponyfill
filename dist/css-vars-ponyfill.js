@@ -999,6 +999,7 @@
         cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
     var cssVarsCounter = 0;
+    var cssVarsIsRunning = false;
     var cssVarsObserver = null;
     var debounceTimer = null;
     var isShadowDOMReady = false;
@@ -1114,6 +1115,10 @@
         if (!isBrowser) {
             return;
         }
+        if (cssVarsIsRunning === settings.rootElement) {
+            cssVarsDebounced(options);
+            return;
+        }
         if (!settings.__benchmark) {
             settings.__benchmark = getTimeStamp();
             settings.variables = fixVarObjNames(settings.variables);
@@ -1169,6 +1174,7 @@
                     }
                 });
             } else {
+                cssVarsIsRunning = settings.rootElement;
                 getCssData({
                     rootElement: settings.rootElement,
                     include: settings.include,
@@ -1308,6 +1314,7 @@
                                 }
                             }
                         }
+                        cssVarsIsRunning = false;
                     }
                 });
             }
@@ -1384,7 +1391,7 @@
                 return isValid;
             });
             if (hasValidMutation) {
-                cssVarsDebounced(settings);
+                cssVars(settings);
             }
         });
         cssVarsObserver.observe(document.documentElement, {
@@ -1395,11 +1402,12 @@
         });
     }
     function cssVarsDebounced(settings) {
+        var delay = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function() {
             settings.__benchmark = null;
             cssVars(settings);
-        }, 100);
+        }, delay);
     }
     function fixKeyframes(rootElement) {
         var animationNameProp = [ "animation-name", "-moz-animation-name", "-webkit-animation-name" ].filter(function(prop) {
