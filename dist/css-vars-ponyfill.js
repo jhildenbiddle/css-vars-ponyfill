@@ -1119,6 +1119,13 @@
             cssVarsDebounced(options);
             return;
         }
+        if (settings.watch) {
+            addMutationObserver(settings);
+            cssVars(settings);
+            return;
+        } else if (settings.watch === false && cssVarsObserver) {
+            cssVarsObserver.disconnect();
+        }
         if (!settings.__benchmark) {
             settings.__benchmark = getTimeStamp();
             settings.variables = fixVarObjNames(settings.variables);
@@ -1141,13 +1148,7 @@
                 });
             }
         }
-        if (settings.watch === false && cssVarsObserver) {
-            cssVarsObserver.disconnect();
-        }
-        if (settings.watch) {
-            addMutationObserver(settings);
-            cssVars(settings);
-        } else if (document.readyState !== "loading") {
+        if (document.readyState !== "loading") {
             var isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
             if (isNativeSupport && settings.onlyLegacy) {
                 if (settings.updateDOM) {

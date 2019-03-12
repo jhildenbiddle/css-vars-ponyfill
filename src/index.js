@@ -201,6 +201,17 @@ function cssVars(options = {}) {
         return;
     }
 
+    // Add / recreate MutationObserver
+    if (settings.watch) {
+        addMutationObserver(settings);
+        cssVars(settings);
+        return;
+    }
+    // Disconnect existing MutationObserver
+    else if (settings.watch === false && cssVarsObserver) {
+        cssVarsObserver.disconnect();
+    }
+
     // If benchmark key is not availalbe, this is a non-recursive call
     if (!settings.__benchmark) {
         // Store benchmark start time
@@ -236,18 +247,8 @@ function cssVars(options = {}) {
         }
     }
 
-    // Disconnect existing MutationObserver
-    if (settings.watch === false && cssVarsObserver) {
-        cssVarsObserver.disconnect();
-    }
-
-    // Add / recreate MutationObserver
-    if (settings.watch) {
-        addMutationObserver(settings);
-        cssVars(settings);
-    }
     // Verify readyState to ensure all <link> and <style> nodes are available
-    else if (document.readyState !== 'loading') {
+    if (document.readyState !== 'loading') {
         const isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
 
         // Native support
