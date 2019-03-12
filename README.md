@@ -449,20 +449,20 @@ CSS:
 
 1. Before the first ponyfill call:
 
-   ```css
+   ```html
    <style>/* Original 1 */</style>
    ```
 
 1. After the first ponyfill call, `<link>` and `<style>` nodes are marked with a job number and node type ("in" nodes contains original CSS, "out" nodes contain ponyfill-generated CSS).
 
-   ```css
+   ```html
    <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
    <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
    ```
 
 1. When a new `<link>` or `<style>` node is added:
 
-   ```css
+   ```html
    <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
    <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
    <style>/* Original 2 (New) */</style>
@@ -474,7 +474,7 @@ CSS:
    - Only CSS from new nodes is processed
    - A `<style>` node with transformed CSS from new nodes is appended
 
-   ```css
+   ```html
    <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
    <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
    <style data-cssvars-job="2" data-cssvars="in">/* Original 2 */</style>
@@ -487,7 +487,7 @@ CSS:
    - CSS from all nodes is processed
    - A `<style>` node with transformed CSS from all nodes is appended
 
-   ```css
+   ```html
    <style data-cssvars-job="2" data-cssvars="in">/* Original 1 */</style>
    <style data-cssvars-job="2" data-cssvars="in">/* Original 2 */</style>
    <style data-cssvars-job="2" data-cssvars="out">/* Ponyfill 1+2 */</style>
