@@ -1174,7 +1174,7 @@ var isShadowDOMReady = false;
     }
     if (settings.watch) {
         addMutationObserver(settings);
-        cssVarsDebounced(settings);
+        cssVars(settings);
     } else if (document.readyState !== "loading") {
         var isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
         if (isNativeSupport && settings.onlyLegacy) {

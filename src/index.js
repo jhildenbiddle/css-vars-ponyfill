@@ -244,7 +244,7 @@ function cssVars(options = {}) {
     // Add / recreate MutationObserver
     if (settings.watch) {
         addMutationObserver(settings);
-        cssVarsDebounced(settings);
+        cssVars(settings);
     }
     // Verify readyState to ensure all <link> and <style> nodes are available
     else if (document.readyState !== 'loading') {
@@ -763,6 +763,7 @@ function hasNewVarVal(oldVarsObj, newVarsObj = {}, cssText = '') {
         })()
     );
 }
+
 
 // Export
 // =============================================================================
