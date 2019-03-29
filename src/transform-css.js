@@ -72,33 +72,10 @@ function transformVars(cssText, options = {}) {
     });
 
     // Define variables
-    cssTree.stylesheet.rules.forEach(function(rule) {
-        const varNameIndices = [];
-
-        if (rule.type !== 'rule') {
-            return;
-        }
-
-        // only variables declared for `:root` are supported
-        if (rule.selectors.length !== 1 || rule.selectors[0] !== ':root') {
-            return;
-        }
-
-        rule.declarations.forEach(function(decl, i) {
-            const prop = decl.property;
-            const value = decl.value;
-
-            if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
-                map[prop] = value;
-                varNameIndices.push(i);
-            }
-        });
-
-        // optionally remove `--*` properties from the rule
-        if (!settings.preserve) {
-            for (let i = varNameIndices.length - 1; i >= 0; i--) {
-                rule.declarations.splice(varNameIndices[i], 1);
-            }
+    cssTree.stylesheet.rules.forEach(cur => {
+        defineVariables(cur, map, settings);
+        if (cur.type === 'media') {
+            cur.rules.forEach(cur => defineVariables(cur, map, settings));
         }
     });
 
@@ -191,6 +168,36 @@ function transformVars(cssText, options = {}) {
 
     // Return CSS string
     return stringifyCss(cssTree);
+}
+
+function defineVariables(rule, map, settings) {
+    const varNameIndices = [];
+
+    if (rule.type !== 'rule') {
+        return;
+    }
+
+    // only variables declared for `:root` are supported
+    if (rule.selectors.length !== 1 || rule.selectors[0] !== ':root') {
+        return;
+    }
+
+    rule.declarations.forEach(function(decl, i) {
+        const prop = decl.property;
+        const value = decl.value;
+
+        if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
+            map[prop] = value;
+            varNameIndices.push(i);
+        }
+    });
+
+    // optionally remove `--*` properties from the rule
+    if (!settings.preserve) {
+        for (let i = varNameIndices.length - 1; i >= 0; i--) {
+            rule.declarations.splice(varNameIndices[i], 1);
+        }
+    }
 }
 
 

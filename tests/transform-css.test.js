@@ -146,6 +146,48 @@ describe('transform-css', function() {
 
             expect(cssOut).to.equal(expectCss);
         });
+
+        it('transforms :root variable within media query', function() {
+            const cssIn = `
+               :root { --color: red; }
+                @media screen {
+                    :root { --color: blue; }
+                }
+                p { color: var(--color); }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = '@media screen{}p{color:blue;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
+        it('transforms :root variable and empty media query', function() {
+            const cssIn = `
+               :root { --color: red; }
+                @media screen {
+                }
+                p { color: var(--color); }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = '@media screen{}p{color:red;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
+
+        it('transforms :root variable with crowded media query', function() {
+            const cssIn = `
+               :root { --color: red; }
+                @media screen {
+                    :root { --color: blue; }
+                    p { color: green; }
+                }
+                p { color: var(--color); }
+            `;
+            const cssOut    = transformCss(cssIn);
+            const expectCss = '@media screen{p{color:green;}}p{color:blue;}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
     });
 
     // Tests: Undefined
