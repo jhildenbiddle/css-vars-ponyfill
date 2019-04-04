@@ -1,9 +1,13 @@
+// TODO: Update option names
+
+
 // Dependencies
 // =============================================================================
-import getCssData          from 'get-css-data';
-import transformCss        from './transform-css';
-import { fixVarObjNames }  from './transform-css';
-import { variableStore }   from './transform-css';
+import getCssData   from 'get-css-data';
+import parseCss     from './parse-css';
+import parseVars    from './parse-vars';
+import stringifyCss from './stringify-css';
+import transformCss from './transform-css';
 
 
 // Constants & Variables
@@ -11,6 +15,10 @@ import { variableStore }   from './transform-css';
 const isBrowser       = typeof window !== 'undefined';
 const isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports('(--a: 0)');
 
+const counters = {
+    group: 0,
+    job  : 0
+};
 const defaults = {
     // Targets
     rootElement  : isBrowser ? document : null,
@@ -52,9 +60,13 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
-
-// Counter used to track ponyfill executions and generate date attribute values
-let cssVarsCounter = 0;
+// Persisted custom property values (matches modern browsers)
+const variableStore = {
+    // Persisted across all ponyfill calls (emulates modern browser behavior)
+    dom: {},
+    // Temporary store for non-persisted values (i.e. options.updateDOM = false)
+    job: {}
+};
 
 // Flag used to prevent successive ponyfill calls from stacking
 let cssVarsIsRunning = false;
@@ -195,6 +207,19 @@ function cssVars(options = {}) {
         return;
     }
 
+    // Reset ponyfill flags and stored values
+    if (settings.__reset) {
+        settings.__reset = false;
+
+        // Reset shadowDOM ready flag
+        isShadowDOMReady = false;
+
+        // Reset variable storage
+        for (const prop in variableStore) {
+            variableStore[prop] = {};
+        }
+    }
+
     // Check flag and debounce to prevent successive call from stacking
     if (cssVarsIsRunning === settings.rootElement) {
         cssVarsDebounced(options);
@@ -218,32 +243,11 @@ function cssVars(options = {}) {
         settings.__benchmark = getTimeStamp();
 
         // Fix malformed custom property names (e.g. "color" or "-color")
-        settings.variables = fixVarObjNames(settings.variables);
+        settings.variables = fixVarNames(settings.variables);
 
-        // Exclude all previously processed elements
+        // Exclude previously processed elements
         if (!settings.watch) {
             settings.exclude = '[data-cssvars]' + (settings.exclude ? `,${settings.exclude}` : '');
-        }
-    }
-
-    // Prepare for full update
-    if (!settings.incremental) {
-        const prevInNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="in"]'));
-        const orphanNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="orphan"]'));
-
-        // Remove main ponyfill attribute from previous nodes
-        prevInNodes.forEach(node => node.removeAttribute('data-cssvars'));
-
-        // Remove "orphan" nodes from the exclude list
-        if (!settings.watch) {
-            settings.exclude = settings.exclude.replace(/(\[data-cssvars\]),/g, '$1:not([data-cssvars="orphan"]),');
-        }
-
-        // Reset custom property cache
-        if (orphanNodes.length) {
-            Object.keys(variableStore.dom).forEach(key => {
-                variableStore.dom[key] = undefined;
-            });
         }
     }
 
@@ -277,12 +281,12 @@ function cssVars(options = {}) {
                     return cssRootRules || false;
                 },
                 onComplete(cssText, cssArray, nodeArray) {
-                    // Transform CSS, which stores custom property values from
-                    // cssText in variableStore. This step ensures that
-                    // variableStore contains all document-level custom property
-                    // values for subsequent ponyfill calls.
-                    transformCss(cssText, {
-                        persist: true
+                    // Parse variables and store in variableStore. This step
+                    // ensures that variableStore contains all document-level
+                    // custom property values for subsequent ponyfill calls.
+                    parseVars(cssText, {
+                        store    : variableStore.dom,
+                        onWarning: handleWarning
                     });
 
                     isShadowDOMReady = true;
@@ -297,18 +301,15 @@ function cssVars(options = {}) {
         // Ponyfill: Process CSS
         else {
             // Set flag to prevent successive call from stacking. Using the
-            // rootElement insead of `true` allows recursive calls to complete
-            // when processing shadowDOM nodes.
+            // rootElement insead of `true` allows simultaneous ponyfill calls
+            // using different rootElement values (e.g. documetn and one-or-more
+            // shadowDOM nodes).
             cssVarsIsRunning = settings.rootElement;
 
             getCssData({
-                rootElement: settings.rootElement,
-                include: settings.include,
-                exclude: settings.exclude,
-                // This filter does a test on each block of CSS. An additional
-                // filter is used in the parser to remove individual
-                // declarations.
-                filter: settings.onlyVars ? regex.cssVars : null,
+                rootElement : settings.rootElement,
+                include     : settings.include,
+                exclude     : settings.exclude,
                 onBeforeSend: settings.onBeforeSend,
                 onSuccess(cssText, node, url) {
                     const returnVal = settings.onSuccess(cssText, node, url);
@@ -341,94 +342,119 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
-                    let doUpdate = true;
+                    const jobVars  = {};
+                    const varStore = settings.updateDOM ? variableStore.dom : Object.keys(variableStore.job).length ? variableStore.job : variableStore.job = JSON.parse(JSON.stringify(variableStore.dom));
 
-                    if (settings.incremental) {
-                        const cssRootRules    = (cssText.match(regex.cssRootRules) || []).join('');
-                        const outNodes        = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]'));
-                        const isBeforeLastOut = nodeArray.length && (function isBeforeLastOut() {
-                            const cssNodes      = Array.apply(null, settings.rootElement.querySelectorAll(defaults.include));
-                            const lastArrayNode = nodeArray[nodeArray.length - 1];
-                            const lastOutNode   = outNodes[outNodes.length - 1];
+                    let hasVarChange = false;
 
-                            return outNodes.length && cssNodes.indexOf(lastArrayNode) < cssNodes.indexOf(lastOutNode);
-                        })();
-                        const isNewVarVal  = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
-                        const isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
-                        const isVarFunc    = (isNewVarVal || isNewVarDecl) ? null : regex.cssVarFunc.test(cssText);
-                        const isSkip       = !isNewVarDecl && !isNewVarVal && !isVarFunc && nodeArray.length;
-
-                        // Abort update
-                        if (isSkip || isBeforeLastOut || isNewVarVal) {
-                            doUpdate = false;
+                    // Parse CSS and variables
+                    nodeArray.forEach((node, i) => {
+                        // Mark as skip node if CSS does not contain a custom
+                        // property declaration or var() function
+                        if (!regex.cssVars.test(cssArray[i])) {
+                            node.setAttribute('data-cssvars', 'skip');
                         }
+                        else {
+                            try {
+                                const cssTree = parseCss(cssArray[i], {
+                                    onlyVars      : settings.onlyVars,
+                                    removeComments: true
+                                });
 
-                        // Skip
-                        if (isSkip) {
-                            // Add skip mark
-                            for (let i = 0, len = nodeArray.length; i < len; i++) {
-                                nodeArray[i].setAttribute('data-cssvars', 'skip');
+                                // Parse variables
+                                parseVars(cssTree, {
+                                    store    : jobVars,
+                                    onWarning: handleWarning
+                                });
+
+                                // Cache data
+                                node.__cssVars = { tree: cssTree };
+                            }
+                            catch(err) {
+                                handleError(err.message, node);
                             }
                         }
-                        // Force full update
-                        else if (isBeforeLastOut || isNewVarVal) {
-                            settings.incremental = false;
-                            cssVars(settings);
-                        }
+                    });
+
+                    // Merge settings.variables into jobVars
+                    Object.assign(jobVars, settings.variables);
+
+                    // Detect new variable declaration or value
+                    hasVarChange = Boolean(Object.keys(varStore).length && Object.keys(jobVars).some(name => jobVars[name] !== varStore[name]));
+
+                    // Merge jobVars into variable storage
+                    Object.assign(varStore, jobVars);
+
+                    // New variable declaration or modified value detected
+                    if (hasVarChange) {
+                        const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
+
+                        srcNodes.forEach(node => node.removeAttribute('data-cssvars'));
+                        cssVars(settings);
                     }
+                    // No variable changes detected
+                    else {
+                        const outCssArray  = [];
+                        const outNodeArray = [];
 
-                    if (doUpdate) {
-                        const cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
-                        let hasKeyframesWithVars;
+                        let hasKeyframesWithVars = false;
 
-                        // Concatenate cssArray items, replacing those that do
-                        // not contain a CSS custom property declaraion or
-                        // function with a temporary marker . After the CSS is
-                        // transformed, the markers will be replaced with the
-                        // matching cssArray item. This optimization is done to
-                        // avoid processing CSS that will not change as a
-                        // results of the ponyfill.
-                        cssText = cssArray.map((css, i) => regex.cssVars.test(css) ? css : `/*__CSSVARSPONYFILL-${i}__*/`).join('');
+                        // Reset temporary variable store
+                        variableStore.job = {};
 
-                        try {
-                            cssText = transformCss(cssText, {
-                                fixNestedCalc: settings.fixNestedCalc,
-                                onlyVars     : settings.onlyVars,
-                                persist      : settings.updateDOM,
-                                preserve     : settings.preserve,
-                                variables    : settings.variables,
-                                onWarning    : handleWarning
-                            });
-
-                            hasKeyframesWithVars = regex.cssKeyframes.test(cssText);
-
-                            // Replace markers with appropriate cssArray item
-                            cssText = cssText.replace(cssMarker, (match, group1) => cssArray[group1]);
+                        // Increment job
+                        if (settings.updateDOM) {
+                            counters.job++;
                         }
-                        catch(err) {
-                            let errorThrown = false;
 
-                            // Iterate cssArray to detect CSS text and node(s)
-                            // responsibile for error.
-                            cssArray.forEach((cssText, i) => {
+                        nodeArray
+                            // Ignore nodes that could not be parsed
+                            .filter(node => node.__cssVars)
+                            .forEach(node => {
                                 try {
-                                    cssText = transformCss(cssText, settings);
+                                    transformCss(node.__cssVars.tree, Object.assign({}, settings, {
+                                        variables: varStore,
+                                        onWarning: handleWarning
+                                    }));
+
+                                    const outCss = stringifyCss(node.__cssVars.tree);
+
+                                    if (settings.updateDOM) {
+                                        const dataGroup = node.getAttribute('data-cssvars-group') || ++counters.group;
+
+                                        let outNode = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`);
+
+                                        hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
+
+                                        if (!node.hasAttribute('data-cssvars')) {
+                                            node.setAttribute('data-cssvars', 'src');
+                                            node.setAttribute('data-cssvars-job', counters.job);
+                                        }
+
+                                        if (!outNode && outCss.length) {
+                                            outNode = document.createElement('style');
+                                            outNode.setAttribute('data-cssvars', 'out');
+                                            node.parentNode.insertBefore(outNode, node.nextSibling);
+                                        }
+
+                                        if (outNode && outNode.textContent !== outCss) {
+                                            [node, outNode].forEach(n => n.setAttribute('data-cssvars-group', counters.group));
+                                            outNode.setAttribute('data-cssvars-job', counters.job);
+                                            outNode.textContent = outCss;
+                                            outCssArray.push(outCss);
+                                            outNodeArray.push(outNode);
+                                        }
+                                    }
+                                    else {
+                                        if (node.textContent !== outCss) {
+                                            outCssArray.push(outCss);
+                                        }
+                                    }
                                 }
                                 catch(err) {
-                                    const errorNode = nodeArray[i - 0];
-
-                                    errorThrown = true;
-                                    handleError(err.message, errorNode);
+                                    handleError(err.message, node);
                                 }
                             });
-
-                            // In the event the error thrown was not due to
-                            // transformCss, handle the original error.
-                            /* istanbul ignore next */
-                            if (!errorThrown) {
-                                handleError(err.message || err);
-                            }
-                        }
 
                         // Process shadow DOM
                         if (settings.shadowDOM) {
@@ -452,66 +478,17 @@ function cssVars(options = {}) {
                             }
                         }
 
-                        if (cssText.length || nodeArray.length) {
-                            let styleNode = null;
+                        // Callback
+                        settings.onComplete(
+                            outCssArray.join(''),
+                            outNodeArray,
+                            JSON.parse(JSON.stringify(varStore)),
+                            getTimeStamp() - settings.__benchmark
+                        );
 
-                            if (settings.updateDOM) {
-                                const cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
-
-                                // Increment ponyfill counter
-                                cssVarsCounter++;
-
-                                styleNode = document.createElement('style');
-                                styleNode.textContent = cssText;
-
-                                // Set in/out and job number as data attributes
-                                styleNode.setAttribute('data-cssvars-job', cssVarsCounter);
-                                styleNode.setAttribute('data-cssvars', 'out');
-                                nodeArray.forEach(node => {
-                                    node.setAttribute('data-cssvars-job', cssVarsCounter);
-                                    node.setAttribute('data-cssvars', 'in');
-                                });
-
-                                // Insert ponyfill <style> after last node
-                                if (cssNodes) {
-                                    const lastNode = cssNodes[cssNodes.length - 1];
-
-                                    lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                                }
-                                // Insert ponyfill <style> after last link/style node
-                                else {
-                                    const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
-
-                                    targetNode.appendChild(styleNode);
-                                }
-
-                                if (!settings.incremental) {
-                                    // Remove old "out" nodes from previous jobs
-                                    const removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]')).filter(node => {
-                                        return Number(node.getAttribute('data-cssvars-job')) < cssVarsCounter;
-                                    });
-
-                                    removeNodes.forEach(node => node.parentNode.removeChild(node));
-                                }
-                            }
-
-                            // Callback and get (optional) return value
-                            const returnValue = settings.onComplete(
-                                cssText,
-                                styleNode,
-                                JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)),
-                                getTimeStamp() - settings.__benchmark
-                            );
-
-                            if (returnValue) {
-                                styleNode.textContent = returnValue;
-                            }
-
-                            if (settings.updateDOM) {
-                                if (hasKeyframesWithVars) {
-                                    fixKeyframes(settings.rootElement);
-                                }
-                            }
+                        // Fix keyframes
+                        if (settings.updateDOM && hasKeyframesWithVars) {
+                            fixKeyframes(settings.rootElement);
                         }
                     }
 
@@ -562,39 +539,26 @@ function addMutationObserver(settings) {
     function isValidRemoveMutation(mutationNodes) {
         return Array.apply(null, mutationNodes).some(node => {
             const isElm     = node.nodeType === 1;
-            const isInNode  = isElm && node.getAttribute('data-cssvars') === 'in';
             const isOutNode = isElm && node.getAttribute('data-cssvars') === 'out';
-            const isValid   = isInNode;
+            const isSrcNode = isElm && node.getAttribute('data-cssvars') === 'src';
 
-            if (isInNode || isOutNode) {
-                const dataJob  = isElm && node.getAttribute('data-cssvars-job');
-                const jobNodes = Array.apply(null, settings.rootElement.querySelectorAll(`style[data-cssvars-job="${dataJob}"]`));
+            if (isSrcNode || isOutNode) {
+                const dataGroup  = node.getAttribute('data-cssvars-group');
+                const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
 
-                if (isInNode) {
-                    const inNodes = jobNodes.filter(node => node.getAttribute('data-cssvars') === 'in');
-                    const outNode = jobNodes.filter(node => node.getAttribute('data-cssvars') === 'out')[0];
-
-                    // Force full update if "in" nodes from the same job exist
-                    if (inNodes.length) {
-                        settings.incremental = false;
-                    }
-
+                if (orphanNode) {
                     // Remove output <style> node
-                    if (outNode) {
-                        outNode.parentNode.removeChild(outNode);
+                    if (isSrcNode) {
+                        orphanNode.parentNode.removeChild(orphanNode);
                     }
-                }
-                else {
-                    // Set orphan indicator on remaining "in" nodes. These nodes
-                    // will be ignored until the next non-incremental update is
-                    // initiated, at which time the "orphan" flag will trigger
-                    // the custom property cache to be reset so that these nodes
-                    // can be reprocessed.
-                    jobNodes.forEach(node => node.setAttribute('data-cssvars', 'orphan'));
+                    // Remove attribute so node is processed on next ponyfil call
+                    else {
+                        orphanNode.removeAttribute('data-cssvars');
+                    }
                 }
             }
 
-            return isValid;
+            return false;
         });
     }
 
@@ -690,6 +654,30 @@ function fixKeyframes(rootElement) {
 }
 
 /**
+ * Converts all object property names to leading '--' style
+ *
+ * @param {object} varObj Object containing CSS custom property name:value pairs
+ * @returns {object}
+ */
+function fixVarNames(varObj) {
+    const userVarNames        = Object.keys(varObj);
+    const reLeadingHyphens    = /^-{2}/;
+    const hasMalformedVarName = userVarNames.some(key => !reLeadingHyphens.test(key));
+
+    if (hasMalformedVarName) {
+        varObj = userVarNames.reduce((obj, value) => {
+            const key = reLeadingHyphens.test(value) ? value : `--${value.replace(/^-+/, '')}`;
+
+            obj[key] = varObj[value];
+
+            return obj;
+        }, {});
+    }
+
+    return varObj;
+}
+
+/**
  * Returns fully qualified URL from relative URL and (optional) base URL
  *
  * @param   {string} url
@@ -716,53 +704,6 @@ function getFullUrl(url, base = location.href) {
  */
 function getTimeStamp() {
     return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
-}
-
-function hasNewVarDecl(oldVarsObj, newVarsObj = {}, cssText = '') {
-    return Boolean(
-        // New declaration in newVarsObj
-        Object.keys(newVarsObj).some(key => !oldVarsObj.hasOwnProperty(key)) ||
-        // New declaration in cssText
-        (function hasNewVarDeclInCSS() {
-            let cssVarDeclsMatch;
-
-            // Reset regex
-            regex.cssVarDecls.lastIndex = 0;
-
-            while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
-                const prop      = cssVarDeclsMatch[1];
-                const isNewDecl = !oldVarsObj.hasOwnProperty(prop);
-
-                if (isNewDecl) {
-                    return true;
-                }
-            }
-        })()
-    );
-}
-
-function hasNewVarVal(oldVarsObj, newVarsObj = {}, cssText = '') {
-    return Boolean(
-        // Check newVarsObj
-        Object.keys(newVarsObj).some(key => newVarsObj[key] !== oldVarsObj[key]) ||
-        // Check cssText
-        (function hasNewVarValInCSS() {
-            let cssVarDeclsMatch;
-
-            // Reset regex
-            regex.cssVarDecls.lastIndex = 0;
-
-            while((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
-                const prop       = cssVarDeclsMatch[1];
-                const value      = cssVarDeclsMatch[2];
-                const isNewValue = oldVarsObj.hasOwnProperty(prop) && oldVarsObj[prop] !== value;
-
-                if (isNewValue) {
-                    return true;
-                }
-            }
-        })()
-    );
 }
 
 

@@ -692,6 +692,33 @@
             }
         };
     }
+    function parseVars(cssData) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var defaults = {
+            store: {},
+            onWarning: function onWarning() {}
+        };
+        var settings = _extends({}, defaults, options);
+        if (typeof cssData === "string") {
+            cssData = parseCss(cssData, settings);
+        }
+        cssData.stylesheet.rules.forEach(function(rule) {
+            if (rule.type !== "rule") {
+                return;
+            }
+            if (rule.selectors.length !== 1 || rule.selectors[0] !== ":root") {
+                return;
+            }
+            rule.declarations.forEach(function(decl, i) {
+                var prop = decl.property;
+                var value = decl.value;
+                if (prop && prop.indexOf("--") === 0) {
+                    settings.store[prop] = value;
+                }
+            });
+        });
+        return settings.store;
+    }
     function stringifyCss(tree) {
         var delim = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         var cb = arguments.length > 2 ? arguments[2] : undefined;
@@ -786,150 +813,65 @@
     }
     var VAR_PROP_IDENTIFIER = "--";
     var VAR_FUNC_IDENTIFIER = "var";
-    var variableStore = {
-        dom: {},
-        temp: {},
-        user: {}
-    };
-    function transformCss(cssText) {
+    function transformCss(cssData) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
             fixNestedCalc: true,
             onlyVars: false,
-            persist: false,
             preserve: false,
             variables: {},
             onWarning: function onWarning() {}
         };
-        var settings = _extends({}, defaults, options, {
-            variables: fixVarObjNames(options.variables || {})
-        });
-        var map = settings.persist ? variableStore.dom : variableStore.temp = JSON.parse(JSON.stringify(variableStore.dom));
-        var cssTree = parseCss(cssText, {
-            onlyVars: settings.onlyVars
-        });
-        cssTree.stylesheet.rules.forEach(function(rule) {
-            var varNameIndices = [];
-            if (rule.type !== "rule") {
-                return;
-            }
-            if (rule.selectors.length !== 1 || rule.selectors[0] !== ":root") {
-                return;
-            }
-            rule.declarations.forEach(function(decl, i) {
+        var settings = _extends({}, defaults, options);
+        if (typeof cssData === "string") {
+            cssData = parseCss(cssData, settings);
+        }
+        walkCss(cssData.stylesheet, function(declarations, node) {
+            for (var i = 0; i < declarations.length; i++) {
+                var decl = declarations[i];
+                var type = decl.type;
                 var prop = decl.property;
                 var value = decl.value;
-                if (prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
-                    map[prop] = value;
-                    varNameIndices.push(i);
-                }
-            });
-            if (!settings.preserve) {
-                for (var i = varNameIndices.length - 1; i >= 0; i--) {
-                    rule.declarations.splice(varNameIndices[i], 1);
-                }
-            }
-        });
-        Object.keys(variableStore.user).forEach(function(key) {
-            map[key] = variableStore.user[key];
-        });
-        if (Object.keys(settings.variables).length) {
-            var newRule = {
-                declarations: [],
-                selectors: [ ":root" ],
-                type: "rule"
-            };
-            Object.keys(settings.variables).forEach(function(key) {
-                var value = settings.variables[key];
-                if (settings.persist) {
-                    variableStore.user[key] = value;
-                }
-                if (map[key] !== value) {
-                    map[key] = value;
-                    newRule.declarations.push({
-                        type: "declaration",
-                        property: key,
-                        value: value
-                    });
-                }
-            });
-            if (settings.preserve && newRule.declarations.length) {
-                cssTree.stylesheet.rules.push(newRule);
-            }
-        }
-        walkCss(cssTree.stylesheet, function(declarations, node) {
-            var decl;
-            var resolvedValue;
-            var value;
-            for (var i = 0; i < declarations.length; i++) {
-                decl = declarations[i];
-                value = decl.value;
-                if (decl.type !== "declaration") {
+                if (type !== "declaration") {
                     continue;
                 }
-                if (!value || value.indexOf(VAR_FUNC_IDENTIFIER + "(") === -1) {
+                if (!settings.preserve && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
+                    declarations.splice(i, 1);
                     continue;
                 }
-                resolvedValue = resolveValue(value, map, settings);
-                if (resolvedValue !== decl.value) {
-                    if (!settings.preserve) {
-                        decl.value = resolvedValue;
-                    } else {
-                        declarations.splice(i, 0, {
-                            type: decl.type,
-                            property: decl.property,
-                            value: resolvedValue
-                        });
-                        i++;
-                    }
+                if (settings.fixNestedCalc) {
+                    value = decl.value = fixNestedCalc(decl.value);
                 }
-            }
-        });
-        if (settings.fixNestedCalc) {
-            fixNestedCalc(cssTree.stylesheet.rules);
-        }
-        return stringifyCss(cssTree);
-    }
-    function fixNestedCalc(rules) {
-        var reCalcExp = /(-[a-z]+-)?calc\(/;
-        rules.forEach(function(rule) {
-            if (rule.declarations) {
-                rule.declarations.forEach(function(decl) {
-                    var oldValue = decl.value;
-                    var newValue = "";
-                    while (reCalcExp.test(oldValue)) {
-                        var rootCalc = balancedMatch("calc(", ")", oldValue || "");
-                        oldValue = oldValue.slice(rootCalc.end);
-                        while (reCalcExp.test(rootCalc.body)) {
-                            var nestedCalc = balancedMatch(reCalcExp, ")", rootCalc.body);
-                            rootCalc.body = "".concat(nestedCalc.pre, "(").concat(nestedCalc.body, ")").concat(nestedCalc.post);
+                if (value.indexOf(VAR_FUNC_IDENTIFIER + "(") !== -1) {
+                    var resolvedValue = resolveValue(value, settings);
+                    if (resolvedValue !== decl.value) {
+                        if (!settings.preserve) {
+                            decl.value = resolvedValue;
+                        } else {
+                            declarations.splice(i, 0, {
+                                type: type,
+                                property: prop,
+                                value: resolvedValue
+                            });
+                            i++;
                         }
-                        newValue += "".concat(rootCalc.pre, "calc(").concat(rootCalc.body);
-                        newValue += !reCalcExp.test(oldValue) ? ")".concat(rootCalc.post) : "";
                     }
-                    decl.value = newValue || decl.value;
-                });
+                }
             }
         });
+        return stringifyCss(cssData);
     }
-    function fixVarObjNames(varObj) {
-        var userVarNames = Object.keys(varObj);
-        var reLeadingHyphens = /^-{2}/;
-        var hasMalformedVarName = userVarNames.some(function(key) {
-            return !reLeadingHyphens.test(key);
+    function fixNestedCalc(value) {
+        var reCalcVal = /calc\(([^)]+)\)/g;
+        (value.match(reCalcVal) || []).forEach(function(match) {
+            var newVal = "calc".concat(match.split("calc").join(""));
+            value = value.replace(match, newVal);
         });
-        if (hasMalformedVarName) {
-            varObj = userVarNames.reduce(function(obj, value) {
-                var key = reLeadingHyphens.test(value) ? value : "--".concat(value.replace(/^-+/, ""));
-                obj[key] = varObj[value];
-                return obj;
-            }, {});
-        }
-        return varObj;
+        return value;
     }
-    function resolveValue(value, map) {
-        var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-        var __recursiveFallback = arguments.length > 3 ? arguments[3] : undefined;
+    function resolveValue(value) {
+        var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var __recursiveFallback = arguments.length > 2 ? arguments[2] : undefined;
         if (value.indexOf("var(") === -1) {
             return value;
         }
@@ -937,14 +879,14 @@
         function resolveFunc(value) {
             var name = value.split(",")[0].replace(/[\s\n\t]/g, "");
             var fallback = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
-            var match = map.hasOwnProperty(name) ? String(map[name]) : undefined;
+            var match = settings.variables.hasOwnProperty(name) ? String(settings.variables[name]) : undefined;
             var replacement = match || (fallback ? String(fallback) : undefined);
             var unresolvedFallback = __recursiveFallback || value;
             if (!match) {
                 settings.onWarning('variable "'.concat(name, '" is undefined'));
             }
             if (replacement && replacement !== "undefined" && replacement.length > 0) {
-                return resolveValue(replacement, map, settings, unresolvedFallback);
+                return resolveValue(replacement, settings, unresolvedFallback);
             } else {
                 return "var(".concat(unresolvedFallback, ")");
             }
@@ -960,14 +902,18 @@
                 settings.onWarning("var() must contain a non-whitespace string");
                 return value;
             } else {
-                return valueData.pre.slice(0, -3) + resolveFunc(valueData.body) + resolveValue(valueData.post, map, settings);
+                return valueData.pre.slice(0, -3) + resolveFunc(valueData.body) + resolveValue(valueData.post, settings);
             }
         } else {
-            return valueData.pre + "(".concat(resolveValue(valueData.body, map, settings), ")") + resolveValue(valueData.post, map, settings);
+            return valueData.pre + "(".concat(resolveValue(valueData.body, settings), ")") + resolveValue(valueData.post, settings);
         }
     }
     var isBrowser = typeof window !== "undefined";
     var isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window.CSS.supports("(--a: 0)");
+    var counters = {
+        group: 0,
+        job: 0
+    };
     var defaults = {
         rootElement: isBrowser ? document : null,
         shadowDOM: false,
@@ -998,7 +944,10 @@
         cssVarFunc: /var\(\s*--[\w-]/,
         cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
     };
-    var cssVarsCounter = 0;
+    var variableStore = {
+        dom: {},
+        job: {}
+    };
     var cssVarsIsRunning = false;
     var cssVarsObserver = null;
     var debounceTimer = null;
@@ -1115,6 +1064,13 @@
         if (!isBrowser) {
             return;
         }
+        if (settings.__reset) {
+            settings.__reset = false;
+            isShadowDOMReady = false;
+            for (var prop in variableStore) {
+                variableStore[prop] = {};
+            }
+        }
         if (cssVarsIsRunning === settings.rootElement) {
             cssVarsDebounced(options);
             return;
@@ -1128,24 +1084,9 @@
         }
         if (!settings.__benchmark) {
             settings.__benchmark = getTimeStamp();
-            settings.variables = fixVarObjNames(settings.variables);
+            settings.variables = fixVarNames(settings.variables);
             if (!settings.watch) {
                 settings.exclude = "[data-cssvars]" + (settings.exclude ? ",".concat(settings.exclude) : "");
-            }
-        }
-        if (!settings.incremental) {
-            var prevInNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="in"]'));
-            var orphanNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="orphan"]'));
-            prevInNodes.forEach(function(node) {
-                return node.removeAttribute("data-cssvars");
-            });
-            if (!settings.watch) {
-                settings.exclude = settings.exclude.replace(/(\[data-cssvars\]),/g, '$1:not([data-cssvars="orphan"]),');
-            }
-            if (orphanNodes.length) {
-                Object.keys(variableStore.dom).forEach(function(key) {
-                    variableStore.dom[key] = undefined;
-                });
             }
         }
         if (document.readyState !== "loading") {
@@ -1167,8 +1108,9 @@
                         return cssRootRules || false;
                     },
                     onComplete: function onComplete(cssText, cssArray, nodeArray) {
-                        transformCss(cssText, {
-                            persist: true
+                        parseVars(cssText, {
+                            store: variableStore.dom,
+                            onWarning: handleWarning
                         });
                         isShadowDOMReady = true;
                         cssVars(settings);
@@ -1180,7 +1122,6 @@
                     rootElement: settings.rootElement,
                     include: settings.include,
                     exclude: settings.exclude,
-                    filter: settings.onlyVars ? regex.cssVars : null,
                     onBeforeSend: settings.onBeforeSend,
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
@@ -1203,69 +1144,92 @@
                     },
                     onComplete: function onComplete(cssText, cssArray) {
                         var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-                        var doUpdate = true;
-                        if (settings.incremental) {
-                            var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
-                            var outNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]'));
-                            var isBeforeLastOut = nodeArray.length && function isBeforeLastOut() {
-                                var cssNodes = Array.apply(null, settings.rootElement.querySelectorAll(defaults.include));
-                                var lastArrayNode = nodeArray[nodeArray.length - 1];
-                                var lastOutNode = outNodes[outNodes.length - 1];
-                                return outNodes.length && cssNodes.indexOf(lastArrayNode) < cssNodes.indexOf(lastOutNode);
-                            }();
-                            var isNewVarVal = hasNewVarVal(variableStore.dom, settings.variables, cssRootRules);
-                            var isNewVarDecl = isNewVarVal ? null : hasNewVarDecl(variableStore.dom, settings.variables, cssRootRules);
-                            var isVarFunc = isNewVarVal || isNewVarDecl ? null : regex.cssVarFunc.test(cssText);
-                            var isSkip = !isNewVarDecl && !isNewVarVal && !isVarFunc && nodeArray.length;
-                            if (isSkip || isBeforeLastOut || isNewVarVal) {
-                                doUpdate = false;
-                            }
-                            if (isSkip) {
-                                for (var i = 0, len = nodeArray.length; i < len; i++) {
-                                    nodeArray[i].setAttribute("data-cssvars", "skip");
+                        var jobVars = {};
+                        var varStore = settings.updateDOM ? variableStore.dom : Object.keys(variableStore.job).length ? variableStore.job : variableStore.job = JSON.parse(JSON.stringify(variableStore.dom));
+                        var hasVarChange = false;
+                        nodeArray.forEach(function(node, i) {
+                            if (!regex.cssVars.test(cssArray[i])) {
+                                node.setAttribute("data-cssvars", "skip");
+                            } else {
+                                try {
+                                    var cssTree = parseCss(cssArray[i], {
+                                        onlyVars: settings.onlyVars,
+                                        removeComments: true
+                                    });
+                                    parseVars(cssTree, {
+                                        store: jobVars,
+                                        onWarning: handleWarning
+                                    });
+                                    node.__cssVars = {
+                                        tree: cssTree
+                                    };
+                                } catch (err) {
+                                    handleError(err.message, node);
                                 }
-                            } else if (isBeforeLastOut || isNewVarVal) {
-                                settings.incremental = false;
-                                cssVars(settings);
                             }
-                        }
-                        if (doUpdate) {
-                            var cssMarker = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
-                            var hasKeyframesWithVars;
-                            cssText = cssArray.map(function(css, i) {
-                                return regex.cssVars.test(css) ? css : "/*__CSSVARSPONYFILL-".concat(i, "__*/");
-                            }).join("");
-                            try {
-                                cssText = transformCss(cssText, {
-                                    fixNestedCalc: settings.fixNestedCalc,
-                                    onlyVars: settings.onlyVars,
-                                    persist: settings.updateDOM,
-                                    preserve: settings.preserve,
-                                    variables: settings.variables,
-                                    onWarning: handleWarning
-                                });
-                                hasKeyframesWithVars = regex.cssKeyframes.test(cssText);
-                                cssText = cssText.replace(cssMarker, function(match, group1) {
-                                    return cssArray[group1];
-                                });
-                            } catch (err) {
-                                var errorThrown = false;
-                                cssArray.forEach(function(cssText, i) {
-                                    try {
-                                        cssText = transformCss(cssText, settings);
-                                    } catch (err) {
-                                        var errorNode = nodeArray[i - 0];
-                                        errorThrown = true;
-                                        handleError(err.message, errorNode);
+                        });
+                        _extends(jobVars, settings.variables);
+                        hasVarChange = Boolean(Object.keys(varStore).length && Object.keys(jobVars).some(function(name) {
+                            return jobVars[name] !== varStore[name];
+                        }));
+                        _extends(varStore, jobVars);
+                        if (hasVarChange) {
+                            var srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
+                            srcNodes.forEach(function(node) {
+                                return node.removeAttribute("data-cssvars");
+                            });
+                            cssVars(settings);
+                        } else {
+                            var outCssArray = [];
+                            var outNodeArray = [];
+                            var hasKeyframesWithVars = false;
+                            variableStore.job = {};
+                            if (settings.updateDOM) {
+                                counters.job++;
+                            }
+                            nodeArray.filter(function(node) {
+                                return node.__cssVars;
+                            }).forEach(function(node) {
+                                try {
+                                    transformCss(node.__cssVars.tree, _extends({}, settings, {
+                                        variables: varStore,
+                                        onWarning: handleWarning
+                                    }));
+                                    var outCss = stringifyCss(node.__cssVars.tree);
+                                    if (settings.updateDOM) {
+                                        var dataGroup = node.getAttribute("data-cssvars-group") || ++counters.group;
+                                        var outNode = settings.rootElement.querySelector('[data-cssvars="out"][data-cssvars-group="'.concat(dataGroup, '"]'));
+                                        hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
+                                        if (!node.hasAttribute("data-cssvars")) {
+                                            node.setAttribute("data-cssvars", "src");
+                                            node.setAttribute("data-cssvars-job", counters.job);
+                                        }
+                                        if (!outNode && outCss.length) {
+                                            outNode = document.createElement("style");
+                                            outNode.setAttribute("data-cssvars", "out");
+                                            node.parentNode.insertBefore(outNode, node.nextSibling);
+                                        }
+                                        if (outNode && outNode.textContent !== outCss) {
+                                            [ node, outNode ].forEach(function(n) {
+                                                return n.setAttribute("data-cssvars-group", counters.group);
+                                            });
+                                            outNode.setAttribute("data-cssvars-job", counters.job);
+                                            outNode.textContent = outCss;
+                                            outCssArray.push(outCss);
+                                            outNodeArray.push(outNode);
+                                        }
+                                    } else {
+                                        if (node.textContent !== outCss) {
+                                            outCssArray.push(outCss);
+                                        }
                                     }
-                                });
-                                if (!errorThrown) {
-                                    handleError(err.message || err);
+                                } catch (err) {
+                                    handleError(err.message, node);
                                 }
-                            }
+                            });
                             if (settings.shadowDOM) {
                                 var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
-                                for (var _i = 0, elm; elm = elms[_i]; ++_i) {
+                                for (var i = 0, elm; elm = elms[i]; ++i) {
                                     if (elm.shadowRoot && elm.shadowRoot.querySelector("style")) {
                                         var shadowSettings = _extends({}, settings, {
                                             rootElement: elm.shadowRoot,
@@ -1275,44 +1239,9 @@
                                     }
                                 }
                             }
-                            if (cssText.length || nodeArray.length) {
-                                var styleNode = null;
-                                if (settings.updateDOM) {
-                                    var cssNodes = nodeArray || settings.rootElement.querySelectorAll('link[rel*="stylesheet"],style');
-                                    cssVarsCounter++;
-                                    styleNode = document.createElement("style");
-                                    styleNode.textContent = cssText;
-                                    styleNode.setAttribute("data-cssvars-job", cssVarsCounter);
-                                    styleNode.setAttribute("data-cssvars", "out");
-                                    nodeArray.forEach(function(node) {
-                                        node.setAttribute("data-cssvars-job", cssVarsCounter);
-                                        node.setAttribute("data-cssvars", "in");
-                                    });
-                                    if (cssNodes) {
-                                        var lastNode = cssNodes[cssNodes.length - 1];
-                                        lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                                    } else {
-                                        var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
-                                        targetNode.appendChild(styleNode);
-                                    }
-                                    if (!settings.incremental) {
-                                        var removeNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars="out"]')).filter(function(node) {
-                                            return Number(node.getAttribute("data-cssvars-job")) < cssVarsCounter;
-                                        });
-                                        removeNodes.forEach(function(node) {
-                                            return node.parentNode.removeChild(node);
-                                        });
-                                    }
-                                }
-                                var returnValue = settings.onComplete(cssText, styleNode, JSON.parse(JSON.stringify(settings.updateDOM ? variableStore.dom : variableStore.temp)), getTimeStamp() - settings.__benchmark);
-                                if (returnValue) {
-                                    styleNode.textContent = returnValue;
-                                }
-                                if (settings.updateDOM) {
-                                    if (hasKeyframesWithVars) {
-                                        fixKeyframes(settings.rootElement);
-                                    }
-                                }
+                            settings.onComplete(outCssArray.join(""), outNodeArray, JSON.parse(JSON.stringify(varStore)), getTimeStamp() - settings.__benchmark);
+                            if (settings.updateDOM && hasKeyframesWithVars) {
+                                fixKeyframes(settings.rootElement);
                             }
                         }
                         cssVarsIsRunning = false;
@@ -1346,32 +1275,20 @@
         function isValidRemoveMutation(mutationNodes) {
             return Array.apply(null, mutationNodes).some(function(node) {
                 var isElm = node.nodeType === 1;
-                var isInNode = isElm && node.getAttribute("data-cssvars") === "in";
                 var isOutNode = isElm && node.getAttribute("data-cssvars") === "out";
-                var isValid = isInNode;
-                if (isInNode || isOutNode) {
-                    var dataJob = isElm && node.getAttribute("data-cssvars-job");
-                    var jobNodes = Array.apply(null, settings.rootElement.querySelectorAll('style[data-cssvars-job="'.concat(dataJob, '"]')));
-                    if (isInNode) {
-                        var inNodes = jobNodes.filter(function(node) {
-                            return node.getAttribute("data-cssvars") === "in";
-                        });
-                        var outNode = jobNodes.filter(function(node) {
-                            return node.getAttribute("data-cssvars") === "out";
-                        })[0];
-                        if (inNodes.length) {
-                            settings.incremental = false;
+                var isSrcNode = isElm && node.getAttribute("data-cssvars") === "src";
+                if (isSrcNode || isOutNode) {
+                    var dataGroup = node.getAttribute("data-cssvars-group");
+                    var orphanNode = settings.rootElement.querySelector('[data-cssvars-group="'.concat(dataGroup, '"]'));
+                    if (orphanNode) {
+                        if (isSrcNode) {
+                            orphanNode.parentNode.removeChild(orphanNode);
+                        } else {
+                            orphanNode.removeAttribute("data-cssvars");
                         }
-                        if (outNode) {
-                            outNode.parentNode.removeChild(outNode);
-                        }
-                    } else {
-                        jobNodes.forEach(function(node) {
-                            return node.setAttribute("data-cssvars", "orphan");
-                        });
                     }
                 }
-                return isValid;
+                return false;
             });
         }
         if (!window.MutationObserver) {
@@ -1427,11 +1344,26 @@
                 }
             }
             void document.body.offsetHeight;
-            for (var _i2 = 0, _len = keyframeNodes.length; _i2 < _len; _i2++) {
-                var nodeStyle = keyframeNodes[_i2].style;
+            for (var _i = 0, _len = keyframeNodes.length; _i < _len; _i++) {
+                var nodeStyle = keyframeNodes[_i].style;
                 nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, "");
             }
         }
+    }
+    function fixVarNames(varObj) {
+        var userVarNames = Object.keys(varObj);
+        var reLeadingHyphens = /^-{2}/;
+        var hasMalformedVarName = userVarNames.some(function(key) {
+            return !reLeadingHyphens.test(key);
+        });
+        if (hasMalformedVarName) {
+            varObj = userVarNames.reduce(function(obj, value) {
+                var key = reLeadingHyphens.test(value) ? value : "--".concat(value.replace(/^-+/, ""));
+                obj[key] = varObj[value];
+                return obj;
+            }, {});
+        }
+        return varObj;
     }
     function getFullUrl$1(url) {
         var base = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : location.href;
@@ -1446,41 +1378,6 @@
     }
     function getTimeStamp() {
         return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
-    }
-    function hasNewVarDecl(oldVarsObj) {
-        var newVarsObj = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        var cssText = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        return Boolean(Object.keys(newVarsObj).some(function(key) {
-            return !oldVarsObj.hasOwnProperty(key);
-        }) || function hasNewVarDeclInCSS() {
-            var cssVarDeclsMatch;
-            regex.cssVarDecls.lastIndex = 0;
-            while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
-                var prop = cssVarDeclsMatch[1];
-                var isNewDecl = !oldVarsObj.hasOwnProperty(prop);
-                if (isNewDecl) {
-                    return true;
-                }
-            }
-        }());
-    }
-    function hasNewVarVal(oldVarsObj) {
-        var newVarsObj = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        var cssText = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        return Boolean(Object.keys(newVarsObj).some(function(key) {
-            return newVarsObj[key] !== oldVarsObj[key];
-        }) || function hasNewVarValInCSS() {
-            var cssVarDeclsMatch;
-            regex.cssVarDecls.lastIndex = 0;
-            while ((cssVarDeclsMatch = regex.cssVarDecls.exec(cssText)) !== null) {
-                var prop = cssVarDeclsMatch[1];
-                var value = cssVarDeclsMatch[2];
-                var isNewValue = oldVarsObj.hasOwnProperty(prop) && oldVarsObj[prop] !== value;
-                if (isNewValue) {
-                    return true;
-                }
-            }
-        }());
     }
     return cssVars;
 });

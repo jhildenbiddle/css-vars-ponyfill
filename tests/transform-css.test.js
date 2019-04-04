@@ -1,19 +1,13 @@
 // Dependencies
 // =============================================================================
-import resetVariableStore from './helpers/reset-variablestore';
-import transformCss       from '../src/transform-css';
-import { expect }         from 'chai';
+import parseVars    from '../src/parse-vars';
+import transformCss from '../src/transform-css';
+import { expect }   from 'chai';
 
 
 // Suite
 // =============================================================================
-describe('transform-css', function() {
-    // Hooks
-    // -------------------------------------------------------------------------
-    beforeEach(function() {
-        resetVariableStore();
-    });
-
+describe.skip('transform-css', function() {
     // Tests: Transforms
     // -------------------------------------------------------------------------
     describe('Transforms', function() {
@@ -22,7 +16,9 @@ describe('transform-css', function() {
                 :root { --color: red; }
                 p { color: var(--color); }
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut    = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
@@ -54,7 +50,10 @@ describe('transform-css', function() {
                 }
                 /* 21 */
             `;
-            const cssOut    = transformCss(cssIn, { onlyVars: true });
+            const cssOut    = transformCss(cssIn, {
+                onlyVars : true,
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);

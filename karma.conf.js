@@ -15,6 +15,9 @@ const files = {
 // Settings
 // =============================================================================
 const settings = {
+    client: {
+        captureConsole: false
+    },
     files: [
         'node_modules/@babel/polyfill/dist/polyfill.js',
         files.test,
