@@ -21,7 +21,7 @@ function createTestElms(elmsData, sharedOptions = {}, documentObject) {
     sharedOptions.appendTo = sharedOptions.appendTo || 'body';
 
     // Set 'data-test' attribute so test elements can easily identified
-    sharedOptions.attr = Object.assign(sharedOptions.attr || {}, { 'data-test': true });
+    sharedOptions.attr = Object.assign(sharedOptions.attr || {}, { 'data-test': '' });
 
     return createElms(elmsData, sharedOptions, documentObject);
 }
