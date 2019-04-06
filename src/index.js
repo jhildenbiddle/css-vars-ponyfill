@@ -45,14 +45,10 @@ const defaults = {
     onComplete() {}       // cssVars
 };
 const regex = {
-    // CSS comments
-    cssComments: /\/\*[\s\S]+?\*\//g,
     // CSS keyframes (@keyframes & @-VENDOR-keyframes)
     cssKeyframes: /@(?:-\w*-)?keyframes/,
     // CSS root vars
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
-    // CSS url(...) values
-    cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable declarations (e.g. --color: red;)
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
     // CSS variable function (e.g. var(--color))
@@ -314,22 +310,12 @@ function cssVars(options = {}) {
                 onSuccess(cssText, node, url) {
                     const returnVal = settings.onSuccess(cssText, node, url);
 
+                    // Use callback return value if provided (skip CSS if false)
                     cssText = returnVal !== undefined && Boolean(returnVal) === false ? '' : returnVal || cssText;
 
                     // Convert relative url(...) values to absolute
                     if (settings.updateURLs) {
-                        const cssUrls = cssText
-                            // Remove comments to avoid processing @import in comments
-                            .replace(regex.cssComments, '')
-                            // Match url(...) values
-                            .match(regex.cssUrls) || [];
-
-                        cssUrls.forEach(cssUrl => {
-                            const oldUrl = cssUrl.replace(regex.cssUrls, '$1');
-                            const newUrl = getFullUrl(oldUrl, url);
-
-                            cssText = cssText.replace(cssUrl, cssUrl.replace(oldUrl, newUrl));
-                        });
+                        cssText = fixRelativeCssUrls(cssText, url);
                     }
 
                     return cssText;
@@ -651,6 +637,36 @@ function fixKeyframes(rootElement) {
             nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, '');
         }
     }
+}
+
+/**
+ * Convert relative CSS url(...) values to absolute based on baseUrl
+ *
+ * @param {string} cssText
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function fixRelativeCssUrls(cssText, baseUrl) {
+    const regex = {
+        // CSS comments
+        cssComments: /\/\*[\s\S]+?\*\//g,
+        cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
+    };
+
+    const cssUrls = cssText
+        // Remove comments
+        .replace(regex.cssComments, '')
+        // Match url(...) values
+        .match(regex.cssUrls) || [];
+
+    cssUrls.forEach(cssUrl => {
+        const oldUrl = cssUrl.replace(regex.cssUrls, '$1');
+        const newUrl = getFullUrl(oldUrl, baseUrl);
+
+        cssText = cssText.replace(cssUrl, cssUrl.replace(oldUrl, newUrl));
+    });
+
+    return cssText;
 }
 
 /**
