@@ -180,7 +180,7 @@ function cssVars(options = {}) {
 
     function handleError(message, sourceNode, xhr, url) {
         /* istanbul ignore next */
-        if (!settings.silent) {
+        if (!settings.silent && window.console) {
             // eslint-disable-next-line
             console.error(`${msgPrefix}${message}\n`, sourceNode);
         }
@@ -190,7 +190,7 @@ function cssVars(options = {}) {
 
     function handleWarning(message) {
         /* istanbul ignore next */
-        if (!settings.silent) {
+        if (!settings.silent && window.console) {
             // eslint-disable-next-line
             console.warn(`${msgPrefix}${message}`);
         }
