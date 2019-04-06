@@ -469,6 +469,11 @@ function cssVars(options = {}) {
                             }
                         }
 
+                        // Fix keyframes
+                        if (settings.updateDOM && hasKeyframesWithVars) {
+                            fixKeyframes(settings.rootElement);
+                        }
+
                         // Callback
                         settings.onComplete(
                             outCssArray.join(''),
@@ -476,11 +481,6 @@ function cssVars(options = {}) {
                             JSON.parse(JSON.stringify(varStore)),
                             getTimeStamp() - settings.__benchmark
                         );
-
-                        // Fix keyframes
-                        if (settings.updateDOM && hasKeyframesWithVars) {
-                            fixKeyframes(settings.rootElement);
-                        }
                     }
 
                     cssVarsIsRunning = false;
