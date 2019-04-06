@@ -214,6 +214,11 @@ function cssVars(options = {}) {
         for (const prop in variableStore) {
             variableStore[prop] = {};
         }
+
+        // Disconnect MutationObserver
+        if (cssVarsObserver) {
+            cssVarsObserver.disconnect();
+        }
     }
 
     // Check flag and debounce to prevent successive call from stacking
