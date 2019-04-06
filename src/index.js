@@ -1,3 +1,7 @@
+// TODO: Handle removal of a custom property declaration from the dom (remove from variableStore)
+// TODO: Finish cleaning regex
+// TODO: Finish updating tests
+// TODO: Remove dist from repo
 // TODO: Update option names
 
 
@@ -248,7 +252,7 @@ function cssVars(options = {}) {
 
         // Exclude previously processed elements
         if (!settings.watch) {
-            settings.exclude = '[data-cssvars]' + (settings.exclude ? `,${settings.exclude}` : '');
+            settings.exclude = '[data-cssvars]:not([data-cssvars=""])' + (settings.exclude ? `,${settings.exclude}` : '');
         }
     }
 
@@ -380,7 +384,7 @@ function cssVars(options = {}) {
                     if (hasVarChange) {
                         const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
 
-                        srcNodes.forEach(node => node.removeAttribute('data-cssvars'));
+                        srcNodes.forEach(node => node.setAttribute('data-cssvars', ''));
                         cssVars(settings);
                     }
                     // No variable changes detected
@@ -411,29 +415,36 @@ function cssVars(options = {}) {
                                     const outCss = stringifyCss(node.__cssVars.tree);
 
                                     if (settings.updateDOM) {
-                                        const dataGroup = node.getAttribute('data-cssvars-group') || ++counters.group;
-
-                                        let outNode = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`);
-
-                                        hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
-
-                                        if (!node.hasAttribute('data-cssvars')) {
+                                        if (!node.getAttribute('data-cssvars')) {
                                             node.setAttribute('data-cssvars', 'src');
+                                        }
+
+                                        if (!node.getAttribute('data-cssvars-job')) {
                                             node.setAttribute('data-cssvars-job', counters.job);
                                         }
 
-                                        if (!outNode && outCss.length) {
-                                            outNode = document.createElement('style');
-                                            outNode.setAttribute('data-cssvars', 'out');
-                                            node.parentNode.insertBefore(outNode, node.nextSibling);
-                                        }
+                                        if (outCss.length) {
+                                            const dataGroup = node.getAttribute('data-cssvars-group') || ++counters.group;
 
-                                        if (outNode && outNode.textContent !== outCss) {
-                                            [node, outNode].forEach(n => n.setAttribute('data-cssvars-group', counters.group));
-                                            outNode.setAttribute('data-cssvars-job', counters.job);
-                                            outNode.textContent = outCss;
-                                            outCssArray.push(outCss);
-                                            outNodeArray.push(outNode);
+                                            let outNode = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`);
+
+                                            hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
+
+                                            if (!outNode) {
+                                                outNode = document.createElement('style');
+                                                outNode.setAttribute('data-cssvars', 'out');
+                                                node.parentNode.insertBefore(outNode, node.nextSibling);
+                                            }
+
+                                            if (outNode && outNode.textContent !== outCss) {
+                                                [node, outNode].forEach(n => {
+                                                    n.setAttribute('data-cssvars-job', counters.job)
+                                                    n.setAttribute('data-cssvars-group', dataGroup)
+                                                });
+                                                outNode.textContent = outCss;
+                                                outCssArray.push(outCss);
+                                                outNodeArray.push(outNode);
+                                            }
                                         }
                                     }
                                     else {
@@ -532,24 +543,34 @@ function addMutationObserver(settings) {
             const isElm     = node.nodeType === 1;
             const isOutNode = isElm && node.getAttribute('data-cssvars') === 'out';
             const isSrcNode = isElm && node.getAttribute('data-cssvars') === 'src';
+            const isValid   = isSrcNode;
 
             if (isSrcNode || isOutNode) {
                 const dataGroup  = node.getAttribute('data-cssvars-group');
                 const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
 
+                if (isSrcNode) {
+                    const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
+
+                    // Remove attributes and reprocess nodes via observer
+                    srcNodes.forEach(node => node.setAttribute('data-cssvars', ''));
+                }
+
                 if (orphanNode) {
-                    // Remove output <style> node
                     if (isSrcNode) {
+                        // Remove orphaned output <style> node
                         orphanNode.parentNode.removeChild(orphanNode);
                     }
-                    // Remove attribute so node is processed on next ponyfil call
                     else {
+                        // Remove attribute and reprocess src nodes on next ponyfill call
                         orphanNode.removeAttribute('data-cssvars');
+                        orphanNode.removeAttribute('data-cssvars-group');
+                        orphanNode.removeAttribute('data-cssvars-job');
                     }
                 }
             }
 
-            return false;
+            return isValid;
         });
     }
 

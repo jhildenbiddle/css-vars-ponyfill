@@ -958,10 +958,8 @@ var defaults = {
 };
 
 var regex = {
-    cssComments: /\/\*[\s\S]+?\*\//g,
     cssKeyframes: /@(?:-\w*-)?keyframes/,
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
-    cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
     cssVarFunc: /var\(\s*--[\w-]/,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
@@ -1078,13 +1076,13 @@ var isShadowDOMReady = false;
     var msgPrefix = "cssVars(): ";
     var settings = _extends({}, defaults, options);
     function handleError(message, sourceNode, xhr, url) {
-        if (!settings.silent) {
+        if (!settings.silent && window.console) {
             console.error("".concat(msgPrefix).concat(message, "\n"), sourceNode);
         }
         settings.onError(message, sourceNode, xhr, url);
     }
     function handleWarning(message) {
-        if (!settings.silent) {
+        if (!settings.silent && window.console) {
             console.warn("".concat(msgPrefix).concat(message));
         }
         settings.onWarning(message);
@@ -1097,6 +1095,9 @@ var isShadowDOMReady = false;
         isShadowDOMReady = false;
         for (var prop in variableStore) {
             variableStore[prop] = {};
+        }
+        if (cssVarsObserver) {
+            cssVarsObserver.disconnect();
         }
     }
     if (cssVarsIsRunning === settings.rootElement) {
@@ -1114,7 +1115,7 @@ var isShadowDOMReady = false;
         settings.__benchmark = getTimeStamp();
         settings.variables = fixVarNames(settings.variables);
         if (!settings.watch) {
-            settings.exclude = "[data-cssvars]" + (settings.exclude ? ",".concat(settings.exclude) : "");
+            settings.exclude = '[data-cssvars]:not([data-cssvars=""])' + (settings.exclude ? ",".concat(settings.exclude) : "");
         }
     }
     if (document.readyState !== "loading") {
@@ -1155,12 +1156,7 @@ var isShadowDOMReady = false;
                     var returnVal = settings.onSuccess(cssText, node, url);
                     cssText = returnVal !== undefined && Boolean(returnVal) === false ? "" : returnVal || cssText;
                     if (settings.updateURLs) {
-                        var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
-                        cssUrls.forEach(function(cssUrl) {
-                            var oldUrl = cssUrl.replace(regex.cssUrls, "$1");
-                            var newUrl = getFullUrl$1(oldUrl, url);
-                            cssText = cssText.replace(cssUrl, cssUrl.replace(oldUrl, newUrl));
-                        });
+                        cssText = fixRelativeCssUrls(cssText, url);
                     }
                     return cssText;
                 },
@@ -1204,7 +1200,7 @@ var isShadowDOMReady = false;
                     if (hasVarChange) {
                         var srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
                         srcNodes.forEach(function(node) {
-                            return node.removeAttribute("data-cssvars");
+                            return node.setAttribute("data-cssvars", "");
                         });
                         cssVars(settings);
                     } else {
@@ -1225,26 +1221,28 @@ var isShadowDOMReady = false;
                                 }));
                                 var outCss = stringifyCss(node.__cssVars.tree);
                                 if (settings.updateDOM) {
-                                    var dataGroup = node.getAttribute("data-cssvars-group") || ++counters.group;
-                                    var outNode = settings.rootElement.querySelector('[data-cssvars="out"][data-cssvars-group="'.concat(dataGroup, '"]'));
-                                    hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
-                                    if (!node.hasAttribute("data-cssvars")) {
+                                    if (!node.getAttribute("data-cssvars")) {
                                         node.setAttribute("data-cssvars", "src");
                                         node.setAttribute("data-cssvars-job", counters.job);
                                     }
-                                    if (!outNode && outCss.length) {
-                                        outNode = document.createElement("style");
-                                        outNode.setAttribute("data-cssvars", "out");
-                                        node.parentNode.insertBefore(outNode, node.nextSibling);
-                                    }
-                                    if (outNode && outNode.textContent !== outCss) {
-                                        [ node, outNode ].forEach(function(n) {
-                                            return n.setAttribute("data-cssvars-group", counters.group);
-                                        });
-                                        outNode.setAttribute("data-cssvars-job", counters.job);
-                                        outNode.textContent = outCss;
-                                        outCssArray.push(outCss);
-                                        outNodeArray.push(outNode);
+                                    if (outCss.length) {
+                                        var dataGroup = node.getAttribute("data-cssvars-group") || ++counters.group;
+                                        var outNode = settings.rootElement.querySelector('[data-cssvars="out"][data-cssvars-group="'.concat(dataGroup, '"]'));
+                                        hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
+                                        if (!outNode) {
+                                            outNode = document.createElement("style");
+                                            outNode.setAttribute("data-cssvars", "out");
+                                            node.parentNode.insertBefore(outNode, node.nextSibling);
+                                        }
+                                        if (outNode && outNode.textContent !== outCss) {
+                                            outNode.setAttribute("data-cssvars-job", counters.job);
+                                            [ node, outNode ].forEach(function(n) {
+                                                return n.setAttribute("data-cssvars-group", dataGroup);
+                                            });
+                                            outNode.textContent = outCss;
+                                            outCssArray.push(outCss);
+                                            outNodeArray.push(outNode);
+                                        }
                                     }
                                 } else {
                                     if (node.textContent !== outCss) {
@@ -1267,10 +1265,10 @@ var isShadowDOMReady = false;
                                 }
                             }
                         }
-                        settings.onComplete(outCssArray.join(""), outNodeArray, JSON.parse(JSON.stringify(varStore)), getTimeStamp() - settings.__benchmark);
                         if (settings.updateDOM && hasKeyframesWithVars) {
                             fixKeyframes(settings.rootElement);
                         }
+                        settings.onComplete(outCssArray.join(""), outNodeArray, JSON.parse(JSON.stringify(varStore)), getTimeStamp() - settings.__benchmark);
                     }
                     cssVarsIsRunning = false;
                 }
@@ -1306,18 +1304,27 @@ function addMutationObserver(settings) {
             var isElm = node.nodeType === 1;
             var isOutNode = isElm && node.getAttribute("data-cssvars") === "out";
             var isSrcNode = isElm && node.getAttribute("data-cssvars") === "src";
+            var isValid = isSrcNode;
             if (isSrcNode || isOutNode) {
                 var dataGroup = node.getAttribute("data-cssvars-group");
                 var orphanNode = settings.rootElement.querySelector('[data-cssvars-group="'.concat(dataGroup, '"]'));
+                if (isSrcNode) {
+                    var srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
+                    srcNodes.forEach(function(node) {
+                        return node.setAttribute("data-cssvars", "");
+                    });
+                }
                 if (orphanNode) {
                     if (isSrcNode) {
                         orphanNode.parentNode.removeChild(orphanNode);
                     } else {
                         orphanNode.removeAttribute("data-cssvars");
+                        orphanNode.removeAttribute("data-cssvars-group");
+                        orphanNode.removeAttribute("data-cssvars-job");
                     }
                 }
             }
-            return false;
+            return isValid;
         });
     }
     if (!window.MutationObserver) {
@@ -1380,6 +1387,20 @@ function fixKeyframes(rootElement) {
             nodeStyle[animationNameProp] = nodeStyle[animationNameProp].replace(nameMarker, "");
         }
     }
+}
+
+function fixRelativeCssUrls(cssText, baseUrl) {
+    var regex = {
+        cssComments: /\/\*[\s\S]+?\*\//g,
+        cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g
+    };
+    var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
+    cssUrls.forEach(function(cssUrl) {
+        var oldUrl = cssUrl.replace(regex.cssUrls, "$1");
+        var newUrl = getFullUrl$1(oldUrl, baseUrl);
+        cssText = cssText.replace(cssUrl, cssUrl.replace(oldUrl, newUrl));
+    });
+    return cssText;
 }
 
 function fixVarNames(varObj) {
