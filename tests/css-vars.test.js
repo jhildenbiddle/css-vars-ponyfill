@@ -485,8 +485,8 @@ describe('css-vars', function() {
         describe('updateURLs', function() {
             it('true - updates relative page url(...) paths to absolute URLs', function(done) {
                 const baseUrl   = location.href.replace(/\/(?:context|debug).html/, '');
-                const styleCss  = 'p{color:var(--a);background:url(image.png);}';
-                const expectCss = `p{color:var(--a);background:url(${baseUrl}/image.png);}`;
+                const styleCss  = ':root{--color:red;}p{color:var(--color);background:url(image.png);}';
+                const expectCss = `p{color:red;background:url(${baseUrl}/image.png);}`;
 
                 createTestElms({ tag: 'style', text: styleCss });
 
@@ -537,8 +537,8 @@ describe('css-vars', function() {
             });
 
             it('false - does not update relative url(...) paths', function(done) {
-                const styleCss  = 'p{color:var(--a);background:url(image.png);}';
-                const expectCss = styleCss;
+                const styleCss  = ':root{--color:red;}p{color:var(--color);background:url(image.png);}';
+                const expectCss = 'p{color:red;background:url(image.png);}';
 
                 createTestElms({ tag: 'style', text: styleCss });
 
