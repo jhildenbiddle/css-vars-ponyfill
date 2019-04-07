@@ -3,6 +3,7 @@
 // TODO: Finish updating tests
 // TODO: Remove dist from repo
 // TODO: Update option names
+// TODO: Update docs
 
 
 // Dependencies
@@ -33,7 +34,6 @@ const defaults = {
     variables    : {},    // transformCss
     // Options
     fixNestedCalc: true,  // transformCss
-    incremental  : true,  // cssVars
     onlyLegacy   : true,  // cssVars
     onlyVars     : false, // cssVars, parseCSS
     preserve     : false, // transformCss
@@ -109,10 +109,6 @@ let isShadowDOMReady = false;
  *                   previous values.
  * @param {boolean}  [options.fixNestedCalc=true] Remove nested 'calc' keywords
  *                   for legacy browser compatibility.
- * @param {boolean}  [options.incremental=true] Determines if the ponyfill will
- *                   ignore previously processed `<link>` and `<style>` nodes
- *                   and generate CSS only for new nodes unless a new node
- *                   contains CSS that necessitates processing all nodes
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -163,7 +159,6 @@ let isShadowDOMReady = false;
  *     exclude      : '',
  *     variables    : {},
  *     fixNestedCalc: true,
- *     incremental  : true,
  *     onlyLegacy   : true,
  *     onlyVars     : false,
  *     preserve     : false,

@@ -76,7 +76,6 @@ describe('css-vars', function() {
             cssVars({
                 include    : '[data-test]',
                 onlyLegacy : false,
-                incremental: false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'cssText').to.equal(expectCss);
                     expect(styleNodes, 'styleNodes').to.have.lengthOf(styleCss.length - 1);
@@ -97,7 +96,6 @@ describe('css-vars', function() {
             cssVars({
                 include    : '[data-test]',
                 onlyLegacy : false,
-                incremental: false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'cssText').to.equal(expectCss);
                     expect(styleNodes, 'styleNodes').to.have.lengthOf(1);
@@ -123,7 +121,6 @@ describe('css-vars', function() {
             cssVars({
                 include    : '[data-test]',
                 onlyLegacy : false,
-                incremental: false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'cssText').to.equal(expectCss);
                     expect(styleNodes, 'styleNodes').to.have.lengthOf(linkUrls.length - 1);
@@ -141,7 +138,6 @@ describe('css-vars', function() {
             cssVars({
                 include    : '[data-test]',
                 onlyLegacy : false,
-                incremental: false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'cssText').to.equal(expectCss);
                     expect(styleNodes, 'styleNodes').to.have.lengthOf(1);
@@ -169,7 +165,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText).to.equal(expectCss);
@@ -190,7 +185,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
@@ -218,7 +212,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         rootElement: shadowRoot,
-                        incremental: false,
                         onlyLegacy : false,
                         updateDOM  : false,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -235,7 +228,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         rootElement: shadowRoot,
-                        incremental: false,
                         onlyLegacy : false,
                         updateDOM  : false,
                         variables  : {
@@ -261,7 +253,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         onCompleteCount++;
@@ -292,7 +283,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     onlyVars   : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -314,7 +304,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     onlyVars   : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -336,7 +325,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     onlyVars   : false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -356,7 +344,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     preserve   : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -374,7 +361,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     preserve   : false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -401,7 +387,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         include    : '[data-test],[data-test-shadow]',
-                        incremental: false,
                         onlyLegacy : false,
                         shadowDOM  : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -434,7 +419,6 @@ describe('css-vars', function() {
                     cssVars({
                         rootElement: testElm1,
                         include    : '[data-test],[data-test-shadow]',
-                        incremental: false,
                         onlyLegacy : false,
                         shadowDOM  : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -461,7 +445,6 @@ describe('css-vars', function() {
                     cssVars({
                         rootElement: testElm1.shadowRoot,
                         include    : '[data-test],[data-test-shadow]',
-                        incremental: false,
                         onlyLegacy : false,
                         shadowDOM  : false,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -485,7 +468,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]:not([data-skip])',
-                    incremental: false,
                     onlyLegacy : false,
                     updateDOM  : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -510,7 +492,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     updateURLs : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -546,7 +527,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     updateURLs : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -564,7 +544,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     updateURLs : false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -590,7 +569,6 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     variables  : {
                         color2    : 'green',  // No leading --
@@ -615,7 +593,6 @@ describe('css-vars', function() {
                 ]);
 
                 cssVars({
-                    incremental: false,
                     variables  : {
                         color1    : 'green', // No leading --
                         '-color2' : 'blue',  // Malformed
@@ -650,7 +627,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         include    : '[data-test]',
-                        incremental: true,
                         onlyLegacy : false,
                         watch      : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -698,7 +674,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         include    : '[data-test]',
-                        incremental: false,
                         onlyLegacy : false,
                         watch      : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -711,7 +686,6 @@ describe('css-vars', function() {
                                     expect(getComputedStyle(document.body).color, 'Observer On').to.be.colored('green');
                                     cssVars({
                                         include    : '[data-test]',
-                                        incremental: false,
                                         onlyLegacy : false,
                                         watch      : false,
                                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -746,7 +720,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 updateDOM  : false,
                 onBeforeSend(xhr, node, url) {
@@ -774,7 +747,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 updateDOM  : false,
                 onSuccess(cssText, node, url) {
@@ -812,7 +784,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 silent     : true, // remove to display console error messages
                 onWarning(warningMsg) {
@@ -842,7 +813,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 silent     : true, // remove to display console error messages
                 onError(errorMsg, node, xhr, url) {
@@ -874,7 +844,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 silent     : true, // remove to display console error messages
                 onError(errorMsg, node, xhr, url) {
@@ -900,7 +869,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: false,
                 onlyLegacy : false,
                 updateDOM  : false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -926,7 +894,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: true,
                 onlyLegacy : false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'Pass1').to.equal(expectCss[0]);
@@ -935,7 +902,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         include    : '[data-test]',
-                        incremental: true,
                         onlyLegacy : false,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
                             const outElms = document.querySelectorAll('[data-cssvars="out"]');
@@ -962,7 +928,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: true,
                 onlyLegacy : false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'Pass1').to.equal(expectCss[0]);
@@ -971,7 +936,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         include    : '[data-test]',
-                        incremental: true,
                         onlyLegacy : false,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
                             const outElms = document.querySelectorAll('[data-cssvars="out"]');
@@ -998,7 +962,6 @@ describe('css-vars', function() {
 
             cssVars({
                 include    : '[data-test]',
-                incremental: true,
                 onlyLegacy : false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText, 'Pass1').to.equal(expectCss[0]);
@@ -1007,7 +970,6 @@ describe('css-vars', function() {
 
                     cssVars({
                         include    : '[data-test]',
-                        incremental: true,
                         onlyLegacy : false,
                         variables  : {
                             color: 'green'
@@ -1037,7 +999,6 @@ describe('css-vars', function() {
             function pass1() {
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     variables  : { color: 'red' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -1051,7 +1012,6 @@ describe('css-vars', function() {
             function pass2() {
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(cssText, 'persist').to.equal(expectCss[1]);
@@ -1063,7 +1023,6 @@ describe('css-vars', function() {
             function pass3() {
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     updateDOM  : false,
                     variables  : { color: 'blue' },
@@ -1077,7 +1036,6 @@ describe('css-vars', function() {
             function pass4() {
                 cssVars({
                     include    : '[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     variables  : { color: 'red' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
@@ -1124,14 +1082,12 @@ describe('css-vars', function() {
 
                 cssVars({
                     include    : 'style[data-test]',
-                    incremental: false,
                     onlyLegacy : false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(getCurrentColor(), 'Initial @keyframes').to.be.colored('red');
 
                         cssVars({
                             include    : 'style[data-test]',
-                            incremental: false,
                             onlyLegacy : false,
                             variables  : {
                                 color: 'blue'
@@ -1163,7 +1119,6 @@ describe('css-vars', function() {
 
     //         cssVars({
     //             include    : '[data-test]',
-    //             incremental: false,
     //             onlyLegacy : false,
     //             onlyVars   : true,
     //             onComplete(cssText, styleNodes, cssVariables, benchmark) {

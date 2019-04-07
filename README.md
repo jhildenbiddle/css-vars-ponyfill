@@ -193,7 +193,6 @@ Values will be updated in both legacy and modern browsers:
 **Options**
 
 - [fixNestedCalc](#optionsfixnestedcalc)
-- [incremental](#optionsincremental)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
@@ -221,7 +220,6 @@ cssVars({
   exclude      : '',
   variables    : {},
   fixNestedCalc: true,
-  incremental  : true,
   onlyLegacy   : true,
   onlyVars     : false,
   preserve     : false,
@@ -423,75 +421,6 @@ p {
   margin: calc(1px + calc(2px + calc(3px + 4)));
 }
 ```
-
-### options.incremental
-
-- Type: `boolean`
-- Default: `true`
-
-Determines how the ponyfill handles processing new `<link>` and `<style>` nodes on subsequent calls.
-
-When `true`, the ponyfill will attempt a fast, incremental update by processing CSS from new `<link>` and `<style>` nodes only. This is sufficient when new CSS does not invalidate previously generated CSS, which allows for significantly faster ponyfill and browser style recalculation times. When the ponyfill determines that new CSS does invalidate previously generated CSS (e.g. a custom property value is changed), a "full" update will be performed automatically.
-
-When `false`, the ponyfill will perform a slower, "full" update on every call, resulting in all `<link>` and `<style>` nodes being processed.
-
-**Example**
-
-JavaScript:
-
-```javascript
-cssVars({
-  incremental: true // default
-});
-```
-
-CSS:
-
-1. Before the first ponyfill call:
-
-   ```html
-   <style>/* Original 1 */</style>
-   ```
-
-1. After the first ponyfill call, `<link>` and `<style>` nodes are marked with a job number and node type ("in" nodes contains original CSS, "out" nodes contain ponyfill-generated CSS).
-
-   ```html
-   <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
-   <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
-   ```
-
-1. When a new `<link>` or `<style>` node is added:
-
-   ```html
-   <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
-   <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
-   <style>/* Original 2 (New) */</style>
-   ```
-
-1. The new node's CSS content is checked to determine if an incremental update is possible. If it is:
-
-   - Previously processed nodes are ignored
-   - Only CSS from new nodes is processed
-   - A `<style>` node with transformed CSS from new nodes is appended
-
-   ```html
-   <style data-cssvars-job="1" data-cssvars="in">/* Original 1 */</style>
-   <style data-cssvars-job="1" data-cssvars="out">/* Ponyfill 1 */</style>
-   <style data-cssvars-job="2" data-cssvars="in">/* Original 2 */</style>
-   <style data-cssvars-job="2" data-cssvars="out">/* Ponyfill 2 */</style>
-   ```
-
-1. If an incremental update is not possible (or when `options.incremental` is `false`):
-
-   - Existing ponyfill-generated CSS is removed
-   - CSS from all nodes is processed
-   - A `<style>` node with transformed CSS from all nodes is appended
-
-   ```html
-   <style data-cssvars-job="2" data-cssvars="in">/* Original 1 */</style>
-   <style data-cssvars-job="2" data-cssvars="in">/* Original 2 */</style>
-   <style data-cssvars-job="2" data-cssvars="out">/* Ponyfill 1+2 */</style>
-   ```
 
 ### options.onlyLegacy
 
