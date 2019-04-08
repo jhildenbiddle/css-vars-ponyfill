@@ -49,10 +49,20 @@ const defaults = {
     onComplete() {}       // cssVars
 };
 const regex = {
-    // CSS keyframes (@keyframes & @-VENDOR-keyframes)
+    // CSS comments
+    cssComments: /\/\*[\s\S]+?\*\//g,
+    // CSS keyframes
+    // Ex: @keyframes & @-VENDOR-keyframes
     cssKeyframes: /@(?:-\w*-)?keyframes/,
-    // CSS root vars
+    // CSS media queries
+    // Ex: @media (min-width: 640px) { ... }
+    cssMediaQueries: /@media[^{]+\{([\s\S]+?})\s*}/g,
+    // CSS root rules
+    // Ex: :root { ... }
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
+    // CSS Urls
+    // Ex: url('path/to/file')
+    cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     // CSS variable declarations (e.g. --color: red;)
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
     // CSS variable function (e.g. var(--color))
@@ -60,11 +70,10 @@ const regex = {
     // CSS variable :root declarations and var() function values
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
-// Persisted custom property values (matches modern browsers)
 const variableStore = {
-    // Persisted across all ponyfill calls (emulates modern browser behavior)
+    // Persisted values (emulates modern browser behavior)
     dom: {},
-    // Temporary store for non-persisted values (i.e. options.updateDOM = false)
+    // Temporary non-persisted values (i.e. options.updateDOM = false)
     job: {}
 };
 
@@ -668,12 +677,6 @@ function fixKeyframes(rootElement) {
  * @returns {string}
  */
 function fixRelativeCssUrls(cssText, baseUrl) {
-    const regex = {
-        // CSS comments
-        cssComments: /\/\*[\s\S]+?\*\//g,
-        cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
-    };
-
     const cssUrls = cssText
         // Remove comments
         .replace(regex.cssComments, '')
