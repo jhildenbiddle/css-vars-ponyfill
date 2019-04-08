@@ -4,7 +4,6 @@ declare module 'css-vars-ponyfill' {
         include?: string;
         exclude?: string;
         fixNestedCalc?: boolean;
-        incremental?: boolean;
         onlyLegacy?: boolean;
         onlyVars?: boolean;
         preserve?: boolean;
