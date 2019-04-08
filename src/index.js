@@ -284,10 +284,14 @@ function cssVars(options = {}) {
                 include: defaults.include,
                 exclude: settings.exclude,
                 onSuccess(cssText, node, url) {
-                    const cssRootRules = (cssText.match(regex.cssRootRules) || []).join('');
+                    cssText = cssText
+                        .replace(regex.cssComments, '')
+                        .replace(regex.cssMediaQueries, '');
+
+                    cssText = (cssText.match(regex.cssRootRules) || []).join('');
 
                     // Return only matching :root {...} blocks
-                    return cssRootRules || false;
+                    return cssText || false;
                 },
                 onComplete(cssText, cssArray, nodeArray) {
                     // Parse variables and store in variableStore. This step
