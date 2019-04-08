@@ -1,5 +1,4 @@
 // TODO: Handle removal of a custom property declaration from the dom (remove from variableStore)
-// TODO: Finish cleaning regex
 // TODO: Finish updating tests
 // TODO: Remove dist from repo
 // TODO: Update option names
@@ -352,12 +351,9 @@ function cssVars(options = {}) {
 
                     // Parse CSS and variables
                     nodeArray.forEach((node, i) => {
-                        // Mark as skip node if CSS does not contain a custom
-                        // property declaration or var() function
-                        if (!regex.cssVars.test(cssArray[i])) {
-                            node.setAttribute('data-cssvars', 'skip');
-                        }
-                        else {
+                        // Only process CSS contains a custom property
+                        // declarations or function
+                        if (regex.cssVars.test(cssArray[i])) {
                             try {
                                 const cssTree = parseCss(cssArray[i], {
                                     onlyVars      : settings.onlyVars,
@@ -410,10 +406,10 @@ function cssVars(options = {}) {
                             counters.job++;
                         }
 
-                        nodeArray
-                            // Ignore nodes that could not be parsed
-                            .filter(node => node.__cssVars)
-                            .forEach(node => {
+                        nodeArray.forEach(node => {
+                            let isSkip = !node.__cssVars;
+
+                            if (node.__cssVars) {
                                 try {
                                     transformCss(node.__cssVars.tree, Object.assign({}, settings, {
                                         variables: varStore,
@@ -427,36 +423,38 @@ function cssVars(options = {}) {
                                             node.setAttribute('data-cssvars', 'src');
                                         }
 
-                                        if (!node.getAttribute('data-cssvars-job')) {
-                                            node.setAttribute('data-cssvars-job', counters.job);
-                                        }
-
                                         if (outCss.length) {
                                             const dataGroup = node.getAttribute('data-cssvars-group') || ++counters.group;
-
-                                            let outNode = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`);
+                                            const outNode   = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`) || document.createElement('style');
 
                                             hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
 
-                                            if (!outNode) {
-                                                outNode = document.createElement('style');
+                                            if (!outNode.hasAttribute('data-cssvars')) {
                                                 outNode.setAttribute('data-cssvars', 'out');
-                                                node.parentNode.insertBefore(outNode, node.nextSibling);
                                             }
 
-                                            if (outNode && outNode.textContent !== outCss) {
+                                            // Transformed CSS
+                                            if (outCss !== (outNode.textContent || node.textContent.replace(/\s/g,''))) {
                                                 [node, outNode].forEach(n => {
-                                                    n.setAttribute('data-cssvars-job', counters.job)
-                                                    n.setAttribute('data-cssvars-group', dataGroup)
+                                                    n.setAttribute('data-cssvars-job', counters.job);
+                                                    n.setAttribute('data-cssvars-group', dataGroup);
                                                 });
                                                 outNode.textContent = outCss;
                                                 outCssArray.push(outCss);
                                                 outNodeArray.push(outNode);
+
+                                                if (!outNode.parentNode) {
+                                                    node.parentNode.insertBefore(outNode, node.nextSibling);
+                                                }
+                                            }
+                                            // Non-transformed CSS
+                                            else {
+                                                isSkip = true;
                                             }
                                         }
                                     }
                                     else {
-                                        if (node.textContent !== outCss) {
+                                        if (node.textContent.replace(/\s/g,'') !== outCss) {
                                             outCssArray.push(outCss);
                                         }
                                     }
@@ -464,7 +462,16 @@ function cssVars(options = {}) {
                                 catch(err) {
                                     handleError(err.message, node);
                                 }
-                            });
+                            }
+
+                            if (isSkip) {
+                                node.setAttribute('data-cssvars', 'skip');
+                            }
+
+                            if (!node.hasAttribute('data-cssvars-job')) {
+                                node.setAttribute('data-cssvars-job', counters.job);
+                            }
+                        });
 
                         // Process shadow DOM
                         if (settings.shadowDOM) {
@@ -560,7 +567,7 @@ function addMutationObserver(settings) {
                 if (isSrcNode) {
                     const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
 
-                    // Remove attributes and reprocess nodes via observer
+                    // Clear attribute and reprocess nodes via observer
                     srcNodes.forEach(node => node.setAttribute('data-cssvars', ''));
                 }
 
@@ -570,10 +577,8 @@ function addMutationObserver(settings) {
                         orphanNode.parentNode.removeChild(orphanNode);
                     }
                     else {
-                        // Remove attribute and reprocess src nodes on next ponyfill call
-                        orphanNode.removeAttribute('data-cssvars');
-                        orphanNode.removeAttribute('data-cssvars-group');
-                        orphanNode.removeAttribute('data-cssvars-job');
+                        // Clear attribute and reprocess src nodes on next ponyfill call
+                        orphanNode.setAttribute('data-cssvars', '');
                     }
                 }
             }

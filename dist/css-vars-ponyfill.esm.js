@@ -942,7 +942,6 @@ var defaults = {
     exclude: "",
     variables: {},
     fixNestedCalc: true,
-    incremental: true,
     onlyLegacy: true,
     onlyVars: false,
     preserve: false,
@@ -958,8 +957,11 @@ var defaults = {
 };
 
 var regex = {
+    cssComments: /\/\*[\s\S]+?\*\//g,
     cssKeyframes: /@(?:-\w*-)?keyframes/,
+    cssMediaQueries: /@media[^{]+\{([\s\S]+?})\s*}/g,
     cssRootRules: /(?::root\s*{\s*[^}]*})/g,
+    cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
     cssVarFunc: /var\(\s*--[\w-]/,
     cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
@@ -1003,10 +1005,6 @@ var isShadowDOMReady = false;
  *                   previous values.
  * @param {boolean}  [options.fixNestedCalc=true] Remove nested 'calc' keywords
  *                   for legacy browser compatibility.
- * @param {boolean}  [options.incremental=true] Determines if the ponyfill will
- *                   ignore previously processed `<link>` and `<style>` nodes
- *                   and generate CSS only for new nodes unless a new node
- *                   contains CSS that necessitates processing all nodes
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -1057,7 +1055,6 @@ var isShadowDOMReady = false;
  *     exclude      : '',
  *     variables    : {},
  *     fixNestedCalc: true,
- *     incremental  : true,
  *     onlyLegacy   : true,
  *     onlyVars     : false,
  *     preserve     : false,
@@ -1133,8 +1130,9 @@ var isShadowDOMReady = false;
                 include: defaults.include,
                 exclude: settings.exclude,
                 onSuccess: function onSuccess(cssText, node, url) {
-                    var cssRootRules = (cssText.match(regex.cssRootRules) || []).join("");
-                    return cssRootRules || false;
+                    cssText = cssText.replace(regex.cssComments, "").replace(regex.cssMediaQueries, "");
+                    cssText = (cssText.match(regex.cssRootRules) || []).join("");
+                    return cssText || false;
                 },
                 onComplete: function onComplete(cssText, cssArray, nodeArray) {
                     parseVars(cssText, {
@@ -1172,9 +1170,7 @@ var isShadowDOMReady = false;
                     var varStore = settings.updateDOM ? variableStore.dom : Object.keys(variableStore.job).length ? variableStore.job : variableStore.job = JSON.parse(JSON.stringify(variableStore.dom));
                     var hasVarChange = false;
                     nodeArray.forEach(function(node, i) {
-                        if (!regex.cssVars.test(cssArray[i])) {
-                            node.setAttribute("data-cssvars", "skip");
-                        } else {
+                        if (regex.cssVars.test(cssArray[i])) {
                             try {
                                 var cssTree = parseCss(cssArray[i], {
                                     onlyVars: settings.onlyVars,
@@ -1211,46 +1207,55 @@ var isShadowDOMReady = false;
                         if (settings.updateDOM) {
                             counters.job++;
                         }
-                        nodeArray.filter(function(node) {
-                            return node.__cssVars;
-                        }).forEach(function(node) {
-                            try {
-                                transformCss(node.__cssVars.tree, _extends({}, settings, {
-                                    variables: varStore,
-                                    onWarning: handleWarning
-                                }));
-                                var outCss = stringifyCss(node.__cssVars.tree);
-                                if (settings.updateDOM) {
-                                    if (!node.getAttribute("data-cssvars")) {
-                                        node.setAttribute("data-cssvars", "src");
-                                        node.setAttribute("data-cssvars-job", counters.job);
-                                    }
-                                    if (outCss.length) {
-                                        var dataGroup = node.getAttribute("data-cssvars-group") || ++counters.group;
-                                        var outNode = settings.rootElement.querySelector('[data-cssvars="out"][data-cssvars-group="'.concat(dataGroup, '"]'));
-                                        hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
-                                        if (!outNode) {
-                                            outNode = document.createElement("style");
-                                            outNode.setAttribute("data-cssvars", "out");
-                                            node.parentNode.insertBefore(outNode, node.nextSibling);
+                        nodeArray.forEach(function(node) {
+                            var isSkip = !node.__cssVars;
+                            if (node.__cssVars) {
+                                try {
+                                    transformCss(node.__cssVars.tree, _extends({}, settings, {
+                                        variables: varStore,
+                                        onWarning: handleWarning
+                                    }));
+                                    var outCss = stringifyCss(node.__cssVars.tree);
+                                    if (settings.updateDOM) {
+                                        if (!node.getAttribute("data-cssvars")) {
+                                            node.setAttribute("data-cssvars", "src");
                                         }
-                                        if (outNode && outNode.textContent !== outCss) {
-                                            outNode.setAttribute("data-cssvars-job", counters.job);
-                                            [ node, outNode ].forEach(function(n) {
-                                                return n.setAttribute("data-cssvars-group", dataGroup);
-                                            });
-                                            outNode.textContent = outCss;
+                                        if (outCss.length) {
+                                            var dataGroup = node.getAttribute("data-cssvars-group") || ++counters.group;
+                                            var outNode = settings.rootElement.querySelector('[data-cssvars="out"][data-cssvars-group="'.concat(dataGroup, '"]')) || document.createElement("style");
+                                            hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
+                                            if (!outNode.hasAttribute("data-cssvars")) {
+                                                outNode.setAttribute("data-cssvars", "out");
+                                            }
+                                            if (outCss !== (outNode.textContent || node.textContent.replace(/\s/g, ""))) {
+                                                [ node, outNode ].forEach(function(n) {
+                                                    n.setAttribute("data-cssvars-job", counters.job);
+                                                    n.setAttribute("data-cssvars-group", dataGroup);
+                                                });
+                                                outNode.textContent = outCss;
+                                                outCssArray.push(outCss);
+                                                outNodeArray.push(outNode);
+                                                if (!outNode.parentNode) {
+                                                    node.parentNode.insertBefore(outNode, node.nextSibling);
+                                                }
+                                            } else {
+                                                isSkip = true;
+                                            }
+                                        }
+                                    } else {
+                                        if (node.textContent.replace(/\s/g, "") !== outCss) {
                                             outCssArray.push(outCss);
-                                            outNodeArray.push(outNode);
                                         }
                                     }
-                                } else {
-                                    if (node.textContent !== outCss) {
-                                        outCssArray.push(outCss);
-                                    }
+                                } catch (err) {
+                                    handleError(err.message, node);
                                 }
-                            } catch (err) {
-                                handleError(err.message, node);
+                            }
+                            if (isSkip) {
+                                node.setAttribute("data-cssvars", "skip");
+                            }
+                            if (!node.hasAttribute("data-cssvars-job")) {
+                                node.setAttribute("data-cssvars-job", counters.job);
                             }
                         });
                         if (settings.shadowDOM) {
@@ -1318,9 +1323,7 @@ function addMutationObserver(settings) {
                     if (isSrcNode) {
                         orphanNode.parentNode.removeChild(orphanNode);
                     } else {
-                        orphanNode.removeAttribute("data-cssvars");
-                        orphanNode.removeAttribute("data-cssvars-group");
-                        orphanNode.removeAttribute("data-cssvars-job");
+                        orphanNode.setAttribute("data-cssvars", "");
                     }
                 }
             }
@@ -1390,10 +1393,6 @@ function fixKeyframes(rootElement) {
 }
 
 function fixRelativeCssUrls(cssText, baseUrl) {
-    var regex = {
-        cssComments: /\/\*[\s\S]+?\*\//g,
-        cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g
-    };
     var cssUrls = cssText.replace(regex.cssComments, "").match(regex.cssUrls) || [];
     cssUrls.forEach(function(cssUrl) {
         var oldUrl = cssUrl.replace(regex.cssUrls, "$1");

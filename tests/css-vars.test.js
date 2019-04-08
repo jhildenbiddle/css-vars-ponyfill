@@ -175,23 +175,24 @@ describe('css-vars', function() {
 
         it('handles skippable <link> and <style> elements', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-skip.css';
-            const styleCss  = 'p { color: red; }';
             const expectCss = '';
 
             createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } },
-                { tag: 'style', text: styleCss }
+                { tag: 'style', text: 'p { color: red; }' },
+                { tag: 'style', text: 'p { color:var(--skip); }' }
             ]);
 
             cssVars({
                 include    : '[data-test]',
                 onlyLegacy : false,
+                silent     : true,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
 
                     expect(cssText, 'cssText').to.equal(expectCss);
                     expect(styleNodes, 'styleNodes').to.have.lengthOf(0);
-                    expect(skipElms, 'skipElms').to.have.lengthOf(2);
+                    expect(skipElms, 'skipElms').to.have.lengthOf(3);
                     done();
                 }
             });
