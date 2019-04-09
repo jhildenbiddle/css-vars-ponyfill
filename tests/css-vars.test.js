@@ -611,14 +611,13 @@ describe('css-vars', function() {
         if ('MutationObserver' in window) {
             describe('watch', function() {
                 it('true - observe add/remove mutations', function(done) {
-                    this.timeout(5000);
-
                     const expectCss = [
                         'h1{color:red;}h2{color:red;}',
                         'h1{color:green;}h2{color:green;}'
                     ];
 
                     let onCompleteCount = 0;
+                    let newVarDeclElm;
 
                     const styleElms = createTestElms([
                         { tag: 'style', text: ':root { --color: red; }' },
@@ -629,31 +628,56 @@ describe('css-vars', function() {
                     cssVars({
                         include    : '[data-test]',
                         onlyLegacy : false,
+                        silent     : true,
                         watch      : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            const outNodes  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipNodes = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcNodes  = document.querySelectorAll('[data-cssvars="src"]');
+
                             switch(onCompleteCount) {
-                                // 1st callback: process styleElms
+                                // styleElms processed
                                 case 0:
                                     expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
+                                    expect(outNodes, 'Pass1:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass1:srcNodes').to.have.lengthOf(3);
+                                    expect(skipNodes, 'Pass1:skipNodes').to.have.lengthOf(0);
                                     expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(2);
 
-                                    // Add new custom property declaration
-                                    styleElms.push(createTestElms({ tag: 'style', text: ':root { --color: green; }' })[0]);
+                                    newVarDeclElm = createTestElms({ tag: 'style', text: ':root { --color: green; }' })[0];
 
                                     break;
-                                // 2nd callback: Add mutation handled
+                                // Add mutation handled
                                 case 1:
                                     expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
+                                    expect(outNodes, 'Pass2:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass2:srcNodes').to.have.lengthOf(4);
+                                    expect(skipNodes, 'Pass2:skipNodes').to.have.lengthOf(0);
                                     expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(2);
 
-                                    // Remove custom property declaration
-                                    styleElms[3].parentNode.removeChild(styleElms[3]);
+                                    // Remove last custom property declaration
+                                    newVarDeclElm.parentNode.removeChild(newVarDeclElm);
 
                                     break;
-                                // 3rd callback: Remove mutation handled
+                                // Remove mutation handled
                                 case 2:
                                     expect(cssText, 'Pass3:cssText').to.equal(expectCss[0]);
+                                    expect(outNodes, 'Pass3:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass3:srcNodes').to.have.lengthOf(3);
+                                    expect(skipNodes, 'Pass3:skipNodes').to.have.lengthOf(0);
                                     expect(styleNodes, 'Pass3:styleNodes').to.have.lengthOf(2);
+
+                                    // Remove first custom property declaration
+                                    styleElms[0].parentNode.removeChild(styleElms[0]);
+
+                                    break;
+                                // Remove mutation handled
+                                case 3:
+                                    expect(cssText, 'Pass4:cssText').to.equal('');
+                                    expect(outNodes, 'Pass4:outNodes').to.have.lengthOf(0);
+                                    expect(srcNodes, 'Pass4:srcNodes').to.have.lengthOf(0);
+                                    expect(skipNodes, 'Pass4:skipNodes').to.have.lengthOf(2);
+                                    expect(styleNodes, 'Pass4:styleNodes').to.have.lengthOf(0);
                                     done();
                             }
 
@@ -678,9 +702,14 @@ describe('css-vars', function() {
                         onlyLegacy : false,
                         watch      : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            const outNodes = document.querySelectorAll('[data-cssvars="out"]');
+                            const srcNodes = document.querySelectorAll('[data-cssvars="src"]');
+
                             switch(onCompleteCount) {
                                 case 0:
                                     expect(getComputedStyle(document.body).color, 'Pass 1').to.be.colored('red');
+                                    expect(outNodes, 'Pass1:outNodes').to.have.lengthOf(1);
+                                    expect(srcNodes, 'Pass1:srcNodes').to.have.lengthOf(1);
                                     createTestElms({ tag: 'style', text: styleCss[1] });
                                     break;
                                 case 1:
@@ -690,6 +719,8 @@ describe('css-vars', function() {
                                         onlyLegacy : false,
                                         watch      : false,
                                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                                            expect(outNodes, 'Pass2:outNodes').to.have.lengthOf(1);
+                                            expect(srcNodes, 'Pass2:srcNodes').to.have.lengthOf(2);
                                             createTestElms({ tag: 'style', text: styleCss[2] });
 
                                             setTimeout(function() {
@@ -882,10 +913,10 @@ describe('css-vars', function() {
         });
     });
 
-    // Tests: Updates
+    // Tests: Subsequent updates
     // -------------------------------------------------------------------------
-    describe('Updates', function() {
-        it('handles incremental update', function(done) {
+    describe('Subsequent updates', function() {
+        it('handles new variable function', function(done) {
             const expectCss = [
                 'h1{color:red;}',
                 'h2{color:red;}'
@@ -894,24 +925,36 @@ describe('css-vars', function() {
             createTestElms({ tag: 'style', text: ':root { --color: red; } h1 { color: var(--color); }' });
 
             cssVars({
-                include    : '[data-test]',
-                onlyLegacy : false,
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                    expect(cssText, 'Pass1').to.equal(expectCss[0]);
+                    const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                    const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                    const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+                    expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
+                    expect(outElms, 'Pass1:outElms').to.have.lengthOf(1);
+                    expect(skipElms, 'Pass1:skipElms').to.have.lengthOf(0);
+                    expect(srcElms, 'Pass1:srcElms').to.have.lengthOf(1);
+                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(1);
 
                     createTestElms({ tag: 'style', text: 'h2 { color: var(--color); }' });
 
                     cssVars({
-                        include    : '[data-test]',
-                        onlyLegacy : false,
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        silent    : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                            const outElms = document.querySelectorAll('[data-cssvars="out"]');
-                            const srcElms = document.querySelectorAll('[data-cssvars="src"]');
+                            const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
 
                             expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
+                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(2);
+                            expect(skipElms, 'Pass2:skipElms').to.have.lengthOf(0);
+                            expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(2);
                             expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(1);
-                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(2);
-                            expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(2);
                             done();
                         }
                     });
@@ -919,33 +962,132 @@ describe('css-vars', function() {
             });
         });
 
-        it('handles full updates (new variable declaration in CSS)', function(done) {
+        it('handles new variable declaration in CSS', function(done) {
+            const expectCss = 'h1{color:red;}';
+
+            createTestElms({ tag: 'style', text: 'h1 { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true,
+                onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                    const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                    const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+                    expect(cssText, 'Pass1:cssText').to.equal('');
+                    expect(outElms, 'Pass1:outElms').to.have.lengthOf(0);
+                    expect(skipElms, 'Pass1:skipElms').to.have.lengthOf(1);
+                    expect(srcElms, 'Pass1:srcElms').to.have.lengthOf(0);
+                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(0);
+
+                    createTestElms({ tag: 'style', text: ':root { --color: red; }' });
+
+                    cssVars({
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        silent    : true,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+                            expect(cssText, 'Pass2:cssText').to.equal(expectCss);
+                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(1);
+                            expect(skipElms, 'Pass2:skipElms').to.have.lengthOf(0);
+                            expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(2);
+                            expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(1);
+                            done();
+                        }
+                    });
+                }
+            });
+        });
+
+        it('handles new variable declaration in settings.variables', function(done) {
+            const expectCss = 'h1{color:red;}';
+
+            createTestElms({ tag: 'style', text: 'h1 { color: var(--color); }' });
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true,
+                onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                    const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                    const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+                    expect(cssText, 'Pass1:cssText').to.equal('');
+                    expect(outElms, 'Pass1:outElms').to.have.lengthOf(0);
+                    expect(skipElms, 'Pass1:skipElms').to.have.lengthOf(1);
+                    expect(srcElms, 'Pass1:srcElms').to.have.lengthOf(0);
+                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(0);
+
+                    cssVars({
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        silent    : true,
+                        variables : {
+                            color: 'red'
+                        },
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+                            expect(cssText, 'Pass2:cssText').to.equal(expectCss);
+                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(1);
+                            expect(skipElms, 'Pass2:skipElms').to.have.lengthOf(0);
+                            expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(1);
+                            expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(1);
+                            done();
+                        }
+                    });
+                }
+            });
+        });
+
+        it('handles modified variable declaration in CSS', function(done) {
             const expectCss = [
                 'h1{color:red;}',
-                'h1{color:green;}h2{color:green;}'
+                'h1{color:green;}'
             ];
 
             createTestElms({ tag: 'style', text: ':root { --color: red; } h1 { color: var(--color); }' });
 
             cssVars({
-                include    : '[data-test]',
-                onlyLegacy : false,
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                    expect(cssText, 'Pass1').to.equal(expectCss[0]);
+                    const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                    const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                    const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
 
-                    createTestElms({ tag: 'style', text: ':root { --color: green; } h2 { color: var(--color); }' });
+                    expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
+                    expect(outElms, 'Pass1:outElms').to.have.lengthOf(1);
+                    expect(skipElms, 'Pass1:skipElms').to.have.lengthOf(0);
+                    expect(srcElms, 'Pass1:srcElms').to.have.lengthOf(1);
+                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(1);
+
+                    createTestElms({ tag: 'style', text: ':root { --color: green; }' });
 
                     cssVars({
-                        include    : '[data-test]',
-                        onlyLegacy : false,
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        silent    : true,
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                            const outElms = document.querySelectorAll('[data-cssvars="out"]');
-                            const srcElms = document.querySelectorAll('[data-cssvars="src"]');
+                            const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
 
                             expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
-                            expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(2);
-                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(2);
+                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(1);
+                            expect(skipElms, 'Pass2:skipElms').to.have.lengthOf(0);
                             expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(2);
+                            expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(1);
                             done();
                         }
                     });
@@ -953,42 +1095,98 @@ describe('css-vars', function() {
             });
         });
 
-        it('handles full updates (new variable declaration in settings.variables)', function(done) {
+        it('handles modified variable declaration in settings.variables', function(done) {
             const expectCss = [
                 'h1{color:red;}',
-                'h1{color:green;}h2{color:green;}'
+                'h1{color:green;}'
             ];
 
             createTestElms({ tag: 'style', text: ':root { --color: red; } h1 { color: var(--color); }' });
 
             cssVars({
-                include    : '[data-test]',
-                onlyLegacy : false,
+                include   : '[data-test]',
+                onlyLegacy: false,
+                silent    : true,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                    expect(cssText, 'Pass1').to.equal(expectCss[0]);
+                    const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                    const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                    const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
 
-                    createTestElms({ tag: 'style', text: 'h2 { color: var(--color); }' });
+                    expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
+                    expect(outElms, 'Pass1:outElms').to.have.lengthOf(1);
+                    expect(skipElms, 'Pass1:skipElms').to.have.lengthOf(0);
+                    expect(srcElms, 'Pass1:srcElms').to.have.lengthOf(1);
+                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(1);
 
                     cssVars({
-                        include    : '[data-test]',
-                        onlyLegacy : false,
-                        variables  : {
+                        include   : '[data-test]',
+                        onlyLegacy: false,
+                        silent    : true,
+                        variables : {
                             color: 'green'
                         },
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                            const outElms = document.querySelectorAll('[data-cssvars="out"]');
-                            const srcElms = document.querySelectorAll('[data-cssvars="src"]');
+                            const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
 
                             expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
-                            expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(2);
-                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(2);
-                            expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(2);
+                            expect(outElms, 'Pass2:outElms').to.have.lengthOf(1);
+                            expect(skipElms, 'Pass2:skipElms').to.have.lengthOf(0);
+                            expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(1);
+                            expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(1);
                             done();
                         }
                     });
                 }
             });
         });
+
+        // it.only('handles removal of variable declaration (reprocess all nodes)', function(done) {
+        //     const expectCss = 'h1{color:red;}';
+
+        //     const styleElms = createTestElms([
+        //         { tag: 'style', text: ':root { --color: red; }' },
+        //         { tag: 'style', text: 'h1 { color: var(--color); }' }
+        //     ]);
+
+        //     cssVars({
+        //         include   : '[data-test]',
+        //         onlyLegacy: false,
+        //         silent    : true,
+        //         onComplete(cssText, styleNodes, cssVariables, benchmark) {
+        //             const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+        //             const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+        //             const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+        //             expect(cssText, 'Pass1:cssText').to.equal(expectCss);
+        //             expect(outElms, 'Pass1:outElms').to.have.lengthOf(1);
+        //             expect(skipElms, 'Pass1:skipElms').to.have.lengthOf(0);
+        //             expect(srcElms, 'Pass1:srcElms').to.have.lengthOf(2);
+        //             expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(1);
+
+        //             styleElms[0].parentNode.removeChild(styleElms[0]);
+
+        //             cssVars({
+        //                 include   : '[data-test]',
+        //                 onlyLegacy: false,
+        //                 silent    : true,
+        //                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
+        //                     const outElms  = document.querySelectorAll('[data-cssvars="out"]');
+        //                     const skipElms = document.querySelectorAll('[data-cssvars="skip"]');
+        //                     const srcElms  = document.querySelectorAll('[data-cssvars="src"]');
+
+        //                     expect(cssText, 'Pass2:cssText').to.equal('');
+        //                     expect(outElms, 'Pass2:outElms').to.have.lengthOf(0);
+        //                     expect(skipElms, 'Pass2:skipElms').to.have.lengthOf(1);
+        //                     expect(srcElms, 'Pass2:srcElms').to.have.lengthOf(0);
+        //                     expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(0);
+        //                     done();
+        //                 }
+        //             });
+        //         }
+        //     });
+        // });
 
         it('persists options.variables when called multiple times', function(done) {
             const expectCss = [
