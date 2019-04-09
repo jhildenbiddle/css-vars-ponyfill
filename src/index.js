@@ -210,24 +210,6 @@ function cssVars(options = {}) {
         return;
     }
 
-    // Reset ponyfill flags and stored values
-    if (settings.__reset) {
-        settings.__reset = false;
-
-        // Reset shadowDOM ready flag
-        isShadowDOMReady = false;
-
-        // Reset variable storage
-        for (const prop in variableStore) {
-            variableStore[prop] = {};
-        }
-
-        // Disconnect MutationObserver
-        if (cssVarsObserver) {
-            cssVarsObserver.disconnect();
-        }
-    }
-
     // Check flag and debounce to prevent successive call from stacking
     if (cssVarsIsRunning === settings.rootElement) {
         cssVarsDebounced(options);
@@ -532,6 +514,29 @@ function cssVars(options = {}) {
         });
     }
 }
+
+// Ponyfill reset
+cssVars.reset = function() {
+    // Reset running flag
+    cssVarsIsRunning = false;
+
+    // Disconnect MutationObserver
+    if (cssVarsObserver) {
+        cssVarsObserver.disconnect();
+        cssVarsObserver = null;
+    }
+
+    // Reset debounce timer
+    debounceTimer = null;
+
+    // Reset shadowDOM ready flag
+    isShadowDOMReady = false;
+
+    // Reset variable storage
+    for (const prop in variableStore) {
+        variableStore[prop] = {};
+    }
+};
 
 
 // Functions (Private)
