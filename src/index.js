@@ -391,9 +391,7 @@ function cssVars(options = {}) {
 
                     // New variable declaration or modified value detected
                     if (hasVarChange) {
-                        const resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
-
-                        resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
+                        resetCssNodes(settings.rootElement);
                         cssVars(settings);
                     }
                     // No variable changes detected
@@ -575,12 +573,7 @@ function addMutationObserver(settings) {
                 const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
 
                 if (isSrcNode) {
-                    const resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
-
-                    // Clear attribute and reprocess nodes via observer
-                    resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
-
-                    // Reset variableStore
+                    resetCssNodes(settings.rootElement);
                     variableStore.dom = {};
                 }
 
@@ -759,6 +752,12 @@ function getFullUrl(url, base = location.href) {
  */
 function getTimeStamp() {
     return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
+}
+
+function resetCssNodes(rootElement) {
+    const resetNodes = Array.apply(null, rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
+
+    resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
 }
 
 
