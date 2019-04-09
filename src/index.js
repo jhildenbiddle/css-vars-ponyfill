@@ -226,6 +226,7 @@ function cssVars(options = {}) {
     // Disconnect existing MutationObserver
     else if (settings.watch === false && cssVarsObserver) {
         cssVarsObserver.disconnect();
+        cssVarsObserver = null;
     }
 
     // If benchmark key is not availalbe, this is a non-recursive call
@@ -598,6 +599,7 @@ function addMutationObserver(settings) {
 
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
+        cssVarsObserver = null;
     }
 
     cssVarsObserver = new MutationObserver(function(mutations) {
