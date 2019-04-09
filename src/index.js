@@ -1,6 +1,6 @@
 // TODO: Handle removal of a custom property declaration from the dom (remove from variableStore)
 // TODO: Finish updating tests
-// TODO: Remove dist from repo
+// TODO: Remove dist from repo (need to move TypeScript file to root?)
 // TODO: Update option names
 // TODO: Update docs
 
@@ -379,16 +379,21 @@ function cssVars(options = {}) {
                     Object.assign(jobVars, settings.variables);
 
                     // Detect new variable declaration or value
-                    hasVarChange = Boolean(Object.keys(varStore).length && Object.keys(jobVars).some(name => jobVars[name] !== varStore[name]));
+                    hasVarChange = Boolean(
+                        // Ponfill has been called previously
+                        (document.querySelector('[data-cssvars]') || Object.keys(variableStore.dom).length) &&
+                        // Variable declaration of value change detected
+                        Object.keys(jobVars).some(name => jobVars[name] !== varStore[name])
+                    );
 
                     // Merge jobVars into variable storage
                     Object.assign(varStore, jobVars);
 
                     // New variable declaration or modified value detected
                     if (hasVarChange) {
-                        const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
+                        const resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
 
-                        srcNodes.forEach(node => node.setAttribute('data-cssvars', ''));
+                        resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
                         cssVars(settings);
                     }
                     // No variable changes detected
@@ -434,7 +439,7 @@ function cssVars(options = {}) {
                                             }
 
                                             // Transformed CSS
-                                            if (outCss !== (outNode.textContent || node.textContent.replace(/\s/g,''))) {
+                                            if (outCss !== outNode.textContent.replace(/\s/g,'') && outCss !== node.textContent.replace(/\s/g,'')) {
                                                 [node, outNode].forEach(n => {
                                                     n.setAttribute('data-cssvars-job', counters.job);
                                                     n.setAttribute('data-cssvars-group', dataGroup);
@@ -447,9 +452,14 @@ function cssVars(options = {}) {
                                                     node.parentNode.insertBefore(outNode, node.nextSibling);
                                                 }
                                             }
-                                            // Non-transformed CSS
+                                            // Non-transformed or invalidated output CSS
                                             else {
                                                 isSkip = true;
+
+                                                if (outNode && outNode.parentNode) {
+                                                    node.removeAttribute('data-cssvars-group');
+                                                    outNode.parentNode.removeChild(outNode);
+                                                }
                                             }
                                         }
                                     }
@@ -565,21 +575,17 @@ function addMutationObserver(settings) {
                 const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
 
                 if (isSrcNode) {
-                    const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
+                    const resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
 
                     // Clear attribute and reprocess nodes via observer
-                    srcNodes.forEach(node => node.setAttribute('data-cssvars', ''));
+                    resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
+
+                    // Reset variableStore
+                    variableStore.dom = {};
                 }
 
                 if (orphanNode) {
-                    if (isSrcNode) {
-                        // Remove orphaned output <style> node
-                        orphanNode.parentNode.removeChild(orphanNode);
-                    }
-                    else {
-                        // Clear attribute and reprocess src nodes on next ponyfill call
-                        orphanNode.setAttribute('data-cssvars', '');
-                    }
+                    orphanNode.parentNode.removeChild(orphanNode);
                 }
             }
 

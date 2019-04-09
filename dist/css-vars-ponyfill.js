@@ -1161,13 +1161,13 @@
                             }
                         });
                         _extends(jobVars, settings.variables);
-                        hasVarChange = Boolean(Object.keys(varStore).length && Object.keys(jobVars).some(function(name) {
+                        hasVarChange = Boolean((document.querySelector("[data-cssvars]") || Object.keys(variableStore.dom).length) && Object.keys(jobVars).some(function(name) {
                             return jobVars[name] !== varStore[name];
                         }));
                         _extends(varStore, jobVars);
                         if (hasVarChange) {
-                            var srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
-                            srcNodes.forEach(function(node) {
+                            var resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
+                            resetNodes.forEach(function(node) {
                                 return node.setAttribute("data-cssvars", "");
                             });
                             cssVars(settings);
@@ -1199,7 +1199,7 @@
                                                 if (!outNode.hasAttribute("data-cssvars")) {
                                                     outNode.setAttribute("data-cssvars", "out");
                                                 }
-                                                if (outCss !== (outNode.textContent || node.textContent.replace(/\s/g, ""))) {
+                                                if (outCss !== outNode.textContent.replace(/\s/g, "") && outCss !== node.textContent.replace(/\s/g, "")) {
                                                     [ node, outNode ].forEach(function(n) {
                                                         n.setAttribute("data-cssvars-job", counters.job);
                                                         n.setAttribute("data-cssvars-group", dataGroup);
@@ -1212,6 +1212,10 @@
                                                     }
                                                 } else {
                                                     isSkip = true;
+                                                    if (outNode && outNode.parentNode) {
+                                                        node.removeAttribute("data-cssvars-group");
+                                                        outNode.parentNode.removeChild(outNode);
+                                                    }
                                                 }
                                             }
                                         } else {
@@ -1285,17 +1289,14 @@
                     var dataGroup = node.getAttribute("data-cssvars-group");
                     var orphanNode = settings.rootElement.querySelector('[data-cssvars-group="'.concat(dataGroup, '"]'));
                     if (isSrcNode) {
-                        var srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="src"]'));
-                        srcNodes.forEach(function(node) {
+                        var resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
+                        resetNodes.forEach(function(node) {
                             return node.setAttribute("data-cssvars", "");
                         });
+                        variableStore.dom = {};
                     }
                     if (orphanNode) {
-                        if (isSrcNode) {
-                            orphanNode.parentNode.removeChild(orphanNode);
-                        } else {
-                            orphanNode.setAttribute("data-cssvars", "");
-                        }
+                        orphanNode.parentNode.removeChild(orphanNode);
                     }
                 }
                 return isValid;
