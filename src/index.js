@@ -218,6 +218,7 @@ function cssVars(options = {}) {
 
     // Add / recreate MutationObserver
     if (settings.watch) {
+        settings.watch = defaults.watch;
         addMutationObserver(settings);
         cssVars(settings);
         return;
@@ -598,8 +599,6 @@ function addMutationObserver(settings) {
     if (cssVarsObserver) {
         cssVarsObserver.disconnect();
     }
-
-    settings.watch = defaults.watch;
 
     cssVarsObserver = new MutationObserver(function(mutations) {
         const hasValidMutation = mutations.some((mutation) => {
