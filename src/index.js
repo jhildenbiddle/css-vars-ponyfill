@@ -493,14 +493,23 @@ function cssVars(options = {}) {
                         }
 
                         // Callback
-                        settings.onComplete(
-                            outCssArray.join(''),
-                            outNodeArray,
-                            JSON.parse(JSON.stringify(varStore)),
-                            getTimeStamp() - settings.__benchmark
-                        );
+                        try {
+                            settings.onComplete(
+                                outCssArray.join(''),
+                                outNodeArray,
+                                JSON.parse(JSON.stringify(varStore)),
+                                getTimeStamp() - settings.__benchmark
+                            );
+                        }
+                        // The callback could throw an error, which if uncaught
+                        // will prevent the running flag from being reset
+                        // causing and infinite loop on the next call
+                        catch(err) {
+                            handleError(err);
+                        }
                     }
 
+                    // Reset running flag
                     cssVarsIsRunning = false;
                 }
             });
