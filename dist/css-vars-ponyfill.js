@@ -1201,18 +1201,19 @@
                                             }
                                             if (outCss.length) {
                                                 var dataGroup = node.getAttribute("data-cssvars-group") || ++counters.group;
+                                                var outCssNoSpaces = outCss.replace(/\s/g, "");
                                                 var outNode = settings.rootElement.querySelector('[data-cssvars="out"][data-cssvars-group="'.concat(dataGroup, '"]')) || document.createElement("style");
                                                 hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
                                                 if (!outNode.hasAttribute("data-cssvars")) {
                                                     outNode.setAttribute("data-cssvars", "out");
                                                 }
-                                                if (outCss === node.textContent.replace(/\s/g, "")) {
+                                                if (outCssNoSpaces === node.textContent.replace(/\s/g, "")) {
                                                     isSkip = true;
                                                     if (outNode && outNode.parentNode) {
                                                         node.removeAttribute("data-cssvars-group");
                                                         outNode.parentNode.removeChild(outNode);
                                                     }
-                                                } else if (outCss !== outNode.textContent.replace(/\s/g, "")) {
+                                                } else if (outCssNoSpaces !== outNode.textContent.replace(/\s/g, "")) {
                                                     [ node, outNode ].forEach(function(n) {
                                                         n.setAttribute("data-cssvars-job", counters.job);
                                                         n.setAttribute("data-cssvars-group", dataGroup);

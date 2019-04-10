@@ -448,8 +448,9 @@ function cssVars(options = {}) {
                                         }
 
                                         if (outCss.length) {
-                                            const dataGroup = node.getAttribute('data-cssvars-group') || ++counters.group;
-                                            const outNode   = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`) || document.createElement('style');
+                                            const dataGroup       = node.getAttribute('data-cssvars-group') || ++counters.group;
+                                            const outCssNoSpaces = outCss.replace(/\s/g,'');
+                                            const outNode        = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`) || document.createElement('style');
 
                                             hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
 
@@ -458,7 +459,7 @@ function cssVars(options = {}) {
                                             }
 
                                             // Non-transformed CSS
-                                            if (outCss === node.textContent.replace(/\s/g,'')) {
+                                            if (outCssNoSpaces === node.textContent.replace(/\s/g,'')) {
                                                 isSkip = true;
 
                                                 if (outNode && outNode.parentNode) {
@@ -467,7 +468,7 @@ function cssVars(options = {}) {
                                                 }
                                             }
                                             // Transformed CSS
-                                            else if (outCss !== outNode.textContent.replace(/\s/g,'')) {
+                                            else if (outCssNoSpaces !== outNode.textContent.replace(/\s/g,'')) {
                                                 [node, outNode].forEach(n => {
                                                     n.setAttribute('data-cssvars-job', counters.job);
                                                     n.setAttribute('data-cssvars-group', dataGroup);
