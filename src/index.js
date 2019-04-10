@@ -420,8 +420,17 @@ function cssVars(options = {}) {
                                                 outNode.setAttribute('data-cssvars', 'out');
                                             }
 
+                                            // Non-transformed CSS
+                                            if (outCss === node.textContent.replace(/\s/g,'')) {
+                                                isSkip = true;
+
+                                                if (outNode && outNode.parentNode) {
+                                                    node.removeAttribute('data-cssvars-group');
+                                                    outNode.parentNode.removeChild(outNode);
+                                                }
+                                            }
                                             // Transformed CSS
-                                            if (outCss !== outNode.textContent.replace(/\s/g,'') && outCss !== node.textContent.replace(/\s/g,'')) {
+                                            else if (outCss !== outNode.textContent.replace(/\s/g,'')) {
                                                 [node, outNode].forEach(n => {
                                                     n.setAttribute('data-cssvars-job', counters.job);
                                                     n.setAttribute('data-cssvars-group', dataGroup);
@@ -432,15 +441,6 @@ function cssVars(options = {}) {
 
                                                 if (!outNode.parentNode) {
                                                     node.parentNode.insertBefore(outNode, node.nextSibling);
-                                                }
-                                            }
-                                            // Non-transformed or invalidated output CSS
-                                            else {
-                                                isSkip = true;
-
-                                                if (outNode && outNode.parentNode) {
-                                                    node.removeAttribute('data-cssvars-group');
-                                                    outNode.parentNode.removeChild(outNode);
                                                 }
                                             }
                                         }
