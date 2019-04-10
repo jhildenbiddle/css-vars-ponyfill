@@ -1,4 +1,3 @@
-// TODO: Handle removal of a custom property declaration from the dom (remove from variableStore)
 // TODO: Finish updating tests
 // TODO: Remove dist from repo (need to move TypeScript file to root?)
 // TODO: Update option names
@@ -30,11 +29,11 @@ const defaults = {
     // Sources
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
-    variables    : {},    // transformCss
+    variables    : {},    // cssVars, transformCss
     // Options
     fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
-    onlyVars     : false, // cssVars, parseCSS
+    onlyVars     : false, // parseCSS
     preserve     : false, // transformCss
     silent       : false, // cssVars
     updateDOM    : true,  // cssVars
@@ -82,11 +81,14 @@ let cssVarsIsRunning = false;
 // Mutation observer reference created via options.watch
 let cssVarsObserver = null;
 
+// Count used to detect manual removal of [data-cssvars="src"] nodes
+let cssVarsSrcNodeCount = 0;
+
 // Debounce timer used with options.watch
 let debounceTimer = null;
 
-// Indicates if document-level custom property values have been parsed, stored,
-// and ready for use with options.shadowDOM
+// Flag used to indicate if document-level custom property values have been
+// parsed, stored, and ready for use with options.shadowDOM
 let isShadowDOMReady = false;
 
 
@@ -210,12 +212,6 @@ function cssVars(options = {}) {
         return;
     }
 
-    // Check flag and debounce to prevent successive call from stacking
-    if (cssVarsIsRunning === settings.rootElement) {
-        cssVarsDebounced(options);
-        return;
-    }
-
     // Add / recreate MutationObserver
     if (settings.watch) {
         settings.watch = defaults.watch;
@@ -231,15 +227,56 @@ function cssVars(options = {}) {
 
     // If benchmark key is not availalbe, this is a non-recursive call
     if (!settings.__benchmark) {
+        // Check flag and debounce to prevent successive call from stacking
+        if (cssVarsIsRunning === settings.rootElement) {
+            cssVarsDebounced(options);
+            return;
+        }
+
         // Store benchmark start time
         settings.__benchmark = getTimeStamp();
+
+        // Exclude previously processed elements
+        settings.exclude = [
+            // 1. When the ponyfill is called by the MutationObserver, all
+            //    previously processed nodes are exluded except those that have
+            //    had their out/skip/src values cleared by the MutationObserver.
+            // 2. When the ponyfill is called directly, only output nodes are
+            //    excluded. This allows the ponyfill to update skip/src nodes
+            //    after a previously processed link/style node has been removed.
+            cssVarsObserver ? '[data-cssvars]:not([data-cssvars=""])' : '[data-cssvars="out"]',
+            settings.exclude
+        ].filter(selector => selector).join(',');
 
         // Fix malformed custom property names (e.g. "color" or "-color")
         settings.variables = fixVarNames(settings.variables);
 
-        // Exclude previously processed elements
-        if (!settings.watch) {
-            settings.exclude = '[data-cssvars]:not([data-cssvars=""])' + (settings.exclude ? `,${settings.exclude}` : '');
+        // Direct call preparation (i.e. non-MutationObserver call)
+        if (!cssVarsObserver) {
+            const outNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="out"]'));
+
+            // Remove orphaned output nodes
+            outNodes.forEach(outNode => {
+                const dataGroup = outNode.getAttribute('data-cssvars-group');
+                const srcNode   = dataGroup ? settings.rootElement.querySelector(`[data-cssvars="src"][data-cssvars-group="${dataGroup}"]`) : null;
+
+                if (!srcNode) {
+                    outNode.parentNode.removeChild(outNode);
+                }
+            });
+
+            // Handle removed source nodes
+            if (cssVarsSrcNodeCount) {
+                const srcNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])');
+
+                if (srcNodes.length < cssVarsSrcNodeCount) {
+                    // Update source node count
+                    cssVarsSrcNodeCount = srcNodes.length;
+
+                    // Reset variableStore
+                    variableStore.dom = {};
+                }
+            }
         }
     }
 
@@ -465,6 +502,9 @@ function cssVars(options = {}) {
                             }
                         });
 
+                        // Update source node count
+                        cssVarsSrcNodeCount = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])').length;
+
                         // Process shadow DOM
                         if (settings.shadowDOM) {
                             const elms = [
@@ -492,25 +532,19 @@ function cssVars(options = {}) {
                             fixKeyframes(settings.rootElement);
                         }
 
-                        // Callback
-                        try {
-                            settings.onComplete(
-                                outCssArray.join(''),
-                                outNodeArray,
-                                JSON.parse(JSON.stringify(varStore)),
-                                getTimeStamp() - settings.__benchmark
-                            );
-                        }
-                        // The callback could throw an error, which if uncaught
-                        // will prevent the running flag from being reset
-                        // causing and infinite loop on the next call
-                        catch(err) {
-                            handleError(err);
-                        }
-                    }
+                        // Reset running flag. Must be done before onComplete
+                        // callback to avoid a callback error preventing the
+                        // flag from being reset after the callback.
+                        cssVarsIsRunning = false;
 
-                    // Reset running flag
-                    cssVarsIsRunning = false;
+                        // Callback
+                        settings.onComplete(
+                            outCssArray.join(''),
+                            outNodeArray,
+                            JSON.parse(JSON.stringify(varStore)),
+                            getTimeStamp() - settings.__benchmark
+                        );
+                    }
                 }
             });
         }
@@ -536,6 +570,9 @@ cssVars.reset = function() {
         cssVarsObserver.disconnect();
         cssVarsObserver = null;
     }
+
+    // Reset source node count
+    cssVarsSrcNodeCount = 0;
 
     // Reset debounce timer
     debounceTimer = null;

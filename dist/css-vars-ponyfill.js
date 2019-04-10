@@ -950,6 +950,7 @@
     };
     var cssVarsIsRunning = false;
     var cssVarsObserver = null;
+    var cssVarsSrcNodeCount = 0;
     var debounceTimer = null;
     var isShadowDOMReady = false;
     /**
@@ -1059,32 +1060,41 @@
         if (!isBrowser) {
             return;
         }
-        if (settings.__reset) {
-            settings.__reset = false;
-            isShadowDOMReady = false;
-            for (var prop in variableStore) {
-                variableStore[prop] = {};
-            }
-            if (cssVarsObserver) {
-                cssVarsObserver.disconnect();
-            }
-        }
-        if (cssVarsIsRunning === settings.rootElement) {
-            cssVarsDebounced(options);
-            return;
-        }
         if (settings.watch) {
+            settings.watch = defaults.watch;
             addMutationObserver(settings);
             cssVars(settings);
             return;
         } else if (settings.watch === false && cssVarsObserver) {
             cssVarsObserver.disconnect();
+            cssVarsObserver = null;
         }
         if (!settings.__benchmark) {
+            if (cssVarsIsRunning === settings.rootElement) {
+                cssVarsDebounced(options);
+                return;
+            }
             settings.__benchmark = getTimeStamp();
+            settings.exclude = [ cssVarsObserver ? '[data-cssvars]:not([data-cssvars=""])' : '[data-cssvars="out"]', settings.exclude ].filter(function(selector) {
+                return selector;
+            }).join(",");
             settings.variables = fixVarNames(settings.variables);
-            if (!settings.watch) {
-                settings.exclude = '[data-cssvars]:not([data-cssvars=""])' + (settings.exclude ? ",".concat(settings.exclude) : "");
+            if (!cssVarsObserver) {
+                var outNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="out"]'));
+                outNodes.forEach(function(outNode) {
+                    var dataGroup = outNode.getAttribute("data-cssvars-group");
+                    var srcNode = dataGroup ? settings.rootElement.querySelector('[data-cssvars="src"][data-cssvars-group="'.concat(dataGroup, '"]')) : null;
+                    if (!srcNode) {
+                        outNode.parentNode.removeChild(outNode);
+                    }
+                });
+                if (cssVarsSrcNodeCount) {
+                    var srcNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])');
+                    if (srcNodes.length < cssVarsSrcNodeCount) {
+                        cssVarsSrcNodeCount = srcNodes.length;
+                        variableStore.dom = {};
+                    }
+                }
             }
         }
         if (document.readyState !== "loading") {
@@ -1166,10 +1176,7 @@
                         }));
                         _extends(varStore, jobVars);
                         if (hasVarChange) {
-                            var resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
-                            resetNodes.forEach(function(node) {
-                                return node.setAttribute("data-cssvars", "");
-                            });
+                            resetCssNodes(settings.rootElement);
                             cssVars(settings);
                         } else {
                             var outCssArray = [];
@@ -1199,7 +1206,13 @@
                                                 if (!outNode.hasAttribute("data-cssvars")) {
                                                     outNode.setAttribute("data-cssvars", "out");
                                                 }
-                                                if (outCss !== outNode.textContent.replace(/\s/g, "") && outCss !== node.textContent.replace(/\s/g, "")) {
+                                                if (outCss === node.textContent.replace(/\s/g, "")) {
+                                                    isSkip = true;
+                                                    if (outNode && outNode.parentNode) {
+                                                        node.removeAttribute("data-cssvars-group");
+                                                        outNode.parentNode.removeChild(outNode);
+                                                    }
+                                                } else if (outCss !== outNode.textContent.replace(/\s/g, "")) {
                                                     [ node, outNode ].forEach(function(n) {
                                                         n.setAttribute("data-cssvars-job", counters.job);
                                                         n.setAttribute("data-cssvars-group", dataGroup);
@@ -1209,12 +1222,6 @@
                                                     outNodeArray.push(outNode);
                                                     if (!outNode.parentNode) {
                                                         node.parentNode.insertBefore(outNode, node.nextSibling);
-                                                    }
-                                                } else {
-                                                    isSkip = true;
-                                                    if (outNode && outNode.parentNode) {
-                                                        node.removeAttribute("data-cssvars-group");
-                                                        outNode.parentNode.removeChild(outNode);
                                                     }
                                                 }
                                             }
@@ -1234,6 +1241,7 @@
                                     node.setAttribute("data-cssvars-job", counters.job);
                                 }
                             });
+                            cssVarsSrcNodeCount = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])').length;
                             if (settings.shadowDOM) {
                                 var elms = [ settings.rootElement ].concat(_toConsumableArray(settings.rootElement.querySelectorAll("*")));
                                 for (var i = 0, elm; elm = elms[i]; ++i) {
@@ -1249,9 +1257,9 @@
                             if (settings.updateDOM && hasKeyframesWithVars) {
                                 fixKeyframes(settings.rootElement);
                             }
+                            cssVarsIsRunning = false;
                             settings.onComplete(outCssArray.join(""), outNodeArray, JSON.parse(JSON.stringify(varStore)), getTimeStamp() - settings.__benchmark);
                         }
-                        cssVarsIsRunning = false;
                     }
                 });
             }
@@ -1262,6 +1270,19 @@
             });
         }
     }
+    cssVars.reset = function() {
+        cssVarsIsRunning = false;
+        if (cssVarsObserver) {
+            cssVarsObserver.disconnect();
+            cssVarsObserver = null;
+        }
+        cssVarsSrcNodeCount = 0;
+        debounceTimer = null;
+        isShadowDOMReady = false;
+        for (var prop in variableStore) {
+            variableStore[prop] = {};
+        }
+    };
     function addMutationObserver(settings) {
         function isLink(node) {
             var isStylesheet = node.tagName === "LINK" && (node.getAttribute("rel") || "").indexOf("stylesheet") !== -1;
@@ -1289,10 +1310,7 @@
                     var dataGroup = node.getAttribute("data-cssvars-group");
                     var orphanNode = settings.rootElement.querySelector('[data-cssvars-group="'.concat(dataGroup, '"]'));
                     if (isSrcNode) {
-                        var resetNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
-                        resetNodes.forEach(function(node) {
-                            return node.setAttribute("data-cssvars", "");
-                        });
+                        resetCssNodes(settings.rootElement);
                         variableStore.dom = {};
                     }
                     if (orphanNode) {
@@ -1307,8 +1325,8 @@
         }
         if (cssVarsObserver) {
             cssVarsObserver.disconnect();
+            cssVarsObserver = null;
         }
-        settings.watch = defaults.watch;
         cssVarsObserver = new MutationObserver(function(mutations) {
             var hasValidMutation = mutations.some(function(mutation) {
                 var isValid = false;
@@ -1398,6 +1416,12 @@
     }
     function getTimeStamp() {
         return isBrowser && window.performance.now ? performance.now() : new Date().getTime();
+    }
+    function resetCssNodes(rootElement) {
+        var resetNodes = Array.apply(null, rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
+        resetNodes.forEach(function(node) {
+            return node.setAttribute("data-cssvars", "");
+        });
     }
     return cssVars;
 });
