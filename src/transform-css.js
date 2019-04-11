@@ -75,12 +75,8 @@ function transformCss(cssData, options = {}) {
             // Remove custom property declarations
             if (!settings.preserve && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                 declarations.splice(i, 1);
+                i--;
                 continue;
-            }
-
-            // Fix nested calc
-            if (settings.fixNestedCalc) {
-                value = decl.value = fixNestedCalc(decl.value);
             }
 
             // Transform custom property functions
@@ -104,6 +100,11 @@ function transformCss(cssData, options = {}) {
                         i++;
                     }
                 }
+            }
+
+            // Fix nested calc
+            if (settings.fixNestedCalc) {
+                value = decl.value = fixNestedCalc(decl.value);
             }
         }
     });
