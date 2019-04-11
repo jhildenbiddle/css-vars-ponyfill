@@ -1,4 +1,3 @@
-// TODO: Finish updating tests
 // TODO: Remove dist from repo (need to move TypeScript file to root?)
 // TODO: Update option names
 // TODO: Update docs
@@ -766,22 +765,16 @@ function fixRelativeCssUrls(cssText, baseUrl) {
  * @param {object} varObj Object containing CSS custom property name:value pairs
  * @returns {object}
  */
-function fixVarNames(varObj) {
-    const userVarNames        = Object.keys(varObj);
-    const reLeadingHyphens    = /^-{2}/;
-    const hasMalformedVarName = userVarNames.some(key => !reLeadingHyphens.test(key));
+function fixVarNames(varObj = {}) {
+    const reLeadingHyphens = /^-{2}/;
 
-    if (hasMalformedVarName) {
-        varObj = userVarNames.reduce((obj, value) => {
-            const key = reLeadingHyphens.test(value) ? value : `--${value.replace(/^-+/, '')}`;
+    return Object.keys(varObj).reduce((obj, value) => {
+        const key = reLeadingHyphens.test(value) ? value : `--${value.replace(/^-+/, '')}`;
 
-            obj[key] = varObj[value];
+        obj[key] = varObj[value];
 
-            return obj;
-        }, {});
-    }
-
-    return varObj;
+        return obj;
+    }, {});
 }
 
 /**
