@@ -946,7 +946,8 @@
     };
     var variableStore = {
         dom: {},
-        job: {}
+        job: {},
+        user: {}
     };
     var cssVarsIsRunning = false;
     var cssVarsObserver = null;
@@ -1170,11 +1171,14 @@
                                 }
                             }
                         });
+                        if (settings.updateDOM) {
+                            _extends(variableStore.user, settings.variables);
+                        }
                         _extends(jobVars, settings.variables);
                         hasVarChange = Boolean((document.querySelector("[data-cssvars]") || Object.keys(variableStore.dom).length) && Object.keys(jobVars).some(function(name) {
                             return jobVars[name] !== varStore[name];
                         }));
-                        _extends(varStore, jobVars);
+                        _extends(varStore, variableStore.user, jobVars);
                         if (hasVarChange) {
                             resetCssNodes(settings.rootElement);
                             cssVars(settings);

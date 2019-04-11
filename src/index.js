@@ -70,9 +70,11 @@ const regex = {
 };
 const variableStore = {
     // Persisted values (emulates modern browser behavior)
-    dom: {},
+    dom : {},
     // Temporary non-persisted values (i.e. options.updateDOM = false)
-    job: {}
+    job : {},
+    // Persisted options.variables data
+    user: {}
 };
 
 // Flag used to prevent successive ponyfill calls from stacking
@@ -396,6 +398,10 @@ function cssVars(options = {}) {
                         }
                     });
 
+                    if (settings.updateDOM) {
+                        Object.assign(variableStore.user, settings.variables);
+                    }
+
                     // Merge settings.variables into jobVars
                     Object.assign(jobVars, settings.variables);
 
@@ -408,7 +414,7 @@ function cssVars(options = {}) {
                     );
 
                     // Merge jobVars into variable storage
-                    Object.assign(varStore, jobVars);
+                    Object.assign(varStore, variableStore.user, jobVars);
 
                     // New variable declaration or modified value detected
                     if (hasVarChange) {
