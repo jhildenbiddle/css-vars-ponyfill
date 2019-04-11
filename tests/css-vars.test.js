@@ -579,15 +579,9 @@ describe('css-vars', function() {
         });
 
         describe('variables', function() {
-            it('updates values via generated CSS', function(done) {
-                const styleCss  = `
-                    :root{ --color1: black; }
-                    p { color: var(--color1); }
-                    p { color: var(--color2); }
-                    p { color: var(--color3); }
-                    p { color: var(--color4); }
-                `;
-                const expectCss = 'p{color:red;}p{color:green;}p{color:blue;}p{color:purple;}';
+            it('Leading --', function(done) {
+                const styleCss  = 'p { color: var(--color); }';
+                const expectCss = 'p{color:red;}';
 
                 createTestElms({ tag: 'style', text: styleCss });
 
@@ -595,10 +589,45 @@ describe('css-vars', function() {
                     include    : '[data-test]',
                     onlyLegacy : false,
                     variables  : {
-                        color2    : 'green',  // No leading --
-                        '-color3' : 'blue',   // Malformed
-                        '--color4': 'purple', // Leading --
-                        '--color1': 'red'     // Override
+                        '--color': 'red'
+                    },
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText).to.equal(expectCss);
+                        done();
+                    }
+                });
+            });
+
+            it('No leading --', function(done) {
+                const styleCss  = 'p { color: var(--color); }';
+                const expectCss = 'p{color:red;}';
+
+                createTestElms({ tag: 'style', text: styleCss });
+
+                cssVars({
+                    include    : '[data-test]',
+                    onlyLegacy : false,
+                    variables  : {
+                        color: 'red'
+                    },
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText).to.equal(expectCss);
+                        done();
+                    }
+                });
+            });
+
+            it('Malformed single -', function(done) {
+                const styleCss  = 'p { color: var(--color); }';
+                const expectCss = 'p{color:red;}';
+
+                createTestElms({ tag: 'style', text: styleCss });
+
+                cssVars({
+                    include    : '[data-test]',
+                    onlyLegacy : false,
+                    variables  : {
+                        '-color': 'red'
                     },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(cssText).to.equal(expectCss);
