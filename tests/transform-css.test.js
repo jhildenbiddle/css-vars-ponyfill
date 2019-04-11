@@ -7,7 +7,7 @@ import { expect }   from 'chai';
 
 // Suite
 // =============================================================================
-describe.skip('transform-css', function() {
+describe('transform-css', function() {
     // Tests: Transforms
     // -------------------------------------------------------------------------
     describe('Transforms', function() {
@@ -16,7 +16,7 @@ describe.skip('transform-css', function() {
                 :root { --color: red; }
                 p { color: var(--color); }
             `;
-            const cssOut    = transformCss(cssIn, {
+            const cssOut = transformCss(cssIn, {
                 variables: parseVars(cssIn)
             });
             const expectCss = 'p{color:red;}';
@@ -50,7 +50,7 @@ describe.skip('transform-css', function() {
                 }
                 /* 21 */
             `;
-            const cssOut    = transformCss(cssIn, {
+            const cssOut = transformCss(cssIn, {
                 onlyVars : true,
                 variables: parseVars(cssIn)
             });
@@ -64,7 +64,9 @@ describe.skip('transform-css', function() {
                 p { color: var(--color); }
                 :root { --color: red; }
             `;
-            const cssOut = transformCss(cssIn);
+            const cssOut = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
@@ -76,7 +78,9 @@ describe.skip('transform-css', function() {
                 :root { --color2: red; }
                 p { color: var(--color1); }
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
@@ -91,7 +95,9 @@ describe.skip('transform-css', function() {
                     );
                 }
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{color:red;}';
 
             expect(cssOut).to.equal(expectCss);
@@ -102,7 +108,9 @@ describe.skip('transform-css', function() {
                 :root { --margin: 20px; }
                 p { margin: 10px var(--margin); }
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{margin:10px 20px;}';
 
             expect(cssOut).to.equal(expectCss);
@@ -113,7 +121,9 @@ describe.skip('transform-css', function() {
                 :root { --margin: 20px; }
                 p { margin: calc(var(--margin) * 2); }
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{margin:calc(20px * 2);}';
 
             expect(cssOut).to.equal(expectCss);
@@ -132,7 +142,9 @@ describe.skip('transform-css', function() {
                 :root { --color: rgba(0, 0, 0, 0.5); }
                 p { color: var(--color, rgba(255, 255, 255, 0.5)); }
             `;
-            const cssOut    = transformCss(cssIn);
+            const cssOut    = transformCss(cssIn, {
+                variables: parseVars(cssIn)
+            });
             const expectCss = 'p{color:rgba(0, 0, 0, 0.5);}';
 
             expect(cssOut).to.equal(expectCss);
@@ -190,8 +202,7 @@ describe.skip('transform-css', function() {
             it('true (without vars)', function() {
                 const cssIn = 'p { margin: calc(1px + calc(2px + calc(3px + 3px))); }';
                 const cssOut    = transformCss(cssIn, {
-                    fixNestedCalc: true,
-                    onlyVars     : false
+                    fixNestedCalc: true
                 }).replace(/\n/g, '');
                 const expectCss = 'p{margin:calc(1px + (2px + (3px + 3px)));}';
 
@@ -210,7 +221,10 @@ describe.skip('transform-css', function() {
                         margin: 1px var(--a) 2px;
                     }
                 `;
-                const cssOut    = transformCss(cssIn, { fixNestedCalc: true }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    fixNestedCalc: true,
+                    variables    : parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = 'p{margin:1px calc(1 + (2 + (3 + 3))) 2px;}';
 
                 expect(cssOut).to.equal(expectCss);
@@ -239,7 +253,10 @@ describe.skip('transform-css', function() {
                     p { color: var(--color); margin: 20px; }
                     p { color: green; }
                 `;
-                const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    onlyVars : true,
+                    variables: parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = 'p{color:red;}';
 
                 expect(cssOut).to.equal(expectCss);
@@ -257,7 +274,10 @@ describe.skip('transform-css', function() {
                         font-weight: bold;
                     }
                 `;
-                const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    onlyVars : true,
+                    variables: parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = `
                     @font-face {
                         font-family: "test1";
@@ -280,7 +300,10 @@ describe.skip('transform-css', function() {
                         to { color: green; }
                     }
                 `;
-                const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    onlyVars : true,
+                    variables: parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = `
                     @keyframes test1 {
                         from { color: red; }
@@ -299,7 +322,10 @@ describe.skip('transform-css', function() {
                         p { color: green; }
                     }
                 `;
-                const cssOut    = transformCss(cssIn, { onlyVars: true }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    onlyVars : true,
+                    variables: parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = `
                     @media screen {
                         p { color: red; }
@@ -310,64 +336,16 @@ describe.skip('transform-css', function() {
             });
         });
 
-        describe('persist', function() {
-            it('false (default)', function() {
-                const cssIn = `
-                    :root { --color: red; }
-                    p { color: var(--color); }
-                `;
-                const cssOut    = [
-                    transformCss(cssIn, { persist: false }).replace(/\n/g, ''),
-                    transformCss(cssIn, { persist: false, variables: { 'color': 'green'} }).replace(/\n/g, ''),
-                    transformCss(cssIn, { persist: false }).replace(/\n/g, '')
-                ];
-                const expectCss = [
-                    'p{color:red;}',
-                    'p{color:green;}'
-                ];
-
-                expect(cssOut[0], 'Pass 1').to.equal(expectCss[0]);
-                expect(cssOut[1], 'Pass 2').to.equal(expectCss[1]);
-                expect(cssOut[2], 'Pass 3').to.equal(expectCss[0]);
-            });
-
-            it('true', function() {
-                const cssIn = `
-                    :root {
-                        --color1: red;
-                        --color2: red;
-                    }
-                    p.one {
-                        color: var(--color1);
-                    }
-                    p.two {
-                        color: var(--color2);
-                    }
-                `;
-                const cssOut    = [
-                    transformCss(cssIn, { persist: true }).replace(/\n/g, ''),
-                    transformCss(cssIn, { persist: true, variables: { 'color1': 'green'} }).replace(/\n/g, ''),
-                    transformCss(cssIn, { persist: true, variables: { 'color2': 'green'} }).replace(/\n/g, '')
-                ];
-                const expectCss = [
-                    'p.one{color:red;}p.two{color:red;}',
-                    'p.one{color:green;}p.two{color:red;}',
-                    'p.one{color:green;}p.two{color:green;}'
-                ];
-
-                expect(cssOut[0], 'Pass 1').to.equal(expectCss[0]);
-                expect(cssOut[1], 'Pass 2').to.equal(expectCss[1]);
-                expect(cssOut[2], 'Pass 3').to.equal(expectCss[2]);
-            });
-        });
-
         describe('preserve', function() {
             it('true (default)', function() {
                 const cssIn     = `
                     :root { --color: red; }
                     p { color: var(--color); }
                 `;
-                const cssOut    = transformCss(cssIn, { preserve: true }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    preserve : true,
+                    variables: parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = `
                     :root { --color: red; }
                     p { color: red; color: var(--color); }
@@ -394,7 +372,10 @@ describe.skip('transform-css', function() {
                         p { color: var(--color); }
                     }
                 `;
-                const cssOut    = transformCss(cssIn, { preserve: false }).replace(/\n/g, '');
+                const cssOut    = transformCss(cssIn, {
+                    preserve : false,
+                    variables: parseVars(cssIn)
+                }).replace(/\n/g, '');
                 const expectCss = `
                     p {
                         color: red;
@@ -417,32 +398,12 @@ describe.skip('transform-css', function() {
         });
 
         describe('variables', function() {
-            it('No leading --', function() {
-                const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
+            it('Handles key:value pairs', function() {
+                const cssIn     = 'p { color: var(--color); }';
                 const cssOut    = transformCss(cssIn, {
-                    variables: { color2: 'green' }
+                    variables: { '--color': 'red' }
                 }).replace(/\n/g, '');
-                const expectCss = 'p{color:red;}p{color:green;}';
-
-                expect(cssOut).to.equal(expectCss);
-            });
-
-            it('Malformed single -', function() {
-                const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
-                const cssOut    = transformCss(cssIn, {
-                    variables: { '-color2': 'green' }
-                }).replace(/\n/g, '');
-                const expectCss = 'p{color:red;}p{color:green;}';
-
-                expect(cssOut).to.equal(expectCss);
-            });
-
-            it('Leading --', function() {
-                const cssIn     = ':root{--color1:red}p{color:var(--color1)}p{color:var(--color2)}';
-                const cssOut    = transformCss(cssIn, {
-                    variables: { '--color2': 'green' }
-                }).replace(/\n/g, '');
-                const expectCss = 'p{color:red;}p{color:green;}';
+                const expectCss = 'p{color:red;}';
 
                 expect(cssOut).to.equal(expectCss);
             });
@@ -471,17 +432,6 @@ describe.skip('transform-css', function() {
                     }
                 }).replace(/\n/g, '');
                 const expectCss = 'p{color:blue;}p{color:green;}';
-
-                expect(cssOut).to.equal(expectCss);
-            });
-
-            it('Appends new :root element with vars', function() {
-                const cssIn     = 'p{color:var(--color1)}';
-                const cssOut    = transformCss(cssIn, {
-                    preserve : true,
-                    variables: { color1: 'red' }
-                }).replace(/\n/g, '');
-                const expectCss = 'p{color:red;color:var(--color1);}:root{--color1:red;}';
 
                 expect(cssOut).to.equal(expectCss);
             });
