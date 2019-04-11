@@ -837,10 +837,8 @@
                 }
                 if (!settings.preserve && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                     declarations.splice(i, 1);
+                    i--;
                     continue;
-                }
-                if (settings.fixNestedCalc) {
-                    value = decl.value = fixNestedCalc(decl.value);
                 }
                 if (value.indexOf(VAR_FUNC_IDENTIFIER + "(") !== -1) {
                     var resolvedValue = resolveValue(value, settings);
@@ -856,6 +854,9 @@
                             i++;
                         }
                     }
+                }
+                if (settings.fixNestedCalc) {
+                    value = decl.value = fixNestedCalc(decl.value);
                 }
             }
         });
@@ -1393,20 +1394,14 @@
         });
         return cssText;
     }
-    function fixVarNames(varObj) {
-        var userVarNames = Object.keys(varObj);
+    function fixVarNames() {
+        var varObj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
         var reLeadingHyphens = /^-{2}/;
-        var hasMalformedVarName = userVarNames.some(function(key) {
-            return !reLeadingHyphens.test(key);
-        });
-        if (hasMalformedVarName) {
-            varObj = userVarNames.reduce(function(obj, value) {
-                var key = reLeadingHyphens.test(value) ? value : "--".concat(value.replace(/^-+/, ""));
-                obj[key] = varObj[value];
-                return obj;
-            }, {});
-        }
-        return varObj;
+        return Object.keys(varObj).reduce(function(obj, value) {
+            var key = reLeadingHyphens.test(value) ? value : "--".concat(value.replace(/^-+/, ""));
+            obj[key] = varObj[value];
+            return obj;
+        }, {});
     }
     function getFullUrl$1(url) {
         var base = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : location.href;
