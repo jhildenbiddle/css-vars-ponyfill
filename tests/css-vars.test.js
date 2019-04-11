@@ -1360,33 +1360,40 @@ describe('css-vars', function() {
                 'h1{color:red;}',
                 'h2{color:red;}',
                 'h1{color:green;}h2{color:green;}',
-                'h1{color:red;}h2{color:red;}'
+                'h1{color:red;}h2{color:red;}',
+                'h1{color:blue;}h2{color:blue;}'
             ];
 
+            // Transforms CSS and persists new value
             function pass1() {
+                createTestElms({ tag: 'style', text: 'h1 { color: var(--color); }' });
+
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
                     variables : { color: 'red' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'set value via options.variables').to.equal(expectCss[0]);
-                        createTestElms({ tag: 'style', text: 'h2 { color: var(--color); }' });
+                        expect(cssText, 'new value').to.equal(expectCss[0]);
                         pass2();
                     }
                 });
             }
 
+            // Transforms CSS with persisted value
             function pass2() {
+                createTestElms({ tag: 'style', text: 'h2 { color: var(--color); }' });
+
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'persisted').to.equal(expectCss[1]);
+                        expect(cssText, 'persisted value').to.equal(expectCss[1]);
                         pass3();
                     }
                 });
             }
 
+            // Transforms CSS with non-persisted value
             function pass3() {
                 cssVars({
                     include   : '[data-test]',
@@ -1394,89 +1401,54 @@ describe('css-vars', function() {
                     updateDOM : false,
                     variables : { color: 'green' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'set non-persistent value via options.variables').to.equal(expectCss[2]);
+                        expect(cssText, 'non-persisted value').to.equal(expectCss[2]);
                         pass4();
                     }
                 });
             }
 
+            // Transforms CSS with persisted value after non-persisted override
             function pass4() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'restored persistent options.variables value').to.equal(expectCss[3]);
+                        expect(cssText, 'persisted after non-persisted override').to.equal(expectCss[3]);
+                        pass5();
+                    }
+                });
+            }
+
+            // Transforms CSS with new DOM value
+            function pass5() {
+                createTestElms({ tag: 'style', text: ':root { --color: blue; }', attr: { 'data-remove': '' } });
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText, 'new DOM value').to.equal(expectCss[4]);
+                        pass6();
+                    }
+                });
+            }
+
+            // Transforms CSS with persisted value after removal of DOM override
+            function pass6() {
+                const removeElm = document.querySelector('[data-remove]');
+
+                removeElm.parentNode.removeChild(removeElm);
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText, 'persisted after removal of DOM override').to.equal(expectCss[3]);
                         done();
                     }
                 });
             }
 
-            createTestElms({ tag: 'style', text: 'h1 { color: var(--color); }' });
-            pass1();
-        });
-
-        it('persists options.variables after DOM override', function(done) {
-            const expectCss = [
-                'h1{color:red;}',
-                'h2{color:red;}',
-                'h1{color:green;}h2{color:green;}',
-                'h1{color:red;}h2{color:red;}'
-            ];
-
-            let lastElms;
-
-            function pass1() {
-                cssVars({
-                    include   : '[data-test]',
-                    onlyLegacy: false,
-                    variables : { color: 'red' },
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'set value via options.variables').to.equal(expectCss[0]);
-                        createTestElms({ tag: 'style', text: 'h2 { color: var(--color); }' });
-                        console.log('-----');
-                        pass2();
-                    }
-                });
-            }
-
-            function pass2() {
-                cssVars({
-                    include   : '[data-test]',
-                    onlyLegacy: false,
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'persisted').to.equal(expectCss[1]);
-                        lastElms = createTestElms({ tag: 'style', text: ':root { --color: green; }' });
-                        console.log('-----');
-                        pass3();
-                    }
-                });
-            }
-
-            function pass3() {
-                cssVars({
-                    include   : '[data-test]',
-                    onlyLegacy: false,
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'set value via CSS node').to.equal(expectCss[2]);
-                        lastElms[0].parentNode.removeChild(lastElms[0]);
-                        console.log('-----');
-                        pass4();
-                    }
-                });
-            }
-
-            function pass4() {
-                cssVars({
-                    include   : '[data-test]',
-                    onlyLegacy: false,
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'removed CSS node & restored options.variable value').to.equal(expectCss[3]);
-                        done();
-                    }
-                });
-            }
-
-            createTestElms({ tag: 'style', text: 'h1 { color: var(--color); }' });
             pass1();
         });
 
