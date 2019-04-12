@@ -30,7 +30,6 @@ const defaults = {
     exclude      : '',
     variables    : {},    // cssVars, transformCss
     // Options
-    fixNestedCalc: true,  // transformCss
     onlyLegacy   : true,  // cssVars
     onlyVars     : false, // parseCSS
     preserve     : false, // transformCss
@@ -118,8 +117,6 @@ let isShadowDOMReady = false;
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values.
- * @param {boolean}  [options.fixNestedCalc=true] Remove nested 'calc' keywords
- *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -164,19 +161,18 @@ let isShadowDOMReady = false;
  * @example
  *
  *   cssVars({
- *     rootElement  : document,
- *     shadowDOM    : false,
- *     include      : 'style,link[rel="stylesheet"]',
- *     exclude      : '',
- *     variables    : {},
- *     fixNestedCalc: true,
- *     onlyLegacy   : true,
- *     onlyVars     : false,
- *     preserve     : false,
- *     silent       : false,
- *     updateDOM    : true,
- *     updateURLs   : true,
- *     watch        : false,
+ *     rootElement: document,
+ *     shadowDOM  : false,
+ *     include    : 'style,link[rel="stylesheet"]',
+ *     exclude    : '',
+ *     variables  : {},
+ *     onlyLegacy : true,
+ *     onlyVars   : false,
+ *     preserve   : false,
+ *     silent     : false,
+ *     updateDOM  : true,
+ *     updateURLs : true,
+ *     watch      : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onSuccess(cssText, node, url) {},
  *     onWarning(message) {},

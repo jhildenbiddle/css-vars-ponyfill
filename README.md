@@ -23,6 +23,24 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 ------
 
+#### `onlyVars:false`
+
+|                     | Pass_1 | Pass_2 | Pass_3 | Pass_4 | Pass_5 |   FULL |
+|-------------------- | -----: | -----: | -----: | -----: | -----: | -----: |
+| npm v1.17.2         |  0.55s |  1.74s |  3.54s |  5.97s |  9.14s | 11.65s |
+| StackBlitz 55-3     |  0.18s |  0.49s |  0.92s |  1.42s |  2.04s | 11.67s |
+| **StackBlitz 55-4** |  0.19s |  0.49s |  0.92s |  1.42s |  2.08s |  4.60s |
+
+#### `onlyVars:true`
+
+|                     | Pass_1 | Pass_2 | Pass_3 | Pass_4 | Pass_5 |   FULL |
+|-------------------- | -----: | -----: | -----: | -----: | -----: | -----: |
+| npm v1.17.2         |  0.36s |  0.97s |  1.72s |  2.73s |  4.02s |  6.49s |
+| StackBlitz 55-3     |  0.18s |  0.47s |  0.82s |  1.37s |  2.03s |  6.54s |
+| **StackBlitz 55-4** |  0.18s |  0.46s |  0.87s |  1.38s |  2.01s |  4.53s |
+
+------
+
 ## Features
 
 - Client-side transformation of CSS custom properties to static values
@@ -192,7 +210,6 @@ Values will be updated in both legacy and modern browsers:
 
 **Options**
 
-- [fixNestedCalc](#optionsfixnestedcalc)
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
@@ -219,7 +236,6 @@ cssVars({
   include      : 'link[rel=stylesheet],style',
   exclude      : '',
   variables    : {},
-  fixNestedCalc: true,
   onlyLegacy   : true,
   onlyVars     : false,
   preserve     : false,
@@ -371,55 +387,6 @@ cssVars({
     'color2'  : 'green' // Leading -- omitted
   }
 });
-```
-
-### options.fixNestedCalc
-
-- Type: `boolean`
-- Default: `true`
-
-Determines if nested `calc` keywords will be removed for compatibility with legacy browsers.
-
-**Example**
-
-CSS:
-
-```css
-:root {
-  --a: calc(1px + var(--b));
-  --b: calc(2px + var(--c));
-  --c: calc(3px + var(--d));
-  --d: 4px;
-}
-p {
-  margin: var(--a);
-}
-```
-
-JavaScript:
-
-```javascript
-cssVars({
-  fixNestedCalc: true // default
-});
-```
-
-Output when `fixNestedCalc: true`
-
-```css
-p {
-  /* Works in legacy browsers */
-  margin: calc(1px + (2px + (3px + 4)));
-}
-```
-
-Output when `fixNestedCalc: false`
-
-```css
-p {
-  /* Does not work in legacy browsers */
-  margin: calc(1px + calc(2px + calc(3px + 4)));
-}
 ```
 
 ### options.onlyLegacy

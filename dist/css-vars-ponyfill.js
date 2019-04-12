@@ -816,7 +816,6 @@
     function transformCss(cssData) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
-            fixNestedCalc: true,
             onlyVars: false,
             preserve: false,
             variables: {},
@@ -843,6 +842,7 @@
                 if (value.indexOf(VAR_FUNC_IDENTIFIER + "(") !== -1) {
                     var resolvedValue = resolveValue(value, settings);
                     if (resolvedValue !== decl.value) {
+                        resolvedValue = fixNestedCalc(resolvedValue);
                         if (!settings.preserve) {
                             decl.value = resolvedValue;
                         } else {
@@ -854,9 +854,6 @@
                             i++;
                         }
                     }
-                }
-                if (settings.fixNestedCalc) {
-                    value = decl.value = fixNestedCalc(decl.value);
                 }
             }
         });
@@ -921,7 +918,6 @@
         include: "style,link[rel=stylesheet]",
         exclude: "",
         variables: {},
-        fixNestedCalc: true,
         onlyLegacy: true,
         onlyVars: false,
         preserve: false,
@@ -978,8 +974,6 @@
    *                   pairs. Property names can omit or include the leading
    *                   double-hyphen (—), and values specified will override
    *                   previous values.
-   * @param {boolean}  [options.fixNestedCalc=true] Remove nested 'calc' keywords
-   *                   for legacy browser compatibility.
    * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
    *                   only generate legacy-compatible CSS in browsers that lack
    *                   native support (i.e., legacy browsers)
@@ -1024,19 +1018,18 @@
    * @example
    *
    *   cssVars({
-   *     rootElement  : document,
-   *     shadowDOM    : false,
-   *     include      : 'style,link[rel="stylesheet"]',
-   *     exclude      : '',
-   *     variables    : {},
-   *     fixNestedCalc: true,
-   *     onlyLegacy   : true,
-   *     onlyVars     : false,
-   *     preserve     : false,
-   *     silent       : false,
-   *     updateDOM    : true,
-   *     updateURLs   : true,
-   *     watch        : false,
+   *     rootElement: document,
+   *     shadowDOM  : false,
+   *     include    : 'style,link[rel="stylesheet"]',
+   *     exclude    : '',
+   *     variables  : {},
+   *     onlyLegacy : true,
+   *     onlyVars   : false,
+   *     preserve   : false,
+   *     silent     : false,
+   *     updateDOM  : true,
+   *     updateURLs : true,
+   *     watch      : false,
    *     onBeforeSend(xhr, node, url) {},
    *     onSuccess(cssText, node, url) {},
    *     onWarning(message) {},

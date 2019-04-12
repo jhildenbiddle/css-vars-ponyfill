@@ -26,8 +26,6 @@ const VAR_FUNC_IDENTIFIER = 'var';
  *
  * @param {object}   cssData CSS text or AST
  * @param {object}   [options] Options object
- * @param {boolean}  [options.fixNestedCalc=true] Removes nested 'calc' keywords
- *                   for legacy browser compatibility.
  * @param {boolean}  [options.onlyVars=false] Remove declarations that do not
  *                   contain a CSS variable from the return value. Note that
  *                   @font-face and @keyframe rules require all declarations to
@@ -45,10 +43,9 @@ const VAR_FUNC_IDENTIFIER = 'var';
  */
 function transformCss(cssData, options = {}) {
     const defaults = {
-        fixNestedCalc: true,
-        onlyVars     : false,
-        preserve     : false,
-        variables    : {},
+        onlyVars : false,
+        preserve : false,
+        variables: {},
         onWarning() {}
     };
     const settings = Object.assign({}, defaults, options);
@@ -61,11 +58,10 @@ function transformCss(cssData, options = {}) {
     // Resolve variables
     walkCss(cssData.stylesheet, function(declarations, node) {
         for (let i = 0; i < declarations.length; i++) {
-            const decl = declarations[i];
-            const type = decl.type;
-            const prop = decl.property;
-
-            let value = decl.value;
+            const decl  = declarations[i];
+            const type  = decl.type;
+            const prop  = decl.property;
+            const value = decl.value;
 
             // Skip comments
             if (type !== 'declaration') {
@@ -81,9 +77,12 @@ function transformCss(cssData, options = {}) {
 
             // Transform custom property functions
             if (value.indexOf(VAR_FUNC_IDENTIFIER + '(') !== -1) {
-                const resolvedValue = resolveValue(value, settings);
+                let resolvedValue = resolveValue(value, settings);
 
                 if (resolvedValue !== decl.value) {
+                    // Fix nested calc
+                    resolvedValue = fixNestedCalc(resolvedValue);
+
                     // Overwrite value
                     if (!settings.preserve) {
                         decl.value = resolvedValue;
@@ -100,11 +99,6 @@ function transformCss(cssData, options = {}) {
                         i++;
                     }
                 }
-            }
-
-            // Fix nested calc
-            if (settings.fixNestedCalc) {
-                value = decl.value = fixNestedCalc(decl.value);
             }
         }
     });
