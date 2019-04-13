@@ -123,7 +123,7 @@ The ponyfill will:
 
 ```html
 <!-- Output -->
-<style>
+<style data-cssvars="out">
   div {
     color: black;
     margin: 20px;
@@ -150,7 +150,7 @@ Values will be updated in both legacy and modern browsers:
 
    ```html
    <!-- Output -->
-   <style>
+   <style data-cssvars="out">
      div {
        color: red;
        margin: 5px;
@@ -621,8 +621,8 @@ Result when `updateDOM: true`
 ```html
 <head>
   <title>Title</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
+  <link rel="stylesheet" href="style.css" data-cssvars="src">
+  <style data-cssvars="out">
     /* Transformed CSS ... */
   </style>
 </head>
