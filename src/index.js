@@ -1,6 +1,5 @@
 // TODO: Remove dist from repo (need to move TypeScript file to root?)
 // TODO: Update option names
-// TODO: Update docs
 
 
 // Dependencies

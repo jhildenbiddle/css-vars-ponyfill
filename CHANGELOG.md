@@ -11,6 +11,7 @@
 - Fixed bug that allowed :root-level custom property declarations in comments
   and media queries be processed when initially called with options.shadowDOM
   set to true
+- Removed options.fixNestedCalc
 
 ## 1.17.1
 
@@ -19,7 +20,7 @@
 - Added `data-cssvars` attribute to processed `<link>` and `<style>` nodes
 
 - Changed ponyfill `<style>` injection logic so that the element is always
-  available in the correct DOM postiion (even when `updateDOM` is `false`) and
+  available in the correct DOM position (even when `updateDOM` is `false`) and
   a reference is always returned with the `options.onComplete` callback.
 
 - Fixed detection of unchanged source CSS and ponyfill options
