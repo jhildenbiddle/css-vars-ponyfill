@@ -822,7 +822,7 @@ cssVars({
 - Type: `function`
 - Arguments:
   1. **cssText**: A `string` of concatenated CSS text from all nodes in DOM order
-  1. **styleNode**: An `object` reference to the appended `<style>` node
+  1. **styleNodes**: An `array` of node references to the appended `<style>` output nodes
   1. **cssVariables**: An `object` containing CSS custom property names and values
   1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
 

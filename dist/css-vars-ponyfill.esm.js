@@ -1039,10 +1039,11 @@ var isShadowDOMReady = false;
  * @param {function} [options.onComplete] Callback after all CSS has been
  *                   processed, legacy-compatible CSS has been generated, and
  *                   (optionally) the DOM has been updated. Passes 1) a CSS
- *                   string with CSS variable values resolved, 2) a reference to
- *                   the appended <style> node, 3) an object containing all
- *                   custom properies names and values, and 4) the ponyfill
- *                   execution time in milliseconds.
+ *                   string with CSS variable values resolved, 2) an array of
+ *                   output <style> node references that have been appended
+ *                   to the DOM, 3) an object containing all custom properies
+ *                   names and values, and 4) the ponyfill execution time in
+ *                   milliseconds.
  *
  * @example
  *
