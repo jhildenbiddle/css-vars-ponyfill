@@ -640,12 +640,12 @@
         }
         function rule() {
             if (settings.onlyVars) {
-                var balancedMatch$$1 = balancedMatch("{", "}", css);
-                if (balancedMatch$$1) {
-                    var hasVarDecl = balancedMatch$$1.pre.indexOf(":root") !== -1 && /--\S*\s*:/.test(balancedMatch$$1.body);
-                    var hasVarFunc = /var\(/.test(balancedMatch$$1.body);
+                var balancedMatch$1 = balancedMatch("{", "}", css);
+                if (balancedMatch$1) {
+                    var hasVarDecl = balancedMatch$1.pre.indexOf(":root") !== -1 && /--\S*\s*:/.test(balancedMatch$1.body);
+                    var hasVarFunc = /var\(/.test(balancedMatch$1.body);
                     if (!hasVarDecl && !hasVarFunc) {
-                        css = css.slice(balancedMatch$$1.end + 1);
+                        css = css.slice(balancedMatch$1.end + 1);
                         return {};
                     }
                 }
