@@ -16,6 +16,7 @@ const defaults = {
     // Targets
     rootElement  : isBrowser ? document : null,
     shadowDOM    : false,
+    styleNode    : null,
     // Sources
     include      : 'style,link[rel=stylesheet]',
     exclude      : '',
@@ -306,7 +307,7 @@ function cssVars(options = {}) {
                         silent       : settings.silent,
                         updateURLs   : settings.updateURLs
                     });
-                    const styleNode  = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
+                    const styleNode  = settings.styleNode || settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
                     const prevData   = styleNode.__cssVars || {};
                     const isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
 
@@ -405,15 +406,17 @@ function cssVars(options = {}) {
                         const cssNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]') || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
                         const lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
 
-                        // Insert ponyfill <style> after last node
-                        if (lastNode) {
-                            lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                        }
-                        // Insert ponyfill <style> after last link/style node
-                        else {
-                            const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+                        if (!styleNode) {
+                            // Insert ponyfill <style> after last node
+                            if (lastNode) {
+                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                            }
+                            // Insert ponyfill <style> after last link/style node
+                            else {
+                                const targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
 
-                            targetNode.appendChild(styleNode);
+                                targetNode.appendChild(styleNode);
+                            }
                         }
 
                         if (settings.updateDOM) {
