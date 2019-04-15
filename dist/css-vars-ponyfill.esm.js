@@ -649,12 +649,12 @@ function parseCss(css) {
     }
     function rule() {
         if (settings.onlyVars) {
-            var balancedMatch$$1 = balancedMatch("{", "}", css);
-            if (balancedMatch$$1) {
-                var hasVarDecl = balancedMatch$$1.pre.indexOf(":root") !== -1 && /--\S*\s*:/.test(balancedMatch$$1.body);
-                var hasVarFunc = /var\(/.test(balancedMatch$$1.body);
+            var balancedMatch$1 = balancedMatch("{", "}", css);
+            if (balancedMatch$1) {
+                var hasVarDecl = balancedMatch$1.pre.indexOf(":root") !== -1 && /--\S*\s*:/.test(balancedMatch$1.body);
+                var hasVarFunc = /var\(/.test(balancedMatch$1.body);
                 if (!hasVarDecl && !hasVarFunc) {
-                    css = css.slice(balancedMatch$$1.end + 1);
+                    css = css.slice(balancedMatch$1.end + 1);
                     return {};
                 }
             }
@@ -979,6 +979,7 @@ var consoleMsgPrefix = "cssVars(): ";
 var defaults = {
     rootElement: isBrowser ? document : null,
     shadowDOM: false,
+    styleNode: null,
     include: "style,link[rel=stylesheet]",
     exclude: "",
     variables: {},
@@ -1193,7 +1194,7 @@ var isShadowDOMReady = false;
                         silent: settings.silent,
                         updateURLs: settings.updateURLs
                     });
-                    var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
+                    var styleNode = settings.styleNode || settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                     var prevData = styleNode.__cssVars || {};
                     var isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
                     var hasKeyframesWithVars;
@@ -1254,11 +1255,13 @@ var isShadowDOMReady = false;
                     if (!isSameData && nodeArray && nodeArray.length) {
                         var cssNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]") || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
                         var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-                        if (lastNode) {
-                            lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
-                        } else {
-                            var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
-                            targetNode.appendChild(styleNode);
+                        if (!styleNode) {
+                            if (lastNode) {
+                                lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
+                            } else {
+                                var targetNode = settings.rootElement.head || settings.rootElement.body || settings.rootElement;
+                                targetNode.appendChild(styleNode);
+                            }
                         }
                         if (settings.updateDOM) {
                             styleNode.setAttribute("id", styleNodeId);
