@@ -214,19 +214,19 @@ cssVars({
   updateDOM    : true,
   updateURLs   : true,
   watch        : false,
-  onBeforeSend(xhr, node, url) {
+  onBeforeSend(xhr, elm, url) {
     // ...
   },
-  onSuccess(cssText, node, url) {
+  onSuccess(cssText, elm, url) {
     // ...
   },
   onWarning(message) {
     // ...
   },
-  onError(message, node, xhr, url) {
+  onError(message, elm, xhr, url) {
     // ...
   },
-  onComplete(cssText, styleNode, cssVariables, benchmark) {
+  onComplete(cssText, styleElms, cssVariables, benchmark) {
     // ...
   }
 });
@@ -237,7 +237,7 @@ cssVars({
 - Type: `object`
 - Default: `document`
 
-Root element containing `<link rel="stylesheet">` and `<style>` nodes to process.
+Root element containing `<link rel="stylesheet">` and `<style>` elements to process.
 
 **Examples**
 
@@ -285,7 +285,7 @@ cssVars({
 - Type: `string`
 - Default: `"link[rel=stylesheet],style"`
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to process. The default value includes all style and link nodes.
+CSS selector matching `<link rel="stylesheet">` and `<style>` elements to process. The default value includes all style and link elements.
 
 **Tip:** The default value is the *safest* setting, but it is not necessarily the fastest. For the best performance, avoid unnecessary CSS processing by including only CSS that needs to be ponyfilled. See [options.exclude](#optionsexclude) for an alternate approach.
 
@@ -294,14 +294,14 @@ CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to process. 
 ```javascript
 // Example 1: Include local CSS only
 cssVars({
-  // Include only CSS from <style> nodes and <link> nodes
+  // Include only CSS from <style> elements and <link> elements
   // with an href that does not contain "//"
   include: 'style,link[rel="stylesheet"]:not([href*="//"])'
 });
 
 // Example 2: Include via data attribute
 cssVars({
-  // Include only CSS from <link> and <style> nodes with
+  // Include only CSS from <link> and <style> elements with
   // a "data-include" attribute
   // Ex: <link data-include rel="stylesheet" href="...">
   // Ex: <style data-include>...</style>
@@ -314,7 +314,7 @@ cssVars({
 - Type: `string`
 - Default: *none*
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to exclude from those matched by [options.include](#optionsinclude).
+CSS selector matching `<link rel="stylesheet">` and `<style>` elements to exclude from those matched by [options.include](#optionsinclude).
 
 **Tip:** The default value is the *safest* setting, but it is not necessarily the fastest. For the best performance, avoid unnecessary CSS processing by excluding CSS that does not need to be ponyfilled. See [options.include](#optionsinclude) for an alternate approach.
 
@@ -323,14 +323,14 @@ CSS selector matching `<link rel="stylesheet">` and `<style>` nodes to exclude f
 ```javascript
 // Example 1: Exclude based on <link> href
 cssVars({
-  // Of the matched 'include' nodes, exclude any node
+  // Of the matched 'include' elements, exclude any element
   // with an href that contains "bootstrap"
   exclude: '[href*=bootstrap]'
 });
 
 // Example 2: Exclude via data attribute
 cssVars({
-  // Of the matched 'include' nodes, exclude any node
+  // Of the matched 'include' elements, exclude any element
   // with a "data-exclude" attribute
   // Ex: <link data-exclude rel="stylesheet" href="...">
   // Ex: <style data-exclude>...</style>
@@ -595,7 +595,7 @@ Console:
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, the ponyfill updates will be applied to the DOM. For legacy browsers, this is accomplished by appending a `<style>` node with transformed CSS after the last `<link>` or `<style>` node processed. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
+When `true`, the ponyfill updates will be applied to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the last `<link>` or `<style>` element processed. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
 
 **Example**
 
@@ -680,7 +680,7 @@ div {
 
 Determines if a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) will be created to watch for `<link>` and `<style>` DOM mutations.
 
-When `true`, the ponyfill will call itself when a `<link>` or `<style>` node is added, removed, or has its `disabled` or `href` attribute modified. The ponyfill settings used by the MutationObserver will be the same as the settings used the last time `options.watch` was set to `true`. When `false`, the ponyfill will disconnect the previously created MutationObserver if it exists.
+When `true`, the ponyfill will call itself when a `<link>` or `<style>` element is added, removed, or has its `disabled` or `href` attribute modified. The ponyfill settings used by the MutationObserver will be the same as the settings used the last time `options.watch` was set to `true`. When `false`, the ponyfill will disconnect the previously created MutationObserver if it exists.
 
 **Note:** This feature requires native [support for MutationObserver](https://caniuse.com/#feat=mutationobserver) or a [polyfill](https://polyfill.io/v2/docs/) for legacy browsers.
 
@@ -703,7 +703,7 @@ cssVars({
 - Type: `function`
 - Arguments:
   1. **xhr**: The XHR `object` containing details of the failed request
-  1. **node**: The source node `object` reference
+  1. **elm**: The source element `object` reference
   1. **url**: The source URL `string` (`<link>` href or `@import` url)
 
 Callback before each [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) (XHR) is sent. Allows modifying the XML object by setting properties, calling methods, or adding event handlers.
@@ -712,7 +712,7 @@ Callback before each [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/W
 
 ```javascript
 cssVars({
-  onBeforeSend(xhr, node, url) {
+  onBeforeSend(xhr, elm, url) {
     // Domain-specific XHR settings
     if (/some-domain.com/.test(url)) {
       xhr.withCredentials = true;
@@ -727,11 +727,11 @@ cssVars({
 
 - Type: `function`
 - Arguments:
-  1. **cssText**: A `string` of CSS text from `node` and `url`
-  1. **node**: The source node `object` reference
+  1. **cssText**: A `string` of CSS text from `element` and `url`
+  1. **elm**: The source element `object` reference
   1. **url**: The source URL `string` (`<link>` href, `@import` url, or page url for `<style>` data)
 
-Callback after CSS data has been collected from each node. Allows modifying the CSS data before it is added to the final output by returning any `string` value or skipping the CSS data by returning `false`, `null`, or an empty string (`""`).
+Callback after CSS data has been collected from each element. Allows modifying the CSS data before it is added to the final output by returning any `string` value or skipping the CSS data by returning `false`, `null`, or an empty string (`""`).
 
 **Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
 
@@ -739,7 +739,7 @@ Callback after CSS data has been collected from each node. Allows modifying the 
 
 ```javascript
 cssVars({
-  onSuccess(cssText, node, url) {
+  onSuccess(cssText, elm, url) {
     // Replace all instances of "color: red" with "color: blue"
     const newCssText = cssText.replace(/color:\s*red\s;/g, 'color: blue;');
 
@@ -783,7 +783,7 @@ cssVars({
 - Type: `function`
 - Arguments:
   1. **message**: The error message
-  1. **node**: The source node `object` reference
+  1. **elm**: The source element `object` reference
   1. **xhr**: The XHR `object` containing details of the failed request
   1. **url**: The source URL `string` (`<link>` href or `@import` url)
 
@@ -801,9 +801,9 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onError(message, node, xhr, url) {
+  onError(message, elm, xhr, url) {
     console.log(message); // 1
-    console.log(node); // 2
+    console.log(elm); // 2
     console.log(xhr.status); // 3
     console.log(xhr.statusText); // 4
     console.log(url); // 5
@@ -821,8 +821,8 @@ cssVars({
 
 - Type: `function`
 - Arguments:
-  1. **cssText**: A `string` of concatenated CSS text from all nodes in DOM order
-  1. **styleNodes**: An `array` of node references to the appended `<style>` output nodes
+  1. **cssText**: A `string` of transformed CSS from `<link>` and `<style>` elements processed
+  1. **styleElms**: An `array` of element references to the `<style>` elements appended to the DOM
   1. **cssVariables**: An `object` containing CSS custom property names and values
   1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
 
@@ -832,7 +832,7 @@ Callback after all CSS has been processed, legacy-compatible CSS has been genera
 
 ```javascript
 cssVars({
-  onComplete(cssText, styleNode, cssVariables, benchmark) {
+  onComplete(cssText, styleElms, cssVariables, benchmark) {
     // ...
   }
 });

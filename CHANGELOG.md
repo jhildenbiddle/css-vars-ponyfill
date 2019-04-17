@@ -17,7 +17,7 @@
 
 *2019-03-01*
 
-- Added `data-cssvars` attribute to processed `<link>` and `<style>` nodes
+- Added `data-cssvars` attribute to processed `<link>` and `<style>` elements
 
 - Changed ponyfill `<style>` injection logic so that the element is always
   available in the correct DOM position (even when `updateDOM` is `false`) and
@@ -170,9 +170,10 @@
 
 - Added logic to automatically get document-level CSS custom property values
   when `options.rootElement` has been set to a shadow host or root. These values
-  are required by the polyfill to transform shadow `<link>` and `<style>` nodes.
-  This new behavior makes it possible to target a shadow host or root element
-  without manually getting the document-level custom property values first.
+  are required by the polyfill to transform shadow `<link>` and `<style>`
+  elements. This new behavior makes it possible to target a shadow host or root
+  element without manually getting the document-level custom property values
+  first.
 
 - Fixed custom property values not persisting when CSS being processed contains
   only custom properties.
@@ -184,10 +185,10 @@
 *2018-09-28*
 
 - Added `options.rootElement` for specifying the root element to traverse for
-  `<link>` and `<style>` nodes.
+  `<link>` and `<style>` elements.
 
 - Added `options.shadowDOM` to determine if shadow DOM `<link>` and `<style>`
-  nodes should be processed.
+  elements should be processed.
 
 - Added `cssVariables` argument to `options.onComplete` callback.
 
@@ -263,7 +264,7 @@
 - Added `options.onBeforeSend` callback. (#7)
 
 - Changed `options.onSuccess` callback so that it is called after CSS data has
-  been collected from each node before CSS custom properties have been
+  been collected from each element before CSS custom properties have been
   transformed.
 
 ## 1.4.0
@@ -273,7 +274,7 @@
 - Updated `get-css-data` dependency to 1.2.0 to resolve a callback related bug.
 
 - Changed logic for inserting generated `<style>` element. Element is now
-  inserted after the last `<style>` or `<link>` node processed. This
+  inserted after the last `<style>` or `<link>` element processed. This
   change, combined with the proceeding change, ensures that the original cascade
   order is maintained after the transformed styles are appended to the DOM.
 
@@ -331,7 +332,7 @@
   with other default values which assume a "legacy-only" configuration.
 
 - Changed logic for inserting generated `<style>` element. Element is now
-  inserted as first CSS source node rather than the last. This allows the
+  inserted as first CSS source element rather than the last. This allows the
   cascade order to be maintained when `options.onlyVars` is `true`.
 
 ## 1.0.0
