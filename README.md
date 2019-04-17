@@ -193,6 +193,7 @@ Values will be updated in both legacy and modern browsers:
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
 - [silent](#optionssilent)
+- [styleNode](#optionsstylenode)
 - [updateDOM](#optionsupdatedom)
 - [updateURLs](#optionsupdateurls)
 - [watch](#optionswatch)
@@ -220,6 +221,7 @@ cssVars({
   onlyVars     : false,
   preserve     : false,
   silent       : false,
+  styleNode    : null,
   updateDOM    : true,
   updateURLs   : true,
   watch        : false,
@@ -644,6 +646,27 @@ Console:
 > CSS XHR error: "fail.css" 404 (Not Found)
 > CSS transform warning: variable "--fail" is undefined
 > CSS parse error: missing "}"
+```
+
+### options.styleNode
+
+- Type: `object`
+- Default: `null`
+
+When provided, the ponyfill will insert the transformed CSS into the node instead of creating a new `<style>` node and appending it to the last `<link>` or `<style>` node processed.
+
+**Example**
+
+JavaScript:
+
+```javascript
+cssVars({
+  styleNode: null // default
+});
+
+cssVars({
+  styleNode: document.querySelector('#my-css-vars-ponyfill')
+});
 ```
 
 ### options.updateDOM
