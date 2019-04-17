@@ -4,7 +4,7 @@
 
 *Unreleased*
 
-### Breaking Changes
+**Breaking Changes**
 
 - Add support for incremental updates. This change provides as much as a 3x
   performance increase by appending transformed CSS to the DOM using multiple
@@ -29,7 +29,7 @@
   was set to `true` (default). Only the option to disable this functionality has
   been removed.
 
-### Other Changes
+**Other Changes**
 
 - Fixed bug that allowed :root-level custom property declarations in comments
   and media queries be processed when initially called with options.shadowDOM
@@ -177,7 +177,7 @@
 
 - Added TypeScript definitions.
 
-## 1.11.1-3
+## 1.11.3
 
 *2018-10-24*
 

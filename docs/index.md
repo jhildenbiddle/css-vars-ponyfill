@@ -821,8 +821,8 @@ cssVars({
 
 - Type: `function`
 - Arguments:
-  1. **cssText**: A `string` of transformed CSS from `<link>` and `<style>` elements processed
-  1. **styleElms**: An `array` of element references to the `<style>` elements appended to the DOM
+  1. **cssText**: A `string` of concatenated and transformed CSS from `<link>` and `<style>` elements
+  1. **styleElms**: An `array` of `<style>` elements appended to the DOM
   1. **cssVariables**: An `object` containing CSS custom property names and values
   1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
 
