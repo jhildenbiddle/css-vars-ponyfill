@@ -193,7 +193,7 @@ Values will be updated in both legacy and modern browsers:
 - [onlyVars](#optionsonlyvars)
 - [preserve](#optionspreserve)
 - [silent](#optionssilent)
-- [styleNode](#optionsstylenode)
+- [staticStyleNode](#optionsstaticstylenode)
 - [updateDOM](#optionsupdatedom)
 - [updateURLs](#optionsupdateurls)
 - [watch](#optionswatch)
@@ -211,20 +211,20 @@ Values will be updated in both legacy and modern browsers:
 ```javascript
 // All options (default values shown)
 cssVars({
-  rootElement  : document,
-  shadowDOM    : false,
-  include      : 'link[rel=stylesheet],style',
-  exclude      : '',
-  variables    : {},
-  fixNestedCalc: true,
-  onlyLegacy   : true,
-  onlyVars     : false,
-  preserve     : false,
-  silent       : false,
-  styleNode    : null,
-  updateDOM    : true,
-  updateURLs   : true,
-  watch        : false,
+  rootElement    : document,
+  shadowDOM      : false,
+  include        : 'link[rel=stylesheet],style',
+  exclude        : '',
+  variables      : {},
+  fixNestedCalc  : true,
+  onlyLegacy     : true,
+  onlyVars       : false,
+  preserve       : false,
+  silent         : false,
+  staticStyleNode: false,
+  updateDOM      : true,
+  updateURLs     : true,
+  watch          : false,
   onBeforeSend(xhr, node, url) {
     // ...
   },
@@ -648,12 +648,14 @@ Console:
 > CSS parse error: missing "}"
 ```
 
-### options.styleNode
+### options.staticStyleNode
 
-- Type: `object`
-- Default: `null`
+- Type: `boolean`
+- Default: `false`
 
-When provided, the ponyfill will insert the transformed CSS into the node instead of creating a new `<style>` node and appending it to the last `<link>` or `<style>` node processed.
+Determines if a static style node should be used instead of inserting a new <style> tag.
+
+When `true`, the ponyfill will insert the transformed CSS into an existing node with ID 'css-vars-ponyfill' instead of creating a new `<style>` node and appending it to the last `<link>` or `<style>` node processed.
 
 **Example**
 
@@ -661,11 +663,11 @@ JavaScript:
 
 ```javascript
 cssVars({
-  styleNode: null // default
+  staticStyleNode: false // default
 });
 
 cssVars({
-  styleNode: document.querySelector('#my-css-vars-ponyfill')
+  staticStyleNode: true
 });
 ```
 

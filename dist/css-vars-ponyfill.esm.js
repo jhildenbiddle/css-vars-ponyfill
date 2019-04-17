@@ -1,6 +1,6 @@
 /*!
  * css-vars-ponyfill
- * v1.17.2
+ * v1.17.3
  * https://github.com/jhildenbiddle/css-vars-ponyfill
  * (c) 2018-2019 John Hildenbiddle <http://hildenbiddle.com>
  * MIT license
@@ -979,7 +979,6 @@ var consoleMsgPrefix = "cssVars(): ";
 var defaults = {
     rootElement: isBrowser ? document : null,
     shadowDOM: false,
-    styleNode: null,
     include: "style,link[rel=stylesheet]",
     exclude: "",
     variables: {},
@@ -988,6 +987,7 @@ var defaults = {
     onlyVars: false,
     preserve: false,
     silent: false,
+    staticStyleNode: false,
     updateDOM: true,
     updateURLs: true,
     watch: null,
@@ -1048,6 +1048,9 @@ var isShadowDOMReady = false;
  *                   ponyfill-generated CSS.
  * @param {boolean}  [options.silent=false] Determines if warning and error
  *                   messages will be displayed on the console
+ * @param {boolean}  [options.staticStyleNode=false] Use static styleNode
+ *                   instead of inserting it after the last processed <link>
+ *                   or <style> node
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
  * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
@@ -1081,19 +1084,20 @@ var isShadowDOMReady = false;
  * @example
  *
  *   cssVars({
- *     rootElement  : document,
- *     shadowDOM    : false,
- *     include      : 'style,link[rel="stylesheet"]',
- *     exclude      : '',
- *     variables    : {},
- *     fixNestedCalc: true,
- *     onlyLegacy   : true,
- *     onlyVars     : false,
- *     preserve     : false,
- *     silent       : false,
- *     updateDOM    : true,
- *     updateURLs   : true,
- *     watch        : false,
+ *     rootElement    : document,
+ *     shadowDOM      : false,
+ *     include        : 'style,link[rel="stylesheet"]',
+ *     exclude        : '',
+ *     variables      : {},
+ *     fixNestedCalc  : true,
+ *     onlyLegacy     : true,
+ *     onlyVars       : false,
+ *     preserve       : false,
+ *     silent         : false,
+ *     staticStyleNode: false,
+ *     updateDOM      : true,
+ *     updateURLs     : true,
+ *     watch          : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onSuccess(cssText, node, url) {},
  *     onWarning(message) {},
@@ -1192,9 +1196,10 @@ var isShadowDOMReady = false;
                         onlyVars: settings.onlyVars,
                         preserve: settings.preserve,
                         silent: settings.silent,
+                        staticStyleNode: settings.staticStyleNode,
                         updateURLs: settings.updateURLs
                     });
-                    var styleNode = settings.styleNode || settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
+                    var styleNode = settings.rootElement.querySelector("#".concat(styleNodeId)) || document.createElement("style");
                     var prevData = styleNode.__cssVars || {};
                     var isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
                     var hasKeyframesWithVars;
@@ -1255,7 +1260,7 @@ var isShadowDOMReady = false;
                     if (!isSameData && nodeArray && nodeArray.length) {
                         var cssNodes = settings.rootElement.querySelectorAll("link[data-cssvars],style[data-cssvars]") || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
                         var lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
-                        if (!styleNode) {
+                        if (!settings.staticStyleNode || !settings.rootElement.querySelector("#".concat(styleNodeId))) {
                             if (lastNode) {
                                 lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);
                             } else {

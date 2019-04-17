@@ -14,22 +14,22 @@ const isNativeSupport = isBrowser && window.CSS && window.CSS.supports && window
 const consoleMsgPrefix = 'cssVars(): ';
 const defaults = {
     // Targets
-    rootElement  : isBrowser ? document : null,
-    shadowDOM    : false,
-    styleNode    : null,
+    rootElement    : isBrowser ? document : null,
+    shadowDOM      : false,
     // Sources
-    include      : 'style,link[rel=stylesheet]',
-    exclude      : '',
-    variables    : {},    // transformCss
+    include        : 'style,link[rel=stylesheet]',
+    exclude        : '',
+    variables      : {},    // transformCss
     // Options
-    fixNestedCalc: true,  // transformCss
-    onlyLegacy   : true,  // cssVars
-    onlyVars     : false, // cssVars, parseCSS
-    preserve     : false, // transformCss
-    silent       : false, // cssVars
-    updateDOM    : true,  // cssVars
-    updateURLs   : true,  // cssVars
-    watch        : null,  // cssVars
+    fixNestedCalc  : true,  // transformCss
+    onlyLegacy     : true,  // cssVars
+    onlyVars       : false, // cssVars, parseCSS
+    preserve       : false, // transformCss
+    silent         : false, // cssVars
+    staticStyleNode: false,  // cssVars
+    updateDOM      : true,  // cssVars
+    updateURLs     : true,  // cssVars
+    watch          : null,  // cssVars
     // Callbacks
     onBeforeSend() {},    // cssVars
     onSuccess() {},       // cssVars
@@ -99,6 +99,9 @@ let isShadowDOMReady = false;
  *                   ponyfill-generated CSS.
  * @param {boolean}  [options.silent=false] Determines if warning and error
  *                   messages will be displayed on the console
+ * @param {boolean}  [options.staticStyleNode=false] Use static styleNode
+ *                   instead of inserting it after the last processed <link>
+ *                   or <style> node
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
  * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
@@ -132,19 +135,20 @@ let isShadowDOMReady = false;
  * @example
  *
  *   cssVars({
- *     rootElement  : document,
- *     shadowDOM    : false,
- *     include      : 'style,link[rel="stylesheet"]',
- *     exclude      : '',
- *     variables    : {},
- *     fixNestedCalc: true,
- *     onlyLegacy   : true,
- *     onlyVars     : false,
- *     preserve     : false,
- *     silent       : false,
- *     updateDOM    : true,
- *     updateURLs   : true,
- *     watch        : false,
+ *     rootElement    : document,
+ *     shadowDOM      : false,
+ *     include        : 'style,link[rel="stylesheet"]',
+ *     exclude        : '',
+ *     variables      : {},
+ *     fixNestedCalc  : true,
+ *     onlyLegacy     : true,
+ *     onlyVars       : false,
+ *     preserve       : false,
+ *     silent         : false,
+ *     staticStyleNode: false,
+ *     updateDOM      : true,
+ *     updateURLs     : true,
+ *     watch          : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onSuccess(cssText, node, url) {},
  *     onWarning(message) {},
@@ -297,17 +301,18 @@ function cssVars(options = {}) {
                     const cssMarker   = /\/\*__CSSVARSPONYFILL-(\d+)__\*\//g;
                     const cssSettings = JSON.stringify({
                         // Sources
-                        include      : settings.include,
-                        exclude      : settings.exclude,
-                        variables    : settings.variables,
+                        include        : settings.include,
+                        exclude        : settings.exclude,
+                        variables      : settings.variables,
                         // Options
-                        fixNestedCalc: settings.fixNestedCalc,
-                        onlyVars     : settings.onlyVars,
-                        preserve     : settings.preserve,
-                        silent       : settings.silent,
-                        updateURLs   : settings.updateURLs
+                        fixNestedCalc  : settings.fixNestedCalc,
+                        onlyVars       : settings.onlyVars,
+                        preserve       : settings.preserve,
+                        silent         : settings.silent,
+                        staticStyleNode: settings.staticStyleNode,
+                        updateURLs     : settings.updateURLs
                     });
-                    const styleNode  = settings.styleNode || settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
+                    const styleNode  = settings.rootElement.querySelector(`#${styleNodeId}`) || document.createElement('style');
                     const prevData   = styleNode.__cssVars || {};
                     const isSameData = prevData.cssText === cssText && prevData.settings === cssSettings;
 
@@ -406,7 +411,7 @@ function cssVars(options = {}) {
                         const cssNodes = settings.rootElement.querySelectorAll('link[data-cssvars],style[data-cssvars]') || settings.rootElement.querySelectorAll('link[rel+="stylesheet"],style');
                         const lastNode = cssNodes ? cssNodes[cssNodes.length - 1] : null;
 
-                        if (!styleNode) {
+                        if (!settings.staticStyleNode || !settings.rootElement.querySelector(`#${styleNodeId}`)) {
                             // Insert ponyfill <style> after last node
                             if (lastNode) {
                                 lastNode.parentNode.insertBefore(styleNode, lastNode.nextSibling);

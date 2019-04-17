@@ -1,10 +1,11 @@
 // Dependencies
 // =============================================================================
-import chai               from 'chai';
-import createTestElms     from './helpers/create-test-elms';
-import cssVars            from '../src/index';
-import resetVariableStore from './helpers/reset-variablestore';
-import { expect }         from 'chai';
+import chai                from 'chai';
+import createTestElms      from './helpers/create-test-elms';
+import cssVars             from '../src/index';
+import resetVariableStore  from './helpers/reset-variablestore';
+import { expect }          from 'chai';
+import { name as pkgName } from '../package.json';
 
 chai.use(require('chai-colors'));
 
@@ -395,6 +396,75 @@ describe('css-vars', function() {
                 });
             });
         }
+
+        describe('staticStyleNode', function() {
+            it('false (appends <style> after last processed element)', function() {
+                const testElms = createTestElms([
+                    { tag: 'style' },
+                    // Not processed by cssVars (used to test insert location)
+                    { tag: 'style', attr: { 'data-skip': true }, appendTo: 'body' }
+                ]);
+
+                cssVars({
+                    include   : '[data-test]:not([data-skip])',
+                    onlyLegacy: false,
+                    updateDOM : true,
+                    onComplete(cssText, styleNode, cssVariables, benchmark) {
+                        const styleElms = Array.from(document.querySelectorAll('style'));
+                        const isAfterLastProcessedElm = testElms[0].nextSibling === styleNode;
+                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(testElms[1]);
+
+                        expect(isAfterLastProcessedElm).to.be.true;
+                        expect(isBeforeSkipElm).to.be.true;
+                    }
+                });
+            });
+
+            it('true (uses the static styleNode)', function() {
+                createTestElms([
+                    { tag: 'style', attr: { id: pkgName } },
+                    { tag: 'style' },
+                    // Not processed by cssVars (used to test insert location)
+                    { tag: 'style', attr: { 'data-skip': true }, appendTo: 'body' }
+                ]);
+
+                cssVars({
+                    include        : '[data-test]:not([data-skip])',
+                    staticStyleNode: true,
+                    onlyLegacy     : false,
+                    updateDOM      : true,
+                    onComplete(cssText, styleNode, cssVariables, benchmark) {
+                        const styleElms = Array.from(document.querySelectorAll('style'));
+                        const providedStyleNodeUsed = styleElms[0] === styleNode;
+
+                        expect(providedStyleNodeUsed).to.be.true;
+                    }
+                });
+            });
+
+            it('true (uses default logic to insert node if no element with styleNodeId is found)', function() {
+                const testElms = createTestElms([
+                    { tag: 'style' },
+                    // Not processed by cssVars (used to test insert location)
+                    { tag: 'style', attr: { 'data-skip': true }, appendTo: 'body' }
+                ]);
+
+                cssVars({
+                    include        : '[data-test]:not([data-skip])',
+                    staticStyleNode: true,
+                    onlyLegacy     : false,
+                    updateDOM      : true,
+                    onComplete(cssText, styleNode, cssVariables, benchmark) {
+                        const styleElms = Array.from(document.querySelectorAll('style'));
+                        const isAfterLastProcessedElm = testElms[0].nextSibling === styleNode;
+                        const isBeforeSkipElm = styleElms.indexOf(styleNode) < styleElms.indexOf(testElms[1]);
+
+                        expect(isAfterLastProcessedElm).to.be.true;
+                        expect(isBeforeSkipElm).to.be.true;
+                    }
+                });
+            });
+        });
 
         describe('updateDOM', function() {
             it('true (appends <style> after last processed element in <head>)', function() {
