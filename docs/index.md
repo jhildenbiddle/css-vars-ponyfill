@@ -56,8 +56,8 @@ git clone https://github.com/jhildenbiddle/css-vars-ponyfill.git
 CDN ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/)):
 
 ```html
-<!-- Latest v1.x.x -->
-<script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@1"></script>
+<!-- Latest v2.x.x -->
+<script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
 ```
 
 ## Examples
