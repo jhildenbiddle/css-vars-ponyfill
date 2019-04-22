@@ -2,27 +2,23 @@
 
 ## 2.0.0
 
-*Unreleased*
+*2019-04-22*
 
 **Breaking Changes**
 
-- Add support for incremental updates. This change provides as much as a 3x
-  performance increase by appending transformed CSS to the DOM using multiple
-  `<style>` elements. Previously, a single `<style>` element was appended and
-  updated after each ponyfill call.
+- Added support for incremental updates. This change significantly increases
+  performance on subsequent ponyfill calls by applying transformed CSS to the
+  DOM using multiple `<style>` elements instead of a single element as was done
+  in 1.x.
 
-- Changed `options.onComplete` behavior so that the first argument returns a
-  `string` of transformed CSS from `<link>` and `<style>` elements processed
-  during each ponyfill call. This means that CSS from elements the ponyfill
-  determines can be skipped (i.e. do not need to be reprocessed) will not be
-  included on subsequent ponyfill calls. Previously, this argument returned all
-  transformed CSS from all `<link>` and `<style>` elements on every ponyfill
-  call.
+- Renamed `options.onlyVars` to `options.preserveStatic`
+
+- Renamed `options.preserve` to `options.preserveVars`
 
 - Changed `options.onComplete` behavior so that the second argument returns an
-  `array` of element references to the `<style>` elements appended to the DOM
-  during each ponyfill call. Previously, this argument returned a single element
-  reference because the ponyfill used only a single `<style>` element.
+  `array` of `<style>` elements appended to the DOM during each ponyfill call.
+  Previously, this argument returned a single element reference because the
+  ponyfill used only a single `<style>` element.
 
 - Removed `options.fixNestedCalc`. Nested `calc()` statements are modified for
   compatibility with legacy browsers as they were previously when this option
@@ -32,7 +28,7 @@
 **Other Changes**
 
 - Fixed bug that allowed :root-level custom property declarations in comments
-  and media queries be processed when initially called with options.shadowDOM
+  and media queries be processed when initially called with `options.shadowDOM`
   set to true
 
 ## 1.17.1
