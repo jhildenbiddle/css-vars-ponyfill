@@ -1,6 +1,3 @@
-// TODO: Remove dist from repo (need to move TypeScript file to root?)
-
-
 // Dependencies
 // =============================================================================
 import getCssData   from 'get-css-data';
