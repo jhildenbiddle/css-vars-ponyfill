@@ -26,14 +26,12 @@ const VAR_FUNC_IDENTIFIER = 'var';
  *
  * @param {object}   cssData CSS text or AST
  * @param {object}   [options] Options object
- * @param {boolean}  [options.onlyVars=false] Remove declarations that do not
- *                   contain a CSS variable from the return value. Note that
- *                   @font-face and @keyframe rules require all declarations to
- *                   be returned if a CSS variable is used.
- * @param {boolean}  [options.preserveVars=false] Preserve CSS variable definitions
- *                   and functions in the return value, allowing "live" variable
- *                   updates via JavaScript to continue working in browsers with
- *                   native CSS variable support.
+ * @param {boolean}  [options.preserveStatic=true] Determines if CSS
+ *                   declarations that do not reference a custom property will
+ *                   be preserved in the transformed CSS
+ * @param {boolean}  [options.preserveVars=false] Determines if CSS custom
+ *                   property declarations will be preserved in the transformed
+ *                   CSS
  * @param {object}   [options.variables={}] CSS variable definitions to include
  *                   during transformation. Can be used to add new override
  *                   exisitng definitions.
@@ -43,9 +41,9 @@ const VAR_FUNC_IDENTIFIER = 'var';
  */
 function transformCss(cssData, options = {}) {
     const defaults = {
-        onlyVars    : false,
-        preserveVars: false,
-        variables   : {},
+        preserveStatic: true,
+        preserveVars  : false,
+        variables     : {},
         onWarning() {}
     };
     const settings = Object.assign({}, defaults, options);

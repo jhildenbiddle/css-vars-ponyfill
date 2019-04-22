@@ -268,52 +268,8 @@ describe('css-vars', function() {
             });
         });
 
-        // The 'onlyVars' option is used in this module as well as the
-        // transfrom-css.js module. Testing how this options is handled by each
-        // module is handled in each module's test file.
-        describe('onlyVars', function() {
-            it('true - filters CSS data', function(done) {
-                const expectCss = 'p{color:red;}';
-
-                createTestElms([
-                    { tag: 'style', text: ':root { --color: red; }' },
-                    { tag: 'style', text: 'p { color: var(--color); }' },
-                    { tag: 'style', text: 'p { color: green; }' }
-                ]);
-
-                cssVars({
-                    include    : '[data-test]',
-                    onlyLegacy : false,
-                    onlyVars   : true,
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText).to.equal(expectCss);
-                        done();
-                    }
-                });
-            });
-
-            it('true - filters CSS declarations (passed to transform-css)', function(done) {
-                const styleCss = `
-                    :root {--color: red;}
-                    p { color: var(--color); }
-                    p { color: green; }
-                `;
-                const expectCss = 'p{color:red;}';
-
-                createTestElms({ tag: 'style', text: styleCss });
-
-                cssVars({
-                    include    : '[data-test]',
-                    onlyLegacy : false,
-                    onlyVars   : true,
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText).to.equal(expectCss);
-                        done();
-                    }
-                });
-            });
-
-            it('false - includes all CSS declarations', function(done) {
+        describe('preserveStatic', function() {
+            it('true - includes all CSS declarations', function(done) {
                 const styleCss = `
                     :root {--color: red;}
                     p { color: var(--color); }
@@ -324,9 +280,50 @@ describe('css-vars', function() {
                 createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
-                    include    : '[data-test]',
-                    onlyLegacy : false,
-                    onlyVars   : false,
+                    include       : '[data-test]',
+                    onlyLegacy    : false,
+                    preserveStatic: true,
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText).to.equal(expectCss);
+                        done();
+                    }
+                });
+            });
+
+            it('false - filters CSS data', function(done) {
+                const expectCss = 'p{color:red;}';
+
+                createTestElms([
+                    { tag: 'style', text: ':root { --color: red; }' },
+                    { tag: 'style', text: 'p { color: var(--color); }' },
+                    { tag: 'style', text: 'p { color: green; }' }
+                ]);
+
+                cssVars({
+                    include       : '[data-test]',
+                    onlyLegacy    : false,
+                    preserveStatic: false,
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText).to.equal(expectCss);
+                        done();
+                    }
+                });
+            });
+
+            it('false - filters CSS declarations (passed to transform-css)', function(done) {
+                const styleCss = `
+                    :root {--color: red;}
+                    p { color: var(--color); }
+                    p { color: green; }
+                `;
+                const expectCss = 'p{color:red;}';
+
+                createTestElms({ tag: 'style', text: styleCss });
+
+                cssVars({
+                    include       : '[data-test]',
+                    onlyLegacy    : false,
+                    preserveStatic: false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(cssText).to.equal(expectCss);
                         done();

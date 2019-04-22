@@ -18,11 +18,9 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 - Live updates of runtime values in both modern and legacy browsers
 - Transforms `<link>`, `<style>`, and `@import` CSS
 - Transforms relative `url()` paths to absolute URLs
+- Supports chained and nested `var()` functions
+- Supports `var()` function fallback values
 - Supports web components / shadow DOM CSS
-- Supports chained `var()` functions
-- Supports nested `var()` functions
-- Supports `var()` functions in space-separated values
-- Supports `var()` fallback values
 - Watch mode auto-updates on `<link>` and `<style>` changes
 - UMD and ES6 module available
 - TypeScript definitions included
@@ -122,9 +120,9 @@ For each `<link>` and `<style>` element processed the ponyfill will:
 
 To update values:
 
-- Use [options.watch](#optionswatch) to detect `<link>` and `<style>` mutations and auto-update transformed CSS
+- Use [options.watch](#watch) to detect `<link>` and `<style>` mutations and auto-update transformed CSS
 - Manually call the ponyfill after a `<link>` or `style` node has been added or removed
-- Manually call the ponyfill with [options.variables](#optionsvariables):
+- Manually call the ponyfill with [options.variables](#variables):
 
 Example:
 
@@ -139,7 +137,7 @@ cssVars({
 
 Values will be updated in both legacy and modern browsers:
 
-- In legacy browsers (and modern browsers when [options.onlyLegacy](#optionsonlylegacy) is `false`), the ponyfill will determine if the changes affect the previously transformed CSS for each `<link>` and `<style>` element previously processed. If they do, CSS will be transformed once again with the new values and the output `<style>` element will be updated.
+- In legacy browsers (and modern browsers when [options.onlyLegacy](#onlylegacy) is `false`), the ponyfill will determine if the changes affect the previously transformed CSS for each `<link>` and `<style>` element previously processed. If they do, CSS will be transformed once again with the new values and the output `<style>` element will be updated.
 
    ```html
    <!-- Output (updated) -->
@@ -163,54 +161,58 @@ Values will be updated in both legacy and modern browsers:
 
 **Targets**
 
-- [rootElement](#optionsrootelement)
-- [shadowDOM](#optionsshadowdom)
+- [rootElement](#rootelement)
+- [shadowDOM](#shadowdom)
 
 **Sources**
 
-- [include](#optionsinclude)
-- [exclude](#optionsexclude)
-- [variables](#optionsvariables)
+- [include](#include)
+- [exclude](#exclude)
+- [variables](#variables)
 
 **Options**
 
-- [onlyLegacy](#optionsonlylegacy)
-- [onlyVars](#optionsonlyvars)
-- [preserveVars](#optionspreservevars)
-- [silent](#optionssilent)
-- [updateDOM](#optionsupdatedom)
-- [updateURLs](#optionsupdateurls)
-- [watch](#optionswatch)
+- [onlyLegacy](#onlylegacy)
+- [preserveStatic](#preservestatic)
+- [preserveVars](#preservevars)
+- [silent](#silent)
+- [updateDOM](#updatedom)
+- [updateURLs](#updateurls)
+- [watch](#watch)
 
 **Callbacks**
 
-- [onBeforeSend](#optionsonbeforesend)
-- [onSuccess](#optionsonsuccess)
-- [onWarning](#optionsonwarning)
-- [onError](#optionsonerror)
-- [onComplete](#optionsoncomplete)
+- [onBeforeSend](#onbeforesend)
+- [onWarning](#onwarning)
+- [onError](#onerror)
+- [onSuccess](#onsuccess)
+- [onComplete](#oncomplete)
 
 **Example**
 
 ```javascript
-// All options (default values shown)
+// Default values
 cssVars({
-  rootElement : document,
-  shadowDOM   : false,
-  include     : 'link[rel=stylesheet],style',
-  exclude     : '',
-  variables   : {},
-  onlyLegacy  : true,
-  onlyVars    : false,
-  preserveVars: false,
-  silent      : false,
-  updateDOM   : true,
-  updateURLs  : true,
-  watch       : false,
+  // Targets
+  rootElement   : document,
+  shadowDOM     : false,
+
+  // Sources
+  include       : 'link[rel=stylesheet],style',
+  exclude       : '',
+  variables     : {},
+
+  // Options
+  onlyLegacy    : true,
+  preserveStatic: true,
+  preserveVars  : false,
+  silent        : false,
+  updateDOM     : true,
+  updateURLs    : true,
+  watch         : false,
+
+  // Callbacks
   onBeforeSend(xhr, elm, url) {
-    // ...
-  },
-  onSuccess(cssText, elm, url) {
     // ...
   },
   onWarning(message) {
@@ -219,13 +221,16 @@ cssVars({
   onError(message, elm, xhr, url) {
     // ...
   },
+  onSuccess(cssText, elm, url) {
+    // ...
+  },
   onComplete(cssText, styleElms, cssVariables, benchmark) {
     // ...
   }
 });
 ```
 
-### options.rootElement
+### rootElement
 
 - Type: `object`
 - Default: `document`
@@ -246,12 +251,12 @@ cssVars({
 });
 ```
 
-### options.shadowDOM
+### shadowDOM
 
 - Type: `boolean`
 - Default: `false`
 
-Determines if shadow DOM tree(s) nested within the [options.rootElement](#optionsrootelement) will be processed.
+Determines if shadow DOM tree(s) nested within the [options.rootElement](#rootelement) will be processed.
 
 **Example**
 
@@ -273,14 +278,14 @@ cssVars({
 });
 ```
 
-### options.include
+### include
 
 - Type: `string`
 - Default: `"link[rel=stylesheet],style"`
 
 CSS selector matching `<link>` and `<style>` elements to process. The default value includes all style and link elements.
 
-**Tip:** For the best performance, avoid unnecessary CSS processing by including only elements that need to be transformed. See [options.exclude](#optionsexclude) for an alternate approach.
+**Tip:** For the best performance, avoid unnecessary CSS processing by including only elements that need to be transformed. See [options.exclude](#exclude) for an alternate approach.
 
 **Example**
 
@@ -302,14 +307,14 @@ cssVars({
 });
 ```
 
-### options.exclude
+### exclude
 
 - Type: `string`
 - Default: *none*
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` elements to exclude from those matched by [options.include](#optionsinclude).
+CSS selector matching `<link rel="stylesheet">` and `<style>` elements to exclude from those matched by [options.include](#include).
 
-**Tip:** For the best performance, avoid unnecessary processing by excluding elements that do not need to be transformed. See [options.include](#optionsinclude) for an alternate approach.
+**Tip:** For the best performance, avoid unnecessary processing by excluding elements that do not need to be transformed. See [options.include](#include) for an alternate approach.
 
 **Example**
 
@@ -331,16 +336,16 @@ cssVars({
 });
 ```
 
-### options.variables
+### variables
 
 - Type: `object`
 - Default: `{}`
 
 A collection of custom property name/value pairs to apply to both legacy and modern browsers as `:root`-level custom property declarations. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
 
-Legacy browsers (and modern browsers when [options.onlyLegacy](#optionsonlylegacy) is `false`) will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
+Legacy browsers (and modern browsers when [options.onlyLegacy](#onlylegacy) is `false`) will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#updatedom) is `true`.
 
-**Note:** Although these values are applied to both modern and legacy browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#optionsonlylegacy) is `false`).
+**Note:** Although these values are applied to both modern and legacy browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#onlylegacy) is `false`).
 
 **Example**
 
@@ -353,16 +358,16 @@ cssVars({
 });
 ```
 
-### options.onlyLegacy
+### onlyLegacy
 
 - Type: `boolean`
 - Default: `true`
 
 Determines how the ponyfill handles modern browsers with native CSS custom property support.
 
-When `true`, the ponyfill will only transform custom properties, generate CSS, and trigger callbacks in legacy browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
+When `true`, the ponyfill will only transform CSS and trigger callbacks in browsers that lack native support for CSS custom properties. When `false`, the ponyfill will transform CSS and trigger callbacks in all browsers, regardless of their support for CSS custom properties.
 
-**Tip:** Setting this value to `false` allows for testing in modern browsers when legacy browsers are not accessible and easier debugging using developer tools only available in modern browsers.
+**Tip:** Setting this value to `false` allows for testing in modern browsers when legacy browsers are not accessible and easier debugging using developer tools available only in modern browsers.
 
 **Example**
 
@@ -382,14 +387,14 @@ cssVars({
 });
 ```
 
-### options.onlyVars
+### preserveStatic
 
 - Type: `boolean`
-- Default: `false`
+- Default: `true`
 
-Determines if CSS declarations that do not reference a custom property will be omitted from the transformed CSS.
+Determines if CSS declarations that do not reference a custom property will be preserved in the transformed CSS.
 
-When `true`, CSS declarations that do not reference a custom property value will be omitted from the transformed CSS. This can increase performance by reducing the amount of CSS that needs to be processed, but doing so runs the risk of breaking the original cascade when the transformed CSS is appended to the DOM (see example below). When `false`, all declarations will be retained in the transformed CSS. This requires additional processing, but doing so ensures that the original cascade order is maintained after the transformed CSS is appended to the DOM.
+When `true`, CSS declarations that do not reference a custom property value will be preserved in the transformed CSS. This requires additional processing but ensures that the original cascade order is maintained after the transformed CSS is appended to the DOM. When `false`, these declarations will be omitted from the transformed CSS. This can increase performance by reducing the amount of CSS that needs to be processed, but doing so runs the risk of breaking the original cascade when the transformed CSS is appended to the DOM (see example below).
 
 **Note:** Earlier versions of the ponyfill (1.x) required setting this option to `true` for optimal performance. With the optimizations introduced in 2.x, this is no longer necessary.
 
@@ -416,11 +421,11 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onlyVars: false // default
+  preserveStatic: true // default
 });
 ```
 
-Output when `onlyVars:false`
+Output when `preserveStatic:true`
 
 ```css
 h1 {
@@ -433,7 +438,7 @@ p {
 }
 ```
 
-Output when `onlyVars:true`
+Output when `preserveStatic:false`
 
 ```css
 p {
@@ -461,7 +466,7 @@ p {
 }
 ```
 
-Output when `onlyVars: true`
+Output when `preserveStatic:false`
 
 ```css
 p {
@@ -481,7 +486,7 @@ A workaround for this issue is force the ponyfill to include a declaration in th
 }
 ```
 
-The ponyfill will include the declaration when `onlyVars` is `true` and resolve to its fallback value, maintaining the original cascade.
+The ponyfill will include the declaration when `preserveStatic` is `false` and resolve to its fallback value, maintaining the original cascade.
 
 ```css
 p {
@@ -495,14 +500,14 @@ p {
 }
 ```
 
-### options.preserveVars
+### preserveVars
 
 - Type: `boolean`
 - Default: `false`
 
-Determines if the original CSS custom property declaration will be retained in the transformed CSS.
+Determines if CSS custom property declarations will be preserved in the transformed CSS.
 
-When `true`, the original custom property declarations are available in the transformed CSS along with their static values. When `false`, only static values are available in the transformed CSS.
+When `true`, both `:root`-level custom properties and declarations that reference a custom property using a `var()` function will be preserved in the transformed CSS. When `false`, these declarations will be omitted from the transformed CSS.
 
 **Example**
 
@@ -545,14 +550,14 @@ p {
 }
 ```
 
-### options.silent
+### silent
 
 - Type: `boolean`
 - Default: `false`
 
 Determines if warning and error messages will be displayed on the console.
 
-When `true`, messages will be displayed on the console for each warning and error encountered while processing CSS. When `false`, messages will not be displayed on the console but will still be available using the [options.onWarning](#optionsonwarning) and [options.onSuccess](#optionsonsuccess) callbacks.
+When `true`, messages will be displayed on the console for each warning and error encountered while processing CSS. When `false`, messages will not be displayed on the console but will still be available using the [options.onWarning](#onwarning) and [options.onSuccess](#onsuccess) callbacks.
 
 **Example**
 
@@ -586,14 +591,14 @@ Console:
 > cssVars(): parse error: missing "}"
 ```
 
-### options.updateDOM
+### updateDOM
 
 - Type: `boolean`
 - Default: `true`
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, transformed CSS will be appended to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the `<link>` or `<style>` element that contains the source CSS. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the ponyfill in either modern or legacy browsers, but transformed CSS can be accessed with the [options.onComplete](#optionsoncomplete) callback.
+When `true`, transformed CSS will be appended to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the `<link>` or `<style>` element that contains the source CSS. For modern browsers, [options.variables](#variabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the ponyfill in either modern or legacy browsers, but transformed CSS can be accessed with the [options.onComplete](#oncomplete) callback.
 
 **Example**
 
@@ -626,7 +631,7 @@ Result when `updateDOM: true`
 </head>
 ```
 
-### options.updateURLs
+### updateURLs
 
 - Type: `boolean`
 - Default: `true`
@@ -671,7 +676,7 @@ div {
 }
 ```
 
-### options.watch
+### watch
 
 - Type: `boolean`
 - Default: `null`
@@ -696,7 +701,7 @@ cssVars({
 });
 ```
 
-### options.onBeforeSend
+### onBeforeSend
 
 - Type: `function`
 - Arguments:
@@ -721,32 +726,7 @@ cssVars({
 });
 ```
 
-### options.onSuccess
-
-- Type: `function`
-- Arguments:
-  1. **cssText**: A `string` of CSS text from `element` and `url`
-  1. **elm**: The source element `object` reference
-  1. **url**: The source URL `string` (`<link>` href, `@import` url, or page url for `<style>` data)
-
-Callback after CSS data has been collected from each element. Allows modifying the CSS data before it is added to the final output by returning any `string` value or skipping the CSS data by returning `false`, `null`, or an empty string (`""`).
-
-**Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
-
-**Example**
-
-```javascript
-cssVars({
-  onSuccess(cssText, elm, url) {
-    // Replace all instances of "color: red" with "color: blue"
-    const newCssText = cssText.replace(/color:\s*red\s;/g, 'color: blue;');
-
-    return newCssText;
-  }
-});
-```
-
-### options.onWarning
+### onWarning
 
 - Type: `function`
 - Arguments:
@@ -776,7 +756,7 @@ cssVars({
 // 1 => 'CSS transform warning: variable "--fail" is undefined'
 ```
 
-### options.onError
+### onError
 
 - Type: `function`
 - Arguments:
@@ -815,7 +795,32 @@ cssVars({
 // 5 => 'http://domain.com/path/to/fail.css'
 ```
 
-### options.onComplete
+### onSuccess
+
+- Type: `function`
+- Arguments:
+  1. **cssText**: A `string` of CSS text from `element` and `url`
+  1. **elm**: The source element `object` reference
+  1. **url**: The source URL `string` (`<link>` href, `@import` url, or page url for `<style>` data)
+
+Callback after CSS data has been collected from each element. Allows modifying the CSS data before it is added to the final output by returning any `string` value or skipping the CSS data by returning `false`, `null`, or an empty string (`""`).
+
+**Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
+
+**Example**
+
+```javascript
+cssVars({
+  onSuccess(cssText, elm, url) {
+    // Replace all instances of "color: red" with "color: blue"
+    const newCssText = cssText.replace(/color:\s*red\s;/g, 'color: blue;');
+
+    return newCssText;
+  }
+});
+```
+
+### onComplete
 
 - Type: `function`
 - Arguments:

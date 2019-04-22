@@ -51,8 +51,8 @@ describe('transform-css', function() {
                 /* 21 */
             `;
             const cssOut = transformCss(cssIn, {
-                onlyVars : true,
-                variables: parseVars(cssIn)
+                preserveStatic: false,
+                variables     : parseVars(cssIn)
             });
             const expectCss = 'p{color:red;}';
 
@@ -218,10 +218,7 @@ describe('transform-css', function() {
     // Tests: Options
     // -------------------------------------------------------------------------
     describe('Options', function() {
-        // The 'onlyVars' option is used in this module as well as the index.js
-        // module. Testing how this options is handled by each module is handled
-        // in each module's test file.
-        describe('onlyVars', function() {
+        describe('preserveStatic', function() {
             it('true (declarations)', function() {
                 const cssIn = `
                     /* Comment */
@@ -230,15 +227,31 @@ describe('transform-css', function() {
                     p { color: green; }
                 `;
                 const cssOut    = transformCss(cssIn, {
-                    onlyVars : true,
-                    variables: parseVars(cssIn)
+                    preserveStatic: true,
+                    variables     : parseVars(cssIn)
+                }).replace(/\n/g, '');
+                const expectCss = 'p{color:red;margin:20px;}p{color:green;}';
+
+                expect(cssOut).to.equal(expectCss);
+            });
+
+            it('false (declarations)', function() {
+                const cssIn = `
+                    /* Comment */
+                    :root { --color: red; }
+                    p { color: var(--color); margin: 20px; }
+                    p { color: green; }
+                `;
+                const cssOut    = transformCss(cssIn, {
+                    preserveStatic: false,
+                    variables     : parseVars(cssIn)
                 }).replace(/\n/g, '');
                 const expectCss = 'p{color:red;}';
 
                 expect(cssOut).to.equal(expectCss);
             });
 
-            it('true (@font-face)', function() {
+            it('false (@font-face)', function() {
                 const cssIn = `
                     :root { --weight: normal; }
                     @font-face {
@@ -251,8 +264,8 @@ describe('transform-css', function() {
                     }
                 `;
                 const cssOut    = transformCss(cssIn, {
-                    onlyVars : true,
-                    variables: parseVars(cssIn)
+                    preserveStatic: false,
+                    variables     : parseVars(cssIn)
                 }).replace(/\n/g, '');
                 const expectCss = `
                     @font-face {
@@ -264,7 +277,7 @@ describe('transform-css', function() {
                 expect(cssOut).to.equal(expectCss);
             });
 
-            it('true (@keyframes)', function() {
+            it('false (@keyframes)', function() {
                 const cssIn = `
                     :root { --color: red; }
                     @keyframes test1 {
@@ -277,8 +290,8 @@ describe('transform-css', function() {
                     }
                 `;
                 const cssOut    = transformCss(cssIn, {
-                    onlyVars : true,
-                    variables: parseVars(cssIn)
+                    preserveStatic: false,
+                    variables     : parseVars(cssIn)
                 }).replace(/\n/g, '');
                 const expectCss = `
                     @keyframes test1 {
@@ -290,7 +303,7 @@ describe('transform-css', function() {
                 expect(cssOut).to.equal(expectCss);
             });
 
-            it('true (@media)', function() {
+            it('false (@media)', function() {
                 const cssIn = `
                     :root { --color: red; }
                     @media screen {
@@ -299,8 +312,8 @@ describe('transform-css', function() {
                     }
                 `;
                 const cssOut    = transformCss(cssIn, {
-                    onlyVars : true,
-                    variables: parseVars(cssIn)
+                    preserveStatic: false,
+                    variables     : parseVars(cssIn)
                 }).replace(/\n/g, '');
                 const expectCss = `
                     @media screen {

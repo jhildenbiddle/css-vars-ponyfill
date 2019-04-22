@@ -390,7 +390,7 @@
     function parseCss(css) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
-            onlyVars: false,
+            preserveStatic: true,
             removeComments: false
         };
         var settings = _extends({}, defaults, options);
@@ -619,7 +619,7 @@
             whitespace();
             if (css[0] === "@") {
                 var ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
-                if (ret && settings.onlyVars) {
+                if (ret && !settings.preserveStatic) {
                     var hasVarFunc = false;
                     if (ret.declarations) {
                         hasVarFunc = ret.declarations.some(function(decl) {
@@ -639,7 +639,7 @@
             }
         }
         function rule() {
-            if (settings.onlyVars) {
+            if (!settings.preserveStatic) {
                 var balancedMatch$1 = balancedMatch("{", "}", css);
                 if (balancedMatch$1) {
                     var hasVarDecl = balancedMatch$1.pre.indexOf(":root") !== -1 && /--\S*\s*:/.test(balancedMatch$1.body);
@@ -651,7 +651,7 @@
                 }
             }
             var sel = selector() || [];
-            var decls = !settings.onlyVars ? declarations() : declarations().filter(function(decl) {
+            var decls = settings.preserveStatic ? declarations() : declarations().filter(function(decl) {
                 var hasVarDecl = sel.some(function(s) {
                     return s.indexOf(":root") !== -1;
                 }) && /^--\S/.test(decl.property);
@@ -816,7 +816,7 @@
     function transformCss(cssData) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
-            onlyVars: false,
+            preserveStatic: true,
             preserveVars: false,
             variables: {},
             onWarning: function onWarning() {}
@@ -919,16 +919,16 @@
         exclude: "",
         variables: {},
         onlyLegacy: true,
-        onlyVars: false,
+        preserveStatic: true,
         preserveVars: false,
         silent: false,
         updateDOM: true,
         updateURLs: true,
         watch: null,
         onBeforeSend: function onBeforeSend() {},
-        onSuccess: function onSuccess() {},
         onWarning: function onWarning() {},
         onError: function onError() {},
+        onSuccess: function onSuccess() {},
         onComplete: function onComplete() {}
     };
     var regex = {
@@ -961,7 +961,7 @@
    * @preserve
    * @param {object}   [options] Options object
    * @param {object}   [options.rootElement=document] Root element to traverse for
-   *                   <link> and <style> nodes.
+   *                   <link> and <style> nodes
    * @param {boolean}  [options.shadowDOM=false] Determines if shadow DOM <link>
    *                   and <style> nodes will be processed.
    * @param {string}   [options.include="style,link[rel=stylesheet]"] CSS selector
@@ -973,40 +973,40 @@
    * @param {object}   [options.variables] A map of custom property name/value
    *                   pairs. Property names can omit or include the leading
    *                   double-hyphen (—), and values specified will override
-   *                   previous values.
+   *                   previous values
    * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
    *                   only generate legacy-compatible CSS in browsers that lack
    *                   native support (i.e., legacy browsers)
-   * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
-   *                   declarations without a custom property value should be
-   *                   removed from the ponyfill-generated CSS
-   * @param {boolean}  [options.preserveVars=false] Determines if the original CSS
-   *                   custom property declaration will be retained in the
-   *                   ponyfill-generated CSS.
+   * @param {boolean}  [options.preserveStatic=true] Determines if CSS
+   *                   declarations that do not reference a custom property will
+   *                   be preserved in the transformed CSS
+   * @param {boolean}  [options.preserveVars=false] Determines if CSS custom
+   *                   property declarations will be preserved in the transformed
+   *                   CSS
    * @param {boolean}  [options.silent=false] Determines if warning and error
    *                   messages will be displayed on the console
    * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
    *                   update the DOM after processing CSS custom properties
    * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
-   *                   convert relative url() paths to absolute urls.
+   *                   convert relative url() paths to absolute urls
    * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
    *                   be created that will execute the ponyfill when a <link> or
-   *                   <style> DOM mutation is observed.
+   *                   <style> DOM mutation is observed
    * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
    *                   1) the XHR object, 2) source node reference, and 3) the
-   *                   source URL as arguments.
-   * @param {function} [options.onSuccess] Callback after CSS data has been
-   *                   collected from each node and before CSS custom properties
-   *                   have been transformed. Allows modifying the CSS data before
-   *                   it is transformed by returning any string value (or false
-   *                   to skip). Passes 1) CSS text, 2) source node reference, and
-   *                   3) the source URL as arguments.
+   *                   source URL as arguments
    * @param {function} [options.onWarning] Callback after each CSS parsing warning
    *                   has occurred. Passes 1) a warning message as an argument.
    * @param {function} [options.onError] Callback after a CSS parsing error has
    *                   occurred or an XHR request has failed. Passes 1) an error
    *                   message, and 2) source node reference, 3) xhr, and 4 url as
    *                   arguments.
+   * @param {function} [options.onSuccess] Callback after CSS data has been
+   *                   collected from each node and before CSS custom properties
+   *                   have been transformed. Allows modifying the CSS data before
+   *                   it is transformed by returning any string value (or false
+   *                   to skip). Passes 1) CSS text, 2) source node reference, and
+   *                   3) the source URL as arguments.
    * @param {function} [options.onComplete] Callback after all CSS has been
    *                   processed, legacy-compatible CSS has been generated, and
    *                   (optionally) the DOM has been updated. Passes 1) a CSS
@@ -1019,22 +1019,22 @@
    * @example
    *
    *   cssVars({
-   *     rootElement : document,
-   *     shadowDOM   : false,
-   *     include     : 'style,link[rel="stylesheet"]',
-   *     exclude     : '',
-   *     variables   : {},
-   *     onlyLegacy  : true,
-   *     onlyVars    : false,
-   *     preserveVars: false,
-   *     silent      : false,
-   *     updateDOM   : true,
-   *     updateURLs  : true,
-   *     watch       : false,
+   *     rootElement   : document,
+   *     shadowDOM     : false,
+   *     include       : 'style,link[rel="stylesheet"]',
+   *     exclude       : '',
+   *     variables     : {},
+   *     onlyLegacy    : true,
+   *     preserveStatic: true,
+   *     preserveVars  : false,
+   *     silent        : false,
+   *     updateDOM     : true,
+   *     updateURLs    : true,
+   *     watch         : false,
    *     onBeforeSend(xhr, node, url) {},
-   *     onSuccess(cssText, node, url) {},
    *     onWarning(message) {},
    *     onError(message, node, xhr, url) {},
+   *     onSuccess(cssText, node, url) {},
    *     onComplete(cssText, styleNode, cssVariables, benchmark) {}
    *   });
    */    function cssVars() {
@@ -1128,6 +1128,12 @@
                     include: settings.include,
                     exclude: settings.exclude,
                     onBeforeSend: settings.onBeforeSend,
+                    onError: function onError(xhr, node, url) {
+                        var responseUrl = xhr.responseURL || getFullUrl$1(url, location.href);
+                        var statusText = xhr.statusText ? "(".concat(xhr.statusText, ")") : "Unspecified Error" + (xhr.status === 0 ? " (possibly CORS related)" : "");
+                        var errorMsg = "CSS XHR Error: ".concat(responseUrl, " ").concat(xhr.status, " ").concat(statusText);
+                        handleError(errorMsg, node, xhr, responseUrl);
+                    },
                     onSuccess: function onSuccess(cssText, node, url) {
                         var returnVal = settings.onSuccess(cssText, node, url);
                         cssText = returnVal !== undefined && Boolean(returnVal) === false ? "" : returnVal || cssText;
@@ -1135,12 +1141,6 @@
                             cssText = fixRelativeCssUrls(cssText, url);
                         }
                         return cssText;
-                    },
-                    onError: function onError(xhr, node, url) {
-                        var responseUrl = xhr.responseURL || getFullUrl$1(url, location.href);
-                        var statusText = xhr.statusText ? "(".concat(xhr.statusText, ")") : "Unspecified Error" + (xhr.status === 0 ? " (possibly CORS related)" : "");
-                        var errorMsg = "CSS XHR Error: ".concat(responseUrl, " ").concat(xhr.status, " ").concat(statusText);
-                        handleError(errorMsg, node, xhr, responseUrl);
                     },
                     onComplete: function onComplete(cssText, cssArray) {
                         var nodeArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
@@ -1151,7 +1151,7 @@
                             if (regex.cssVars.test(cssArray[i])) {
                                 try {
                                     var cssTree = parseCss(cssArray[i], {
-                                        onlyVars: settings.onlyVars,
+                                        preserveStatic: settings.preserveStatic,
                                         removeComments: true
                                     });
                                     parseVars(cssTree, {
