@@ -817,7 +817,7 @@
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
         var defaults = {
             onlyVars: false,
-            preserve: false,
+            preserveVars: false,
             variables: {},
             onWarning: function onWarning() {}
         };
@@ -834,7 +834,7 @@
                 if (type !== "declaration") {
                     continue;
                 }
-                if (!settings.preserve && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
+                if (!settings.preserveVars && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                     declarations.splice(i, 1);
                     i--;
                     continue;
@@ -843,7 +843,7 @@
                     var resolvedValue = resolveValue(value, settings);
                     if (resolvedValue !== decl.value) {
                         resolvedValue = fixNestedCalc(resolvedValue);
-                        if (!settings.preserve) {
+                        if (!settings.preserveVars) {
                             decl.value = resolvedValue;
                         } else {
                             declarations.splice(i, 0, {
@@ -920,7 +920,7 @@
         variables: {},
         onlyLegacy: true,
         onlyVars: false,
-        preserve: false,
+        preserveVars: false,
         silent: false,
         updateDOM: true,
         updateURLs: true,
@@ -980,7 +980,7 @@
    * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
    *                   declarations without a custom property value should be
    *                   removed from the ponyfill-generated CSS
-   * @param {boolean}  [options.preserve=false] Determines if the original CSS
+   * @param {boolean}  [options.preserveVars=false] Determines if the original CSS
    *                   custom property declaration will be retained in the
    *                   ponyfill-generated CSS.
    * @param {boolean}  [options.silent=false] Determines if warning and error
@@ -1011,26 +1011,26 @@
    *                   processed, legacy-compatible CSS has been generated, and
    *                   (optionally) the DOM has been updated. Passes 1) a CSS
    *                   string with CSS variable values resolved, 2) an array of
-   *                   output <style> node references that have been appended
-   *                   to the DOM, 3) an object containing all custom properies
-   *                   names and values, and 4) the ponyfill execution time in
+   *                   output <style> node references that have been appended to
+   *                   the DOM, 3) an object containing all custom properies names
+   *                   and values, and 4) the ponyfill execution time in
    *                   milliseconds.
    *
    * @example
    *
    *   cssVars({
-   *     rootElement: document,
-   *     shadowDOM  : false,
-   *     include    : 'style,link[rel="stylesheet"]',
-   *     exclude    : '',
-   *     variables  : {},
-   *     onlyLegacy : true,
-   *     onlyVars   : false,
-   *     preserve   : false,
-   *     silent     : false,
-   *     updateDOM  : true,
-   *     updateURLs : true,
-   *     watch      : false,
+   *     rootElement : document,
+   *     shadowDOM   : false,
+   *     include     : 'style,link[rel="stylesheet"]',
+   *     exclude     : '',
+   *     variables   : {},
+   *     onlyLegacy  : true,
+   *     onlyVars    : false,
+   *     preserveVars: false,
+   *     silent      : false,
+   *     updateDOM   : true,
+   *     updateURLs  : true,
+   *     watch       : false,
    *     onBeforeSend(xhr, node, url) {},
    *     onSuccess(cssText, node, url) {},
    *     onWarning(message) {},

@@ -312,15 +312,15 @@ describe('transform-css', function() {
             });
         });
 
-        describe('preserve', function() {
+        describe('preserveVars', function() {
             it('true (default)', function() {
                 const cssIn     = `
                     :root { --color: red; }
                     p { color: var(--color); }
                 `;
                 const cssOut    = transformCss(cssIn, {
-                    preserve : true,
-                    variables: parseVars(cssIn)
+                    preserveVars: true,
+                    variables   : parseVars(cssIn)
                 }).replace(/\n/g, '');
                 const expectCss = `
                     :root { --color: red; }
@@ -349,8 +349,8 @@ describe('transform-css', function() {
                     }
                 `;
                 const cssOut    = transformCss(cssIn, {
-                    preserve : false,
-                    variables: parseVars(cssIn)
+                    preserveVars: false,
+                    variables   : parseVars(cssIn)
                 }).replace(/\n/g, '');
                 const expectCss = `
                     p {

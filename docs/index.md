@@ -176,7 +176,7 @@ Values will be updated in both legacy and modern browsers:
 
 - [onlyLegacy](#optionsonlylegacy)
 - [onlyVars](#optionsonlyvars)
-- [preserve](#optionspreserve)
+- [preserveVars](#optionspreservevars)
 - [silent](#optionssilent)
 - [updateDOM](#optionsupdatedom)
 - [updateURLs](#optionsupdateurls)
@@ -195,18 +195,18 @@ Values will be updated in both legacy and modern browsers:
 ```javascript
 // All options (default values shown)
 cssVars({
-  rootElement  : document,
-  shadowDOM    : false,
-  include      : 'link[rel=stylesheet],style',
-  exclude      : '',
-  variables    : {},
-  onlyLegacy   : true,
-  onlyVars     : false,
-  preserve     : false,
-  silent       : false,
-  updateDOM    : true,
-  updateURLs   : true,
-  watch        : false,
+  rootElement : document,
+  shadowDOM   : false,
+  include     : 'link[rel=stylesheet],style',
+  exclude     : '',
+  variables   : {},
+  onlyLegacy  : true,
+  onlyVars    : false,
+  preserveVars: false,
+  silent      : false,
+  updateDOM   : true,
+  updateURLs  : true,
+  watch       : false,
   onBeforeSend(xhr, elm, url) {
     // ...
   },
@@ -495,7 +495,7 @@ p {
 }
 ```
 
-### options.preserve
+### options.preserveVars
 
 - Type: `boolean`
 - Default: `false`
@@ -521,11 +521,11 @@ JavaScript:
 
 ```javascript
 cssVars({
-  preserve: false // default
+  preserveVars: false // default
 });
 ```
 
-Output when `preserve: false`
+Output when `preserveVars: false`
 
 ```css
 p {
@@ -533,7 +533,7 @@ p {
 }
 ```
 
-Output when `preserve: true`
+Output when `preserveVars: true`
 
 ```css
 :root {

@@ -30,7 +30,7 @@ const VAR_FUNC_IDENTIFIER = 'var';
  *                   contain a CSS variable from the return value. Note that
  *                   @font-face and @keyframe rules require all declarations to
  *                   be returned if a CSS variable is used.
- * @param {boolean}  [options.preserve=false] Preserve CSS variable definitions
+ * @param {boolean}  [options.preserveVars=false] Preserve CSS variable definitions
  *                   and functions in the return value, allowing "live" variable
  *                   updates via JavaScript to continue working in browsers with
  *                   native CSS variable support.
@@ -43,9 +43,9 @@ const VAR_FUNC_IDENTIFIER = 'var';
  */
 function transformCss(cssData, options = {}) {
     const defaults = {
-        onlyVars : false,
-        preserve : false,
-        variables: {},
+        onlyVars    : false,
+        preserveVars: false,
+        variables   : {},
         onWarning() {}
     };
     const settings = Object.assign({}, defaults, options);
@@ -69,7 +69,7 @@ function transformCss(cssData, options = {}) {
             }
 
             // Remove custom property declarations
-            if (!settings.preserve && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
+            if (!settings.preserveVars && prop && prop.indexOf(VAR_PROP_IDENTIFIER) === 0) {
                 declarations.splice(i, 1);
                 i--;
                 continue;
@@ -84,7 +84,7 @@ function transformCss(cssData, options = {}) {
                     resolvedValue = fixNestedCalc(resolvedValue);
 
                     // Overwrite value
-                    if (!settings.preserve) {
+                    if (!settings.preserveVars) {
                         decl.value = resolvedValue;
                     }
                     // Insert new rule with resolved value

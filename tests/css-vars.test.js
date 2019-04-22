@@ -335,7 +335,7 @@ describe('css-vars', function() {
             });
         });
 
-        describe('preserve', function() {
+        describe('preserveVars', function() {
             it('true (passed to transform-css)', function(done) {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);}';
                 const expectCss = ':root{--color:red;}p{color:red;color:var(--color);}';
@@ -343,9 +343,9 @@ describe('css-vars', function() {
                 createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
-                    include    : '[data-test]',
-                    onlyLegacy : false,
-                    preserve   : true,
+                    include     : '[data-test]',
+                    onlyLegacy  : false,
+                    preserveVars: true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(cssText).to.equal(expectCss);
                         done();
@@ -360,9 +360,9 @@ describe('css-vars', function() {
                 createTestElms({ tag: 'style', text: styleCss });
 
                 cssVars({
-                    include    : '[data-test]',
-                    onlyLegacy : false,
-                    preserve   : false,
+                    include     : '[data-test]',
+                    onlyLegacy  : false,
+                    preserveVars: false,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(cssText).to.equal(expectCss);
                         done();

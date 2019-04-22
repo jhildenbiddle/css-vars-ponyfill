@@ -22,20 +22,20 @@ const counters = {
 };
 const defaults = {
     // Targets
-    rootElement  : isBrowser ? document : null,
-    shadowDOM    : false,
+    rootElement : isBrowser ? document : null,
+    shadowDOM   : false,
     // Sources
-    include      : 'style,link[rel=stylesheet]',
-    exclude      : '',
-    variables    : {},    // cssVars, transformCss
+    include     : 'style,link[rel=stylesheet]',
+    exclude     : '',
+    variables   : {},    // cssVars, transformCss
     // Options
-    onlyLegacy   : true,  // cssVars
-    onlyVars     : false, // parseCSS
-    preserve     : false, // transformCss
-    silent       : false, // cssVars
-    updateDOM    : true,  // cssVars
-    updateURLs   : true,  // cssVars
-    watch        : null,  // cssVars
+    onlyLegacy  : true,  // cssVars
+    onlyVars    : false, // parseCSS
+    preserveVars: false, // transformCss
+    silent      : false, // cssVars
+    updateDOM   : true,  // cssVars
+    updateURLs  : true,  // cssVars
+    watch       : null,  // cssVars
     // Callbacks
     onBeforeSend() {},    // cssVars
     onSuccess() {},       // cssVars
@@ -122,7 +122,7 @@ let isShadowDOMReady = false;
  * @param {boolean}  [options.onlyVars=false] Determines if CSS rulesets and
  *                   declarations without a custom property value should be
  *                   removed from the ponyfill-generated CSS
- * @param {boolean}  [options.preserve=false] Determines if the original CSS
+ * @param {boolean}  [options.preserveVars=false] Determines if the original CSS
  *                   custom property declaration will be retained in the
  *                   ponyfill-generated CSS.
  * @param {boolean}  [options.silent=false] Determines if warning and error
@@ -153,26 +153,26 @@ let isShadowDOMReady = false;
  *                   processed, legacy-compatible CSS has been generated, and
  *                   (optionally) the DOM has been updated. Passes 1) a CSS
  *                   string with CSS variable values resolved, 2) an array of
- *                   output <style> node references that have been appended
- *                   to the DOM, 3) an object containing all custom properies
- *                   names and values, and 4) the ponyfill execution time in
+ *                   output <style> node references that have been appended to
+ *                   the DOM, 3) an object containing all custom properies names
+ *                   and values, and 4) the ponyfill execution time in
  *                   milliseconds.
  *
  * @example
  *
  *   cssVars({
- *     rootElement: document,
- *     shadowDOM  : false,
- *     include    : 'style,link[rel="stylesheet"]',
- *     exclude    : '',
- *     variables  : {},
- *     onlyLegacy : true,
- *     onlyVars   : false,
- *     preserve   : false,
- *     silent     : false,
- *     updateDOM  : true,
- *     updateURLs : true,
- *     watch      : false,
+ *     rootElement : document,
+ *     shadowDOM   : false,
+ *     include     : 'style,link[rel="stylesheet"]',
+ *     exclude     : '',
+ *     variables   : {},
+ *     onlyLegacy  : true,
+ *     onlyVars    : false,
+ *     preserveVars: false,
+ *     silent      : false,
+ *     updateDOM   : true,
+ *     updateURLs  : true,
+ *     watch       : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onSuccess(cssText, node, url) {},
  *     onWarning(message) {},
