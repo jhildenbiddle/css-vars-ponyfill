@@ -1,22 +1,21 @@
 declare module 'css-vars-ponyfill' {
     export default function cssVars(options?: {
-        rootElement?: HTMLElement|Node;
+        rootElement?: Document|HTMLElement;
+        shadowDOM?: boolean;
         include?: string;
         exclude?: string;
-        fixNestedCalc?: boolean;
+        variables?: {[key: string]: string};
         onlyLegacy?: boolean;
-        onlyVars?: boolean;
-        preserve?: boolean;
-        shadowDOM?: boolean;
+        preserveStatic?: boolean;
+        preserveVars?: boolean;
         silent?: boolean;
         updateDOM?: boolean;
         updateURLs?: boolean;
-        variables?: {[key: string]: string};
         watch?: boolean;
-        onBeforeSend?(xhr: XMLHttpRequest, node: HTMLLinkElement|HTMLStyleElement, url: string): void;
-        onSuccess?(cssText: string, node: HTMLLinkElement|HTMLStyleElement, url: string): void;
-        onError?(message: string, node: HTMLLinkElement|HTMLStyleElement, xhr: XMLHttpRequest, url: string): void;
+        onBeforeSend?(xhr: XMLHttpRequest, elm: HTMLLinkElement|HTMLStyleElement, url: string): void;
         onWarning?(message: string): void;
-        onComplete?(cssText: string, styleNode: HTMLStyleElement, cssVariables: {[key: string]: string}, benchmark: number): void;
+        onError?(message: string, elm: HTMLLinkElement|HTMLStyleElement, xhr: XMLHttpRequest, url: string): void;
+        onSuccess?(cssText: string, elm: HTMLLinkElement|HTMLStyleElement, url: string): void;
+        onComplete?(cssText: string, styleElms: HTMLStyleElement[], cssVariables: {[key: string]: string}, benchmark: number): void;
     }): void;
 }
