@@ -16,14 +16,14 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 - Client-side transformation of CSS custom properties to static values
 - Live updates of runtime values in both modern and legacy browsers
-- Auto-updates on `<link>` and `<style>` changes
 - Transforms `<link>`, `<style>`, and `@import` CSS
-- Transforms shadow DOM `<link>` and `<style>` CSS
 - Transforms relative `url()` paths to absolute URLs
-- Fixes nested `calc()` functions
-- Supports chained custom property references
-- Supports complex values
-- Supports fallback values
+- Supports web components / shadow DOM CSS
+- Supports chained `var()` functions
+- Supports nested `var()` functions
+- Supports `var()` functions in space-separated values
+- Supports `var()` fallback values
+- Watch mode auto-updates on `<link>` and `<style>` changes
 - UMD and ES6 module available
 - TypeScript definitions included
 - Lightweight (6k min+gzip) and dependency-free
@@ -62,11 +62,9 @@ CDN ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https:
 
 ## Examples
 
-HTML / CSS
+HTML:
 
 ```html
-<!-- file.html -->
-
 <link rel="stylesheet" href="style.css">
 <style>
   :root {
@@ -75,25 +73,19 @@ HTML / CSS
 </style>
 ```
 
-```css
-/* style.css */
+CSS (from `style.css`):
 
+```css
 :root {
-  /* Chained references */
-  --a: var(--b);
+  --a: var(--b); /* Chained */
   --b: var(--c);
   --c: 10px;
 }
 
 div {
-  /* External value (from <style>) */
-  color: var(--color);
-
-  /* Fallback */
-  margin: var(--unknown, 20px);
-
-  /* Complex value */
-  padding: calc(2 * var(--a));
+  color: var(--color); /* from <style> */
+  margin: var(--unknown, 20px); /* Fallback */
+  padding: calc(2 * var(--a)); /* Nested */
 }
 ```
 
@@ -102,19 +94,15 @@ JavaScript (see [Options](#options)):
 ```javascript
 import cssVars from 'css-vars-ponyfill';
 
-// Call using defaults
-cssVars();
-
-// Call with options
 cssVars({
-  // ...
+  // Options ...
 });
 ```
 
-The ponyfill will:
+For each `<link>` and `<style>` element processed the ponyfill will:
 
-1. Get the `<link>`, `<style>`, and `@import` CSS
-1. Parse the CSS and convert it to an abstract syntax tree
+1. Get the CSS content (including `@import` CSS)
+1. Parse the CSS and convert it to an AST
 1. Transform CSS custom properties to static values
 1. Transforms relative `url()` paths to absolute URLs
 1. Fix nested `calc()` functions
@@ -132,7 +120,13 @@ The ponyfill will:
 </style>
 ```
 
-To update values, call `cssVars()` with [options.variables](#optionsvariables):
+To update values:
+
+- Use [options.watch](#optionswatch) to detect `<link>` and `<style>` mutations and auto-update transformed CSS
+- Manually call the ponyfill after a `<link>` or `style` node has been added or removed
+- Manually call the ponyfill with [options.variables](#optionsvariables):
+
+Example:
 
 ```javascript
 cssVars({
@@ -145,11 +139,10 @@ cssVars({
 
 Values will be updated in both legacy and modern browsers:
 
-- In legacy browsers, the ponyfill will get, parse, transform, and append
-  legacy-compatible CSS to the DOM once again.
+- In legacy browsers (and modern browsers when [options.onlyLegacy](#optionsonlylegacy) is `false`), the ponyfill will determine if the changes affect the previously transformed CSS for each `<link>` and `<style>` element previously processed. If they do, CSS will be transformed once again with the new values and the output `<style>` element will be updated.
 
    ```html
-   <!-- Output -->
+   <!-- Output (updated) -->
    <style data-cssvars="out">
      div {
        color: red;
@@ -237,9 +230,9 @@ cssVars({
 - Type: `object`
 - Default: `document`
 
-Root element containing `<link rel="stylesheet">` and `<style>` elements to process.
+Root element containing `<link>` and `<style>` elements to process.
 
-**Examples**
+**Example**
 
 ```javascript
 // Document
@@ -285,9 +278,9 @@ cssVars({
 - Type: `string`
 - Default: `"link[rel=stylesheet],style"`
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` elements to process. The default value includes all style and link elements.
+CSS selector matching `<link>` and `<style>` elements to process. The default value includes all style and link elements.
 
-**Tip:** The default value is the *safest* setting, but it is not necessarily the fastest. For the best performance, avoid unnecessary CSS processing by including only CSS that needs to be ponyfilled. See [options.exclude](#optionsexclude) for an alternate approach.
+**Tip:** For the best performance, avoid unnecessary CSS processing by including only elements that need to be transformed. See [options.exclude](#optionsexclude) for an alternate approach.
 
 **Example**
 
@@ -316,7 +309,7 @@ cssVars({
 
 CSS selector matching `<link rel="stylesheet">` and `<style>` elements to exclude from those matched by [options.include](#optionsinclude).
 
-**Tip:** The default value is the *safest* setting, but it is not necessarily the fastest. For the best performance, avoid unnecessary CSS processing by excluding CSS that does not need to be ponyfilled. See [options.include](#optionsinclude) for an alternate approach.
+**Tip:** For the best performance, avoid unnecessary processing by excluding elements that do not need to be transformed. See [options.include](#optionsinclude) for an alternate approach.
 
 **Example**
 
@@ -343,11 +336,11 @@ cssVars({
 - Type: `object`
 - Default: `{}`
 
-A collection of custom property name/value pairs to apply to both legacy and modern browsers. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
+A collection of custom property name/value pairs to apply to both legacy and modern browsers as `:root`-level custom property declarations. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
 
-Legacy browsers will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
+Legacy browsers (and modern browsers when [options.onlyLegacy](#optionsonlylegacy) is `false`) will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#optionsupdatedom) is `true`.
 
-**Note:** Although this option affects both legacy and modern browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#optionsonlylegacy) is `false`).
+**Note:** Although these values are applied to both modern and legacy browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#optionsonlylegacy) is `false`).
 
 **Example**
 
@@ -368,6 +361,8 @@ cssVars({
 Determines how the ponyfill handles modern browsers with native CSS custom property support.
 
 When `true`, the ponyfill will only transform custom properties, generate CSS, and trigger callbacks in legacy browsers that lack native support. When `false`, the ponyfill will treat all browsers as legacy, regardless of their support for CSS custom properties.
+
+**Tip:** Setting this value to `false` allows for testing in modern browsers when legacy browsers are not accessible and easier debugging using developer tools only available in modern browsers.
 
 **Example**
 
@@ -392,13 +387,11 @@ cssVars({
 - Type: `boolean`
 - Default: `false`
 
-Determines if CSS rulesets and declarations that do not reference a CSS custom property value should be removed from the transformed CSS.
+Determines if CSS declarations that do not reference a custom property will be omitted from the transformed CSS.
 
-When `true`, rulesets and declarations that do not reference a CSS custom property value will be removed from the generated CSS. This can dramatically increase the performance of the polyfill by reducing the amount of CSS that needs to be generated, but doing so runs the risk of breaking the original cascade order once the transformed values are appended to the DOM (see examples below).
+When `true`, CSS declarations that do not reference a custom property value will be omitted from the transformed CSS. This can increase performance by reducing the amount of CSS that needs to be processed, but doing so runs the risk of breaking the original cascade when the transformed CSS is appended to the DOM (see example below). When `false`, all declarations will be retained in the transformed CSS. This requires additional processing, but doing so ensures that the original cascade order is maintained after the transformed CSS is appended to the DOM.
 
-When `false`, all rulesets and declarations will be retained in the generated CSS. This means the ponyfill will need to process and will therefore be slower, but doing so ensures that the original cascade order is maintained after the transformed styles are appended to the DOM.
-
-**Note:** `@font-face` and `@keyframes` rulesets require all declarations to be retained if a CSS custom property is used anywhere within the ruleset.
+**Note:** Earlier versions of the ponyfill (1.x) required setting this option to `true` for optimal performance. With the optimizations introduced in 2.x, this is no longer necessary.
 
 **Example**
 
@@ -408,9 +401,11 @@ CSS:
 :root {
   --color: red;
 }
+
 h1 {
   font-weight: bold;
 }
+
 p {
   margin: 20px;
   color: var(--color);
@@ -421,26 +416,27 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onlyVars: true // default
+  onlyVars: false // default
 });
 ```
 
-Output when `onlyVars: true`
-
-```css
-p {
-  color: red;
-}
-```
-
-Output when `onlyVars: false`
+Output when `onlyVars:false`
 
 ```css
 h1 {
   font-weight: bold;
 }
+
 p {
   margin: 20px;
+  color: red;
+}
+```
+
+Output when `onlyVars:true`
+
+```css
+p {
   color: red;
 }
 ```
@@ -453,6 +449,7 @@ CSS:
 :root {
   --color: red;
 }
+
 p {
   color: var(--color);
 }
@@ -472,7 +469,7 @@ p {
 }
 ```
 
-When the above CSS output is appended to the DOM, the `color: red;` declaration overrides the `@meda` rule's `color: blue;` declaration. This is because the two `p` rules have the same [CSS specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity) so the last rule wins.
+When the above CSS output is appended to the DOM, the `color: red;` declaration overrides the `@media` rule's `color: blue;` declaration. This is because the two `p` rules have the same [CSS specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity) so the last rule wins.
 
 A workaround for this issue is force the ponyfill to include a declaration in the output by using a bogus CSS custom property with a fallback value:
 
@@ -490,6 +487,7 @@ The ponyfill will include the declaration when `onlyVars` is `true` and resolve 
 p {
   color: red;
 }
+
 @media all (min-width: 800px) {
   p {
     color: blue;
@@ -583,9 +581,9 @@ cssVars({
 Console:
 
 ```bash
-> CSS XHR error: "fail.css" 404 (Not Found)
-> CSS transform warning: variable "--fail" is undefined
-> CSS parse error: missing "}"
+> cssVars(): "fail.css" 404 (Not Found)
+> cssVars(): variable "--fail" is undefined
+> cssVars(): parse error: missing "}"
 ```
 
 ### options.updateDOM
@@ -595,7 +593,7 @@ Console:
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, the ponyfill updates will be applied to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the last `<link>` or `<style>` element processed. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the polyfill in either modern or legacy browsers, but transformed CSS can be accessed with either the [options.onSuccess](#optionsonsuccess) or [options.onComplete](#optionsoncomplete) callback.
+When `true`, transformed CSS will be appended to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the `<link>` or `<style>` element that contains the source CSS. For modern browsers, [options.variables](#optionsvariabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the ponyfill in either modern or legacy browsers, but transformed CSS can be accessed with the [options.onComplete](#optionsoncomplete) callback.
 
 **Example**
 
