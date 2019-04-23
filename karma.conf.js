@@ -84,7 +84,6 @@ const settings = {
     concurrency: Infinity,
     port       : 9876,
     singleRun  : true,
-
     // Prevent disconnect in Firefox/Safari
     // https://support.saucelabs.com/hc/en-us/articles/225104707-Karma-Tests-Disconnect-Particularly-When-Running-Tests-on-Safari
     browserDisconnectTimeout  : 1000*10, // default 2000
@@ -92,9 +91,11 @@ const settings = {
     browserNoActivityTimeout  : 1000*30, // default 10000
     captureTimeout            : 1000*60, // default 60000
     client: {
-        mocha: {
-            timeout: 1000*20 // default 2000
-        }
+        // Prevent browser messages from appearing in terminal
+        captureConsole: false
+        // mocha: {
+        //     timeout: 1000*20 // default 2000
+        // }
     }
 };
 

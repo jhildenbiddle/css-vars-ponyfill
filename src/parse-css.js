@@ -16,17 +16,16 @@ import balanced from 'balanced-match';
  *
  * @param {string}  css The CSS stringt to be converted to an AST
  * @param {object}  [options] Options object
- * @param {boolean} [options.onlyVars=false] Remove declarations that do not
- *                  contain a CSS variable from the return value. Note that
- *                  @font-face and @keyframe rules require all declarations to
- *                  be returned if a CSS variable is used.
+ * @param {boolean} [options.preserveStatic=true] Determines if CSS
+ *                  declarations that do not reference a custom property will
+ *                  be preserved in the transformed CSS
  * @param {boolean} [options.removeComments=false] Remove comments from returned
- *                  object.
+ *                  object
  * @returns {object}
  */
 function parseCss(css, options = {}) {
     const defaults = {
-        onlyVars      : false,
+        preserveStatic: true,
         removeComments: false
     };
     const settings = Object.assign({}, defaults, options);
@@ -285,7 +284,7 @@ function parseCss(css, options = {}) {
         if (css[0] === '@') {
             const ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
 
-            if (ret && settings.onlyVars) {
+            if (ret && !settings.preserveStatic) {
                 let hasVarFunc = false;
 
                 // @page, @font-face
@@ -309,11 +308,11 @@ function parseCss(css, options = {}) {
     // Rules
     // -------------------------------------------------------------------------
     function rule() {
-        if (settings.onlyVars) {
+        if (!settings.preserveStatic) {
             const balancedMatch = balanced('{', '}', css);
 
-            // When onlyVars:true, skip rulset if it does not contain a :root
-            // variable declaration of a variable function value
+            // Skip rulset if it does not contain a :root variable declaration
+            // of a variable function value
             if (balancedMatch) {
                 const hasVarDecl = balancedMatch.pre.indexOf(':root') !== -1 && /--\S*\s*:/.test(balancedMatch.body);
                 const hasVarFunc = /var\(/.test(balancedMatch.body);
@@ -327,7 +326,7 @@ function parseCss(css, options = {}) {
         }
 
         const sel   = selector() || [];
-        const decls = !settings.onlyVars ? declarations() : declarations().filter(decl => {
+        const decls = settings.preserveStatic ? declarations() : declarations().filter(decl => {
             const hasVarDecl = sel.some(s => s.indexOf(':root') !== -1) && /^--\S/.test(decl.property);
             const hasVarFunc = /var\(/.test(decl.value);
 

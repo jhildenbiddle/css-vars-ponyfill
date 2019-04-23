@@ -127,7 +127,7 @@ describe('parse-css', function() {
     // Tests: Options
     // -------------------------------------------------------------------------
     describe('Options', function() {
-        describe('onlyVars', function() {
+        describe('preserveStatic', function() {
             const cssVarDecl = `
                 :root {
                     --color: red;
@@ -155,7 +155,7 @@ describe('parse-css', function() {
 
             it('true (keeps only :root variable declaration)', function() {
                 const ast = parseCss(cssVarDecl, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules[0].declarations).to.have.lengthOf(1);
@@ -163,7 +163,7 @@ describe('parse-css', function() {
 
             it('true (keeps only variable function declarations)', function() {
                 const ast = parseCss(cssVarFunc, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules[0].declarations).to.have.lengthOf(1);
@@ -178,7 +178,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules[0].declarations).to.have.lengthOf(3);
@@ -192,7 +192,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules).to.have.lengthOf(0);
@@ -213,7 +213,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules[0].keyframes[0].declarations).to.have.lengthOf(3);
@@ -234,7 +234,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules).to.have.lengthOf(0);
@@ -250,7 +250,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules[0].rules[0].declarations).to.have.lengthOf(1);
@@ -265,7 +265,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules).to.have.lengthOf(0);
@@ -278,7 +278,7 @@ describe('parse-css', function() {
                     }
                 `;
                 const ast = parseCss(css, {
-                    onlyVars: true
+                    preserveStatic: false
                 });
 
                 expect(ast.stylesheet.rules).to.have.lengthOf(0);
@@ -322,7 +322,7 @@ describe('parse-css', function() {
 
     //         console.time('Performance Test');
     //         const ast = parseCss(css, {
-    //             onlyVars: true
+    //             preserveStatic: false
     //         });
     //         console.timeEnd('Performance Test');
     //         console.log('CSS:', css.length);

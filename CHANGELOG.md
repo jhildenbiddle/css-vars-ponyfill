@@ -1,20 +1,52 @@
 # Change Log
 
+## 2.0.0
+
+*2019-04-22*
+
+**Breaking Changes**
+
+- Added support for incremental updates. This change significantly increases
+  performance on subsequent ponyfill calls by applying transformed CSS to the
+  DOM using multiple `<style>` elements instead of a single element as was done
+  in 1.x.
+
+- Renamed `options.onlyVars` to `options.preserveStatic`
+
+- Renamed `options.preserve` to `options.preserveVars`
+
+- Changed `options.onComplete` behavior so that the second argument returns an
+  `array` of `<style>` elements appended to the DOM during each ponyfill call.
+  Previously, this argument returned a single element reference because the
+  ponyfill used only a single `<style>` element.
+
+- Removed `options.fixNestedCalc`. Nested `calc()` statements are modified for
+  compatibility with legacy browsers as they were previously when this option
+  was set to `true` (default). Only the option to disable this functionality has
+  been removed.
+
+**Other Changes**
+
+- Fixed bug that allowed :root-level custom property declarations in comments
+  and media queries be processed when initially called with `options.shadowDOM`
+  set to true
+
 ## 1.17.2
 
 *2019-03-08*
 
 - Fixed error in legacy browsers caused by improper `performance.now()` check
+
 - Fixed TypeScript definitions by adding `benchmark` to `options.onComplete`
 
 ## 1.17.1
 
 *2019-03-01*
 
-- Added `data-cssvars` attribute to processed `<link>` and `<style>` nodes
+- Added `data-cssvars` attribute to processed `<link>` and `<style>` elements
 
 - Changed ponyfill `<style>` injection logic so that the element is always
-  available in the correct DOM postiion (even when `updateDOM` is `false`) and
+  available in the correct DOM position (even when `updateDOM` is `false`) and
   a reference is always returned with the `options.onComplete` callback.
 
 - Fixed detection of unchanged source CSS and ponyfill options
@@ -52,7 +84,7 @@
 
 *2019-01-25*
 
-- Updated method of merging defanult and user options from deep to shallow merge
+- Updated method of merging default and user options from deep to shallow merge
   to better accommodate SSR / virtual DOM environments.
 
 - Fixed parsing of variable functions that contain spaces, tabs, and new lines.
@@ -149,7 +181,7 @@
 
 - Added TypeScript definitions.
 
-## 1.11.1-3
+## 1.11.3
 
 *2018-10-24*
 
@@ -164,9 +196,10 @@
 
 - Added logic to automatically get document-level CSS custom property values
   when `options.rootElement` has been set to a shadow host or root. These values
-  are required by the polyfill to transform shadow `<link>` and `<style>` nodes.
-  This new behavior makes it possible to target a shadow host or root element
-  without manually getting the document-level custom property values first.
+  are required by the polyfill to transform shadow `<link>` and `<style>`
+  elements. This new behavior makes it possible to target a shadow host or root
+  element without manually getting the document-level custom property values
+  first.
 
 - Fixed custom property values not persisting when CSS being processed contains
   only custom properties.
@@ -178,10 +211,10 @@
 *2018-09-28*
 
 - Added `options.rootElement` for specifying the root element to traverse for
-  `<link>` and `<style>` nodes.
+  `<link>` and `<style>` elements.
 
 - Added `options.shadowDOM` to determine if shadow DOM `<link>` and `<style>`
-  nodes should be processed.
+  elements should be processed.
 
 - Added `cssVariables` argument to `options.onComplete` callback.
 
@@ -257,7 +290,7 @@
 - Added `options.onBeforeSend` callback. (#7)
 
 - Changed `options.onSuccess` callback so that it is called after CSS data has
-  been collected from each node before CSS custom properties have been
+  been collected from each element before CSS custom properties have been
   transformed.
 
 ## 1.4.0
@@ -267,7 +300,7 @@
 - Updated `get-css-data` dependency to 1.2.0 to resolve a callback related bug.
 
 - Changed logic for inserting generated `<style>` element. Element is now
-  inserted after the last `<style>` or `<link>` node processed. This
+  inserted after the last `<style>` or `<link>` element processed. This
   change, combined with the proceeding change, ensures that the original cascade
   order is maintained after the transformed styles are appended to the DOM.
 
@@ -325,7 +358,7 @@
   with other default values which assume a "legacy-only" configuration.
 
 - Changed logic for inserting generated `<style>` element. Element is now
-  inserted as first CSS source node rather than the last. This allows the
+  inserted as first CSS source element rather than the last. This allows the
   cascade order to be maintained when `options.onlyVars` is `true`.
 
 ## 1.0.0

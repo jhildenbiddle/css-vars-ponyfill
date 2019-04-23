@@ -1,5 +1,6 @@
 # Folders
 coverage
+dist
 node_modules
 
 # Files
