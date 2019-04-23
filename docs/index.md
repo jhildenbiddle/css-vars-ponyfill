@@ -33,9 +33,15 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 **Browser Support**
 
-| IE   | Edge | Chrome | Firefox | Safari |
-| ---- | ---- | ------ | ------- | ------ |
-| 9+   | 12+  | 19+    | 6+      | 6+     |
+<img src="https://icongr.am/devicon/chrome-original.svg?size=19" style="margin-right: 0.4em; vertical-align: text-bottom;"> Chrome 19+
+<br>
+<img src="https://icongr.am/simple/microsoftedge.svg?size=19&colored=true" style="margin-right: 0.4em; vertical-align: text-bottom;"> Edge 12+
+<br>
+<img src="https://icongr.am/devicon/firefox-original.svg?size=19" style="margin-right: 0.4em; vertical-align: text-bottom;"> Firefox 6+
+<br>
+<img src="https://icongr.am/simple/internetexplorer.svg?size=19&colored=true" style="margin-right: 0.4em; vertical-align: text-bottom;"> IE 9+
+<br>
+<img src="https://icongr.am/devicon/safari-original.svg?size=19" style="margin-right: 0.4em; vertical-align: text-bottom;"> Safari 6+
 
 ## Installation
 
