@@ -62,7 +62,7 @@
     "test": "karma start",
     "test-watch": "karma start --auto-watch --no-single-run",
     "test-remote": "karma start --remote",
-    "version": "npm run build && npm test && git add -A dist"
+    "version": "npm run build && npm test"
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
