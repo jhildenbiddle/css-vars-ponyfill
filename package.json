@@ -76,7 +76,7 @@
     "babel-plugin-istanbul": "^5.1.2",
     "babel-plugin-transform-custom-element-classes": "^0.1.0",
     "balanced-match": "^1.0.0",
-    "browser-sync": "^2.26.3",
+    "browser-sync": "^2.26.4",
     "chai": "^4.2.0",
     "chai-colors": "^1.0.1",
     "compression": "^1.7.4",
