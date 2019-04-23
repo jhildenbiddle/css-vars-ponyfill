@@ -10,7 +10,33 @@
 
 A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) (aka "CSS variables") in legacy and modern browsers.
 
+- [Documentation](https://jhildenbiddle.github.io/css-vars-ponyfill)
 - [Demo](https://codepen.io/jhildenbiddle/pen/ZxYJrR/) (CodePen)
+
+## Features
+
+- Client-side transformation of CSS custom properties to static values
+- Live updates of runtime values in both modern and legacy browsers
+- Transforms `<link>`, `<style>`, and `@import` CSS
+- Transforms relative `url()` paths to absolute URLs
+- Supports chained and nested `var()` functions
+- Supports `var()` function fallback values
+- Supports web components / shadow DOM CSS
+- Watch mode auto-updates on `<link>` and `<style>` changes
+- UMD and ES6 module available
+- TypeScript definitions included
+- Lightweight (6k min+gzip) and dependency-free
+
+**Limitations**
+
+- Custom property support is limited to `:root` declarations
+- The use of `var()` is limited to property values (per [W3C specification](https://www.w3.org/TR/css-variables/))
+
+**Browser Support**
+
+| IE   | Edge | Chrome | Firefox | Safari |
+| ---- | ---- | ------ | ------- | ------ |
+| 9+   | 12+  | 19+    | 6+      | 6+     |
 
 ## Contact
 
