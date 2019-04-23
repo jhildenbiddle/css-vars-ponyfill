@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.0.1
+
+*2019-04-22*
+
+- Updated homepage URL in package.json
+
 ## 2.0.0
 
 *2019-04-22*
@@ -24,6 +30,8 @@
   compatibility with legacy browsers as they were previously when this option
   was set to `true` (default). Only the option to disable this functionality has
   been removed.
+
+- Removed `dist` directory from repo
 
 **Other Changes**
 
