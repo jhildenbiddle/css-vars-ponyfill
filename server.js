@@ -29,7 +29,7 @@ browserSync.init({
     rewriteRules: [
         // Replace CDN URLs with local paths
         {
-            match  : /https:\/\/cdn\.jsdelivr\.net\/npm\/css-vars-ponyfill@[\d.]*\/CHANGELOG.md/g,
+            match  : /https?.*\/CHANGELOG.md/g,
             replace: '/CHANGELOG.md'
         }
     ]
