@@ -296,14 +296,23 @@ CSS selector matching `<link>` and `<style>` elements to process. The default va
 **Example**
 
 ```javascript
-// Example 1: Include local CSS only
+// Example 1: Only <style> elements
+cssVars({
+  // Include only <style> elements and ignore <link> elements.
+  // Removes delay introduced by AJAX requests made by the
+  // ponyfill to read CSS content of external stylesheets.
+  // Use only when <link> elements do not contain custom properties.
+  include: 'style'
+});
+
+// Example 2: Only local CSS
 cssVars({
   // Include only CSS from <style> elements and <link> elements
   // with an href that does not contain "//"
   include: 'style,link[rel="stylesheet"]:not([href*="//"])'
 });
 
-// Example 2: Include via data attribute
+// Example 3: Specify elements via data attribute
 cssVars({
   // Include only CSS from <link> and <style> elements with
   // a "data-include" attribute
@@ -325,14 +334,23 @@ CSS selector matching `<link rel="stylesheet">` and `<style>` elements to exclud
 **Example**
 
 ```javascript
-// Example 1: Exclude based on <link> href
+// Example 1: Only <style> elements
+cssVars({
+  // Exclude <link> elements
+  // Removes delay introduced by AJAX requests made by the
+  // ponyfill to read CSS content of external stylesheets.
+  // Use only when <link> elements do not contain custom properties.
+  exclude: 'link'
+});
+
+// Example 2: Exclude based on <link> href
 cssVars({
   // Of the matched 'include' elements, exclude any element
   // with an href that contains "bootstrap"
   exclude: '[href*=bootstrap]'
 });
 
-// Example 2: Exclude via data attribute
+// Example 3: Exclude via data attribute
 cssVars({
   // Of the matched 'include' elements, exclude any element
   // with a "data-exclude" attribute
