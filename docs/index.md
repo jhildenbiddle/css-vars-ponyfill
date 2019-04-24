@@ -702,12 +702,12 @@ div {
 
 ### watch
 
-- Type: `boolean`
+- Type: `null`|`boolean`
 - Default: `null`
 
 Determines if a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) will be created to watch for `<link>` and `<style>` DOM mutations.
 
-When `true`, the ponyfill will call itself when a `<link>` or `<style>` element is added, removed, or has its `disabled` or `href` attribute modified. The ponyfill settings used by the MutationObserver will be the same as the settings used the last time `options.watch` was set to `true`. When `false`, the ponyfill will disconnect the previously created MutationObserver if it exists.
+When `true`, the ponyfill will call itself when a `<link>` or `<style>` element is added, removed, or has its `disabled` or `href` attribute modified. The ponyfill settings used by the MutationObserver will be the same as the settings used the last time `options.watch` was set to `true`. When `false`, the ponyfill will disconnect the previously created MutationObserver if it exists. When `null`, the ponyfill will make no watch-related changes.
 
 **Note:** This feature requires native [support for MutationObserver](https://caniuse.com/#feat=mutationobserver) or a [polyfill](https://polyfill.io/v2/docs/) for legacy browsers.
 
