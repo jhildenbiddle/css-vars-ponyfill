@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.0.2
+
+*2019-04-24*
+
+- Fixed TypeScript support
+
 ## 2.0.1
 
 *2019-04-22*
