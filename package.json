@@ -53,6 +53,7 @@
   "module": "dist/css-vars-ponyfill.esm.js",
   "unpkg": "dist/css-vars-ponyfill.min.js",
   "types": "dist/css-vars-ponyfill.d.ts",
+  "sideEffects": false,
   "scripts": {
     "prepare": "rimraf dist/*.js* && npm run build",
     "build": "rollup -c",
