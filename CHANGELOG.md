@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.1.0
+
+*Unreleased*
+
+- Added `sideEffects:false` to `package.json` to allow proper tree-shaking
+- Added support for parsing comma-separated `:root` selectors
+
 ## 2.0.2
 
 *2019-04-24*

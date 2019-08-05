@@ -37,7 +37,7 @@ function parseVars(cssData, options = {}) {
         }
 
         // only variables declared for `:root` are supported
-        if (rule.selectors.length !== 1 || rule.selectors[0] !== ':root') {
+        if (rule.selectors.indexOf(':root') === -1) {
             return;
         }
 
