@@ -7,6 +7,7 @@
 - Added `sideEffects:false` to `package.json` to allow proper tree-shaking
 - Added support for parsing comma-separated `:root` selectors
 - Fixed parsing of `@media` rules without query
+- Fixed `options.silent` description
 
 ## 2.0.2
 

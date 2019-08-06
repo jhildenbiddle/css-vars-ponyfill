@@ -579,9 +579,9 @@ p {
 - Type: `boolean`
 - Default: `false`
 
-Determines if warning and error messages will be displayed on the console.
+Determines if warning and error messages will be displayed in the console.
 
-When `true`, messages will be displayed on the console for each warning and error encountered while processing CSS. When `false`, messages will not be displayed on the console but will still be available using the [options.onWarning](#onwarning) and [options.onSuccess](#onsuccess) callbacks.
+When `true`, messages will not be displayed in the console but will still be available using the [options.onWarning](#onwarning) and [options.onSuccess](#onsuccess) callbacks. When `false`, messages will be displayed in the console for each warning and error encountered while processing CSS.
 
 **Example**
 
