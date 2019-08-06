@@ -49,6 +49,8 @@ foo bar baz{bizz-buzz:word "ferrets";*even:'ie boo';}
 
 @media (min-width: 1024px){.test{height:0;}}
 @media screen, print{.test{height:0;}}
+@media {.test{height:0;}}
+@media {.test{height:0;}}
 
 @namespace svg "http://www.w3.org/2000/svg";
 @namespace "http://www.w3.org/1999/xhtml";

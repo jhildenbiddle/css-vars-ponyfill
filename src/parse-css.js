@@ -263,8 +263,8 @@ function parseCss(css, options = {}) {
         if (m) { return { type: 'host', rules: rules() }; }
     }
     function at_media() {
-        const m = match(/^@media *([^{]+)/);
-        if (m) { return { type: 'media', media: m[1].trim(), rules: rules() }; }
+        const m = match(/^@media([^{]+)*/);
+        if (m) { return { type: 'media', media: (m[1] || '').trim(), rules: rules() }; }
     }
     function at_custom_m() {
         const m = match(/^@custom-media\s+(--[^\s]+)\s*([^{;]+);/);

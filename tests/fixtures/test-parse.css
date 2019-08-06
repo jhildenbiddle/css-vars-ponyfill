@@ -128,6 +128,12 @@ foo bar baz {
 @media screen, print {
     .test { height: 0; }
 }
+@media {
+    .test { height: 0; }
+}
+@media{
+    .test { height: 0; }
+}
 
 /* @namespace */
 @namespace svg "http://www.w3.org/2000/svg";
