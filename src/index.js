@@ -50,7 +50,7 @@ const regex = {
     cssMediaQueries: /@media[^{]+\{([\s\S]+?})\s*}/g,
     // CSS root rules
     // Ex: :root { ... }
-    cssRootRules: /(?::root\s*{\s*[^}]*})/g,
+    cssRootRules: /(?::root(?![.:#])[\s,]*[^{]*{\s*[^}]*})/g,
     // CSS Urls
     // Ex: url('path/to/file')
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
@@ -59,7 +59,7 @@ const regex = {
     // CSS variable function (e.g. var(--color))
     cssVarFunc: /var\(\s*--[\w-]/,
     // CSS variable :root declarations and var() function values
-    cssVars: /(?:(?::root\s*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
+    cssVars: /(?:(?::root(?![.:#])[\s,]*[^{]*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 const variableStore = {
     // Persisted values (emulates modern browser behavior)
