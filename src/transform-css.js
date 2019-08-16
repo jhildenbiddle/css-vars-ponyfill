@@ -170,7 +170,7 @@ function resolveValue(value, settings = {}, __recursiveFallback) {
     function resolveFunc(value) {
         const name               = value.split(',')[0].replace(/[\s\n\t]/g, '');
         const fallback           = (value.match(/(?:\s*,\s*){1}(.*)?/) || [])[1];
-        const match              = settings.variables.hasOwnProperty(name) ? String(settings.variables[name]) : undefined;
+        const match              = Object.prototype.hasOwnProperty.call(settings.variables, name) ? String(settings.variables[name]) : undefined;
         const replacement        = match || (fallback ? String(fallback) : undefined);
         const unresolvedFallback = __recursiveFallback || value;
 
