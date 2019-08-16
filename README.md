@@ -29,7 +29,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 **Limitations**
 
-- Custom property support is limited to `:root` declarations
+- Custom property declaration support is limited to `:root` and `:host` rulesets
 - The use of `var()` is limited to property values (per [W3C specification](https://www.w3.org/TR/css-variables/))
 
 **Browser Support**
