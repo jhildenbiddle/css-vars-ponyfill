@@ -4,17 +4,19 @@ module.exports = {
     "env": {
         "mocha": true
     },
-    "plugins": [
-        "chai-expect",
-        "mocha"
+    "extends": [
+        "plugin:mocha/recommended"
     ],
     "parserOptions": {
         "ecmaVersion": 8,
     },
+    "plugins": [
+        "chai-expect",
+        "mocha"
+    ],
     "rules": {
-        "mocha/no-global-tests"   : ["error"],
-        "mocha/no-identical-title": ["error"],
-        "mocha/no-mocha-arrows"   : ["error"],
-        "no-console"              : "off",
+        "mocha/no-hooks-for-single-case": ["off"],
+        "mocha/no-top-level-hooks"      : ["off"],
+        "mocha/no-setup-in-describe"    : ["off"]
     }
 };

@@ -5,11 +5,13 @@ module.exports = {
         "es6"     : true,
         "node"    : true
     },
-    "extends": "eslint:recommended",
-    "plugins": [],
+    "extends": [
+        "eslint:recommended"
+    ],
     "parserOptions": {
-        "sourceType" : "module"
+        "sourceType": "module"
     },
+    "plugins": [],
     "rules": {
         "array-bracket-spacing"      : ["error", "never"],
         "array-callback-return"      : ["error"],
