@@ -203,7 +203,7 @@ describe('css-vars', function() {
     describe('Options', function() {
         if ('customElements' in window) {
             describe('rootElement', function() {
-                it('handles Element.shadowRoot <style> elements', function(done) {
+                it('handles shadowRoot <style> elements', function(done) {
                     const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
@@ -221,10 +221,57 @@ describe('css-vars', function() {
                     });
                 });
 
-                it('handles Element.shadowRoot using options.variables', function(done) {
+                it('ignores shadowRoot <style> element :root declarations', function(done) {
                     const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
+
+                    createTestElms([
+                        { tag: 'style', text: ':root { --test-component-background: green; }' },
+                        { tag: 'style', text: ':root { --test-component-background: purple; }', appendTo: shadowRoot }
+                    ]);
+
+                    cssVars({
+                        rootElement: shadowRoot,
+                        onlyLegacy : false,
+                        updateDOM  : false,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            expect(cssText).to.equal(expectCss);
+                            done();
+                        }
+                    });
+                });
+
+                it('handles shadowRoot <style> element :host declarations', function(done) {
+                    const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                    const shadowRoot = customElm.shadowRoot;
+                    const expectCss  = '.test-component{background:red;background:green;color:white;}';
+
+                    createTestElms([
+                        { tag: 'style', text: ':root { --test-component-background: purple; }' },
+                        { tag: 'style', text: ':host { --test-component-background: green; }', appendTo: shadowRoot }
+                    ]);
+
+                    cssVars({
+                        rootElement: shadowRoot,
+                        onlyLegacy : false,
+                        updateDOM  : false,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            expect(cssText).to.equal(expectCss);
+                            done();
+                        }
+                    });
+                });
+
+                it('handles shadowRoot using options.variables', function(done) {
+                    const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                    const shadowRoot = customElm.shadowRoot;
+                    const expectCss  = '.test-component{background:red;background:green;color:white;}';
+
+                    createTestElms([
+                        { tag: 'style', text: ':root { --test-component-background: purple; }' },
+                        { tag: 'style', text: ':host { --test-component-background: purple; }', appendTo: shadowRoot }
+                    ]);
 
                     cssVars({
                         rootElement: shadowRoot,
@@ -235,6 +282,91 @@ describe('css-vars', function() {
                         },
                         onComplete(cssText, styleNodes, cssVariables, benchmark) {
                             expect(cssText).to.equal(expectCss);
+                            done();
+                        }
+                    });
+                });
+            });
+
+            describe('shadowDOM', function() {
+                it('true (handles shadowRoot <style> elements)', function(done) {
+                    const styleCss  = ':root { --test-component-background: green; }';
+                    const expectCss = '.test-component{background:red;background:green;color:white;}';
+                    const testElms  = createTestElms([
+                        { tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } },
+                        { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' } }
+                    ]);
+
+                    let onCompleteCount = 0;
+
+                    createTestElms({ tag: 'style', text: styleCss });
+
+                    cssVars({
+                        include    : '[data-test],[data-test-shadow]',
+                        onlyLegacy : false,
+                        shadowDOM  : true,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            onCompleteCount++;
+
+                            // Test for cssText since test <style> elm with only
+                            // :root rule will also trigger callback
+                            if (cssText) {
+                                expect(cssText).to.equal(expectCss);
+                            }
+                        }
+                    });
+
+                    expect(onCompleteCount).to.equal(testElms.length + 1); // +1 = document
+                    done();
+                });
+
+                it('true (handles nested shadowRoot <style> elements)', function(done) {
+                    const styleCss  = ':root { --test-component-background: green; }';
+                    const expectCss = '.test-component{background:red;background:green;color:white;}';
+                    const testElm1  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
+
+                    let onCompleteCount = 0;
+
+                    createTestElms([
+                        { tag: 'style', text: styleCss },
+                        { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 }
+                    ]);
+
+                    cssVars({
+                        rootElement: testElm1,
+                        include    : '[data-test],[data-test-shadow]',
+                        onlyLegacy : false,
+                        shadowDOM  : true,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            if (cssText) {
+                                onCompleteCount++;
+                                expect(cssText).to.equal(expectCss);
+                            }
+
+                            if (onCompleteCount === 2) {
+                                done();
+                            }
+                        }
+                    });
+                });
+
+                it('false (ignores nested shadowRoot <style> elements)', function(done) {
+                    const styleCss  = ':root { --test-component-background: green; }';
+                    const expectCss = '.test-component{background:red;background:green;color:white;}';
+                    const testElm1  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
+                    const testElm2  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 })[0];
+
+                    createTestElms({ tag: 'style', text: styleCss });
+
+                    cssVars({
+                        rootElement: testElm1.shadowRoot,
+                        include    : '[data-test],[data-test-shadow]',
+                        onlyLegacy : false,
+                        shadowDOM  : false,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            expect(styleNodes[0].parentNode).to.equal(this.rootElement);
+                            expect(cssText).to.equal(expectCss);
+                            expect(testElm2.shadowRoot.querySelector('style[id]')).to.equal(null);
                             done();
                         }
                     });
@@ -367,93 +499,6 @@ describe('css-vars', function() {
                 });
             });
         });
-
-        if ('customElements' in window) {
-            describe('shadowDOM', function() {
-                it('true (handles Element.shadowRoot <style> elements)', function(done) {
-                    const styleCss  = ':root { --test-component-background: green; }';
-                    const expectCss = '.test-component{background:red;background:green;color:white;}';
-                    const testElms  = createTestElms([
-                        { tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } },
-                        { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' } }
-                    ]);
-
-                    let onCompleteCount = 0;
-
-                    createTestElms({ tag: 'style', text: styleCss });
-
-                    cssVars({
-                        include    : '[data-test],[data-test-shadow]',
-                        onlyLegacy : false,
-                        shadowDOM  : true,
-                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                            onCompleteCount++;
-
-                            // Test for cssText since test <style> elm with only
-                            // :root rule will also trigger callback
-                            if (cssText) {
-                                expect(cssText).to.equal(expectCss);
-                            }
-                        }
-                    });
-
-                    expect(onCompleteCount).to.equal(testElms.length + 1); // +1 = document
-                    done();
-                });
-
-                it('true (handles nested Element.shadowRoot <style> elements)', function(done) {
-                    const styleCss  = ':root { --test-component-background: green; }';
-                    const expectCss = '.test-component{background:red;background:green;color:white;}';
-                    const testElm1  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
-
-                    let onCompleteCount = 0;
-
-                    createTestElms([
-                        { tag: 'style', text: styleCss },
-                        { tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 }
-                    ]);
-
-                    cssVars({
-                        rootElement: testElm1,
-                        include    : '[data-test],[data-test-shadow]',
-                        onlyLegacy : false,
-                        shadowDOM  : true,
-                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                            if (cssText) {
-                                onCompleteCount++;
-                                expect(cssText).to.equal(expectCss);
-                            }
-
-                            if (onCompleteCount === 2) {
-                                done();
-                            }
-                        }
-                    });
-                });
-
-                it('false (ignores nested Element.shadowRoot <style> elements)', function(done) {
-                    const styleCss  = ':root { --test-component-background: green; }';
-                    const expectCss = '.test-component{background:red;background:green;color:white;}';
-                    const testElm1  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 1' } })[0];
-                    const testElm2  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element 2' }, appendTo: testElm1 })[0];
-
-                    createTestElms({ tag: 'style', text: styleCss });
-
-                    cssVars({
-                        rootElement: testElm1.shadowRoot,
-                        include    : '[data-test],[data-test-shadow]',
-                        onlyLegacy : false,
-                        shadowDOM  : false,
-                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                            expect(styleNodes[0].parentNode).to.equal(this.rootElement);
-                            expect(cssText).to.equal(expectCss);
-                            expect(testElm2.shadowRoot.querySelector('style[id]')).to.equal(null);
-                            done();
-                        }
-                    });
-                });
-            });
-        }
 
         describe('updateDOM', function() {
             it('true (appends <style> after source node)', function(done) {

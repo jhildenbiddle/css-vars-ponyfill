@@ -311,10 +311,10 @@ function parseCss(css, options = {}) {
         if (!settings.preserveStatic) {
             const balancedMatch = balanced('{', '}', css);
 
-            // Skip rulset if it does not contain a :root variable declaration
-            // of a variable function value
+            // Skip rulset if it does not contain a root/host variable
+            // declaration or a variable function value
             if (balancedMatch) {
-                const hasVarDecl = balancedMatch.pre.indexOf(':root') !== -1 && /--\S*\s*:/.test(balancedMatch.body);
+                const hasVarDecl = /:(?:root|host)(?![.:#(])/.test(balancedMatch.pre) && /--\S*\s*:/.test(balancedMatch.body);
                 const hasVarFunc = /var\(/.test(balancedMatch.body);
 
                 if (!hasVarDecl && !hasVarFunc) {
@@ -327,7 +327,7 @@ function parseCss(css, options = {}) {
 
         const sel   = selector() || [];
         const decls = settings.preserveStatic ? declarations() : declarations().filter(decl => {
-            const hasVarDecl = sel.some(s => s.indexOf(':root') !== -1) && /^--\S/.test(decl.property);
+            const hasVarDecl = sel.some(s => /:(?:root|host)(?![.:#(])/.test(s)) && /^--\S/.test(decl.property);
             const hasVarFunc = /var\(/.test(decl.value);
 
             return hasVarDecl || hasVarFunc;

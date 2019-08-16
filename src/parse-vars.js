@@ -18,10 +18,12 @@ import parseCss from './parse-css';
  */
 function parseVars(cssData, options = {}) {
     const defaults = {
-        store: {},
+        parseHost: false,
+        store    : {},
         onWarning() {}
     };
-    const settings = Object.assign({}, defaults, options);
+    const settings           = Object.assign({}, defaults, options);
+    const reVarDeclSelectors = new RegExp(`:${ settings.parseHost ? 'host' : 'root' }(?![.:#(])`);
 
     // Convert CSS string to AST
     if (typeof cssData === 'string') {
@@ -32,12 +34,7 @@ function parseVars(cssData, options = {}) {
     cssData.stylesheet.rules.forEach(function(rule) {
         const varNameIndices = [];
 
-        if (rule.type !== 'rule') {
-            return;
-        }
-
-        // only variables declared for `:root` are supported
-        if (rule.selectors.indexOf(':root') === -1) {
+        if (rule.type !== 'rule' || !rule.selectors.some(s => reVarDeclSelectors.test(s))) {
             return;
         }
 

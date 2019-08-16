@@ -48,18 +48,18 @@ const regex = {
     // CSS media queries
     // Ex: @media (min-width: 640px) { ... }
     cssMediaQueries: /@media[^{]+\{([\s\S]+?})\s*}/g,
-    // CSS root rules
-    // Ex: :root { ... }
-    cssRootRules: /(?::root(?![.:#])[\s,]*[^{]*{\s*[^}]*})/g,
     // CSS Urls
     // Ex: url('path/to/file')
     cssUrls: /url\((?!['"]?(?:data|http|\/\/):)['"]?([^'")]*)['"]?\)/g,
+    // CSS root/host rules
+    // Ex: :root { ... } or :host { ... }
+    cssVarDeclRules: /(?::(?:root|host)(?![.:#(])[\s,]*[^{]*{\s*[^}]*})/g,
     // CSS variable declarations (e.g. --color: red;)
     cssVarDecls: /(?:[\s;]*)(-{2}\w[\w-]*)(?:\s*:\s*)([^;]*);/g,
     // CSS variable function (e.g. var(--color))
     cssVarFunc: /var\(\s*--[\w-]/,
-    // CSS variable :root declarations and var() function values
-    cssVars: /(?:(?::root(?![.:#])[\s,]*[^{]*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
+    // CSS variable root/host declarations and var() function values
+    cssVars: /(?:(?::(?:root|host)(?![.:#(])[\s,]*[^{]*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 const variableStore = {
     // Persisted values (emulates modern browser behavior)
@@ -275,7 +275,7 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        const isShadowElm = settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host;
+        const isShadowElm = Boolean(settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host);
 
         // Native support
         if (isNativeSupport && settings.onlyLegacy) {
@@ -301,7 +301,7 @@ function cssVars(options = {}) {
                         .replace(regex.cssComments, '')
                         .replace(regex.cssMediaQueries, '');
 
-                    cssText = (cssText.match(regex.cssRootRules) || []).join('');
+                    cssText = (cssText.match(regex.cssVarDeclRules) || []).join('');
 
                     // Return only matching :root {...} blocks
                     return cssText || false;
@@ -376,6 +376,7 @@ function cssVars(options = {}) {
 
                                 // Parse variables
                                 parseVars(cssTree, {
+                                    parseHost: isShadowElm,
                                     store    : jobVars,
                                     onWarning: handleWarning
                                 });

@@ -4,8 +4,10 @@
 
 *Unreleased*
 
-- Added `sideEffects:false` to `package.json` to allow proper tree-shaking
-- Added support for parsing comma-separated `:root` selectors
+- Added `sideEffects:false` to `package.json` to allow bundler tree-shaking
+- Added support for parsing `:host` custom property declarations
+- Added support for parsing comma-separated `:root` and `:host` selectors
+- Fixed `:root` and `:host` selector tests (no classes, IDs, psuedo, etc.)
 - Fixed parsing of `@media` rules without query
 - Fixed `options.silent` description
 
