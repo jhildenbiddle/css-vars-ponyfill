@@ -28,7 +28,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 **Limitations**
 
-- Custom property support is limited to `:root` declarations
+- Custom property declaration support is limited to `:root` and `:host` rulesets
 - The use of `var()` is limited to property values (per [W3C specification](https://www.w3.org/TR/css-variables/))
 
 **Browser Support**
@@ -51,10 +51,13 @@ NPM:
 npm install css-vars-ponyfill
 ```
 
-Git:
+```js
+// ES6+
+import cssVars from 'css-vars-ponyfill';
 
-```bash
-git clone https://github.com/jhildenbiddle/css-vars-ponyfill.git
+cssVars({
+  // Options...
+});
 ```
 
 CDN ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/)):
@@ -62,13 +65,31 @@ CDN ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https:
 ```html
 <!-- Latest v2.x.x -->
 <script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
+<script>
+  cssVars({
+    // Options...
+  });
+</script>
 ```
 
-## Examples
+## Usage
 
-HTML:
+For each `<link>` and `<style>` element processed the ponyfill will:
+
+1. Get the CSS content (including `@import` rules)
+1. Parse the CSS and convert it to an AST
+1. Parse custom property declarations from `:root` and `:host` rulesets
+1. Transform `var()` CSS functions to static values
+1. Transforms relative `url()` paths to absolute URLs
+1. Fix nested `calc()` functions
+1. Convert the AST back to CSS
+1. Append legacy-compatible CSS to the DOM
+
+Example:
 
 ```html
+<!-- index.html -->
+
 <link rel="stylesheet" href="style.css">
 <style>
   :root {
@@ -77,9 +98,9 @@ HTML:
 </style>
 ```
 
-CSS (from `style.css`):
-
 ```css
+/* style.css */
+
 :root {
   --a: var(--b); /* Chained */
   --b: var(--c);
@@ -93,68 +114,33 @@ div {
 }
 ```
 
-JavaScript (see [Options](#options)):
-
-```javascript
-import cssVars from 'css-vars-ponyfill';
+```js
+/* main.js */
 
 cssVars({
-  // Options ...
+  // Options...
 });
 ```
 
-For each `<link>` and `<style>` element processed the ponyfill will:
+Output:
 
-1. Get the CSS content (including `@import` CSS)
-1. Parse the CSS and convert it to an AST
-1. Transform CSS custom properties to static values
-1. Transforms relative `url()` paths to absolute URLs
-1. Fix nested `calc()` functions
-1. Convert the AST back to CSS
-1. Append legacy-compatible CSS to the DOM
-
-```html
-<!-- Output -->
-<style data-cssvars="out">
-  div {
-    color: black;
-    margin: 20px;
-    padding: calc(2 * 10px);
-  }
-</style>
+```css
+div {
+  color: black;
+  margin: 20px;
+  padding: calc(2 * 10px);
+}
 ```
 
 To update values:
 
-- Use [options.watch](#watch) to detect `<link>` and `<style>` mutations and auto-update transformed CSS
+- Use [options.watch](#watch) to update CSS automatically on `<link>` and `<style>` mutations
 - Manually call the ponyfill after a `<link>` or `style` node has been added or removed
-- Manually call the ponyfill with [options.variables](#variables):
+- Manually call the ponyfill with [options.variables](#variables)
 
-Example:
-
-```javascript
-cssVars({
-  variables: {
-    color: 'red',
-    unknown: '5px'
-  }
-});
-```
-
-Values will be updated in both legacy and modern browsers:
+Updated values will be applied in both legacy and modern browsers:
 
 - In legacy browsers (and modern browsers when [options.onlyLegacy](#onlylegacy) is `false`), the ponyfill will determine if the changes affect the previously transformed CSS for each `<link>` and `<style>` element previously processed. If they do, CSS will be transformed once again with the new values and the output `<style>` element will be updated.
-
-   ```html
-   <!-- Output (updated) -->
-   <style data-cssvars="out">
-     div {
-       color: red;
-       margin: 5px;
-       padding: calc(2 * 10px);
-     }
-   </style>
-   ```
 
 - In modern browsers with native support for CSS custom properties, the ponyfill will update values using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
 
@@ -267,17 +253,17 @@ Determines if shadow DOM tree(s) nested within the [options.rootElement](#rootel
 **Example**
 
 ```javascript
-// Do no process shadow DOM trees
+// Do no process nested shadow DOM trees
 cssVars({
   shadowDOM: false // default
 });
 
-// Process all shadow DOM trees in document
+// Process nested shadow DOM trees in document
 cssVars({
   shadowDOM: true
 });
 
-// Process all shadow DOM trees in custom element
+// Process nested shadow DOM trees in custom element
 cssVars({
   rootElement: document.querySelector('my-element'),
   shadowDOM  : true
@@ -365,7 +351,7 @@ cssVars({
 - Type: `object`
 - Default: `{}`
 
-A collection of custom property name/value pairs to apply to both legacy and modern browsers as `:root`-level custom property declarations. Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
+A collection of custom property name/value pairs to apply to both legacy and modern browsers as `:root`-level custom property declarations (or `:host`-level for shadowDOM elements). Property names can include or omit the leading double-hyphen (`--`). Values specified will override previous values.
 
 Legacy browsers (and modern browsers when [options.onlyLegacy](#onlylegacy) is `false`) will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#updatedom) is `true`.
 
@@ -531,7 +517,7 @@ p {
 
 Determines if CSS custom property declarations will be preserved in the transformed CSS.
 
-When `true`, both `:root`-level custom properties and declarations that reference a custom property using a `var()` function will be preserved in the transformed CSS. When `false`, these declarations will be omitted from the transformed CSS.
+When `true`, both `:root` and `:host` custom property declarations and `var()` functions will be preserved in the transformed CSS. When `false`, these declarations will be omitted from the transformed CSS.
 
 **Example**
 
