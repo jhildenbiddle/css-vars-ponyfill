@@ -2,7 +2,7 @@
 
 ## 2.1.0
 
-*Unreleased*
+*2019-08-16*
 
 - Added `sideEffects:false` to `package.json` to allow bundler tree-shaking
 - Added support for parsing `:host` custom property declarations
