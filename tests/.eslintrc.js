@@ -17,6 +17,7 @@ module.exports = {
     "rules": {
         "mocha/no-hooks-for-single-case": ["off"],
         "mocha/no-top-level-hooks"      : ["off"],
-        "mocha/no-setup-in-describe"    : ["off"]
+        "mocha/no-setup-in-describe"    : ["off"],
+        "no-console"                    : ["off"]
     }
 };
