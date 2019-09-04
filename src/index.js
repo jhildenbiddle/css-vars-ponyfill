@@ -275,8 +275,6 @@ function cssVars(options = {}) {
 
     // Verify readyState to ensure all <link> and <style> nodes are available
     if (document.readyState !== 'loading') {
-        const isShadowElm = Boolean(settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host);
-
         // Native support
         if (isNativeSupport && settings.onlyLegacy) {
             // Apply settings.variables
@@ -290,7 +288,7 @@ function cssVars(options = {}) {
             }
         }
         // Ponyfill: Handle rootElement set to a shadow host or root
-        else if (isShadowElm && !isShadowDOMReady) {
+        else if (!isShadowDOMReady && (settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host)) {
             // Get all document-level CSS
             getCssData({
                 rootElement: defaults.rootElement,
@@ -376,7 +374,7 @@ function cssVars(options = {}) {
 
                                 // Parse variables
                                 parseVars(cssTree, {
-                                    parseHost: isShadowElm,
+                                    parseHost: Boolean(settings.rootElement.host),
                                     store    : jobVars,
                                     onWarning: handleWarning
                                 });
@@ -401,7 +399,7 @@ function cssVars(options = {}) {
                     hasVarChange = Boolean(
                         // Ponfill has been called previously
                         (document.querySelector('[data-cssvars]') || Object.keys(variableStore.dom).length) &&
-                        // Variable declaration of value change detected
+                        // Variable declaration or value change detected
                         Object.keys(jobVars).some(name => jobVars[name] !== varStore[name])
                     );
 
@@ -517,8 +515,7 @@ function cssVars(options = {}) {
                             for (let i = 0, elm; (elm = elms[i]); ++i) {
                                 if (elm.shadowRoot && elm.shadowRoot.querySelector('style')) {
                                     const shadowSettings = Object.assign({}, settings, {
-                                        rootElement: elm.shadowRoot,
-                                        variables  : variableStore.dom
+                                        rootElement: elm.shadowRoot
                                     });
 
                                     cssVars(shadowSettings);

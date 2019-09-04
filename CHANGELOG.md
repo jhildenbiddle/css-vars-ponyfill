@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+*2019-09-04*
+
+- Fixed bug that allowed a `:root`-level custom property value to override
+  `:host`-level value with the same name.
+
 ## 2.1.1
 
 *2019-08-16*

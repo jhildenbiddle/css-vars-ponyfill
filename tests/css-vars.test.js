@@ -203,7 +203,28 @@ describe('css-vars', function() {
     describe('Options', function() {
         if ('customElements' in window) {
             describe('rootElement', function() {
-                it('handles shadowRoot <style> elements', function(done) {
+                it('ignores shadowRoot :root declarations', function(done) {
+                    const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
+                    const shadowRoot = customElm.shadowRoot;
+                    const expectCss  = '.test-component{background:red;background:green;color:white;}';
+
+                    createTestElms([
+                        { tag: 'style', text: ':root { --test-component-background: green; }' },
+                        { tag: 'style', text: ':root { --test-component-background: blue; }', appendTo: shadowRoot }
+                    ]);
+
+                    cssVars({
+                        rootElement: shadowRoot,
+                        onlyLegacy : false,
+                        updateDOM  : false,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            expect(cssText).to.equal(expectCss);
+                            done();
+                        }
+                    });
+                });
+
+                it('handles shadowRoot with document :root declarations', function(done) {
                     const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
@@ -221,14 +242,13 @@ describe('css-vars', function() {
                     });
                 });
 
-                it('ignores shadowRoot <style> element :root declarations', function(done) {
+                it('handles shadowRoot with :host declarations', function(done) {
                     const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
 
                     createTestElms([
-                        { tag: 'style', text: ':root { --test-component-background: green; }' },
-                        { tag: 'style', text: ':root { --test-component-background: purple; }', appendTo: shadowRoot }
+                        { tag: 'style', text: ':host { --test-component-background: green; }', appendTo: shadowRoot }
                     ]);
 
                     cssVars({
@@ -242,13 +262,13 @@ describe('css-vars', function() {
                     });
                 });
 
-                it('handles shadowRoot <style> element :host declarations', function(done) {
+                it('handles shadowRoot with document :root and :host declarations', function(done) {
                     const customElm  = createTestElms({ tag: 'test-component', attr: { 'data-text': 'Custom Element' } })[0];
                     const shadowRoot = customElm.shadowRoot;
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
 
                     createTestElms([
-                        { tag: 'style', text: ':root { --test-component-background: purple; }' },
+                        { tag: 'style', text: ':root { --test-component-background: blue; }' },
                         { tag: 'style', text: ':host { --test-component-background: green; }', appendTo: shadowRoot }
                     ]);
 
@@ -269,7 +289,7 @@ describe('css-vars', function() {
                     const expectCss  = '.test-component{background:red;background:green;color:white;}';
 
                     createTestElms([
-                        { tag: 'style', text: ':root { --test-component-background: purple; }' },
+                        { tag: 'style', text: ':root { --test-component-background: blue; }' },
                         { tag: 'style', text: ':host { --test-component-background: purple; }', appendTo: shadowRoot }
                     ]);
 
