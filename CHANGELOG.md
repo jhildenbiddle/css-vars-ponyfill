@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 2.1.2
 
 *2019-09-04*
 
