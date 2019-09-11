@@ -162,10 +162,19 @@ module.exports = function(config) {
     }
     // Local
     else {
-        settings.browsers = [
-            'ChromeHeadless'
+        settings.customLaunchers = {
+            ChromeHeadlessDebug: {
+                base : 'ChromeHeadless',
+                flags: [
+                    '--disable-extensions',
+                    '--remote-debugging-port=9333'
+                ]
+            },
+        };
+        settings.browsers = [].concat(
+            Object.keys(settings.customLaunchers)
             // 'jsdom' // SSR Testing
-        ];
+        );
         settings.webpack.devtool = 'inline-source-map';
         settings.coverageIstanbulReporter.reports.push('html');
 
