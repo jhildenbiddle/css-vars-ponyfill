@@ -45,41 +45,41 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 ## Installation
 
-NPM:
+**NPM**
 
 ```bash
 npm install css-vars-ponyfill
 ```
 
 ```js
-// ES6+
 import cssVars from 'css-vars-ponyfill';
+```
+
+**CDN** ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/))
+
+```html
+<!-- Latest v2.x.x -->
+<script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
+```
+
+## Usage
+
+This library is offered as a [ponyfill](https://ponyfill.com/), not a polyfill. As a result, a function must be called in order for processing to take place.
+
+```js
+/* main.js */
 
 cssVars({
   // Options...
 });
 ```
 
-CDN ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/)):
-
-```html
-<!-- Latest v2.x.x -->
-<script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
-<script>
-  cssVars({
-    // Options...
-  });
-</script>
-```
-
-## Usage
-
 For each `<link>` and `<style>` element processed the ponyfill will:
 
 1. Get the CSS content (including `@import` rules)
 1. Parse the CSS and convert it to an AST
 1. Parse custom property declarations from `:root` and `:host` rulesets
-1. Transform `var()` CSS functions to static values
+1. Transform CSS `var()` functions to static values
 1. Transforms relative `url()` paths to absolute URLs
 1. Fix nested `calc()` functions
 1. Convert the AST back to CSS
@@ -114,14 +114,6 @@ div {
 }
 ```
 
-```js
-/* main.js */
-
-cssVars({
-  // Options...
-});
-```
-
 Output:
 
 ```css
@@ -138,16 +130,13 @@ To update values:
 - Manually call the ponyfill after a `<link>` or `style` node has been added or removed
 - Manually call the ponyfill with [options.variables](#variables)
 
-Updated values will be applied in both legacy and modern browsers:
+Updated values will be applied in both legacy and modern browsers, providing a single API for handling custom property changes for all browsers:
 
-- In legacy browsers (and modern browsers when [options.onlyLegacy](#onlylegacy) is `false`), the ponyfill will determine if the changes affect the previously transformed CSS for each `<link>` and `<style>` element previously processed. If they do, CSS will be transformed once again with the new values and the output `<style>` element will be updated.
+- In legacy browsers, the ponyfill will determine which `<link>` and `<style>` elements contain CSS affected by the new custom property value(s), then transform and append legacy-compatible CSS to the DOM for each one.
 
 - In modern browsers with native support for CSS custom properties, the ponyfill will update values using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
 
-   ```javascript
-   document.documentElement.style.setProperty('--color', 'red');
-   document.documentElement.style.setProperty('--unknown', '5px');
-   ```
+Note that the when [options.onlyLegacy](#onlylegacy) is `false`, modern browsers with native support for CSS custom properties are treated as legacy browsers.
 
 ## Options
 
