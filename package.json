@@ -92,7 +92,7 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage-istanbul-reporter": "^2.0.5",
     "karma-eslint": "^2.2.0",
-    "karma-file-fixtures-preprocessor": "^2.0.1",
+    "karma-file-fixtures-preprocessor": "^3.0.0",
     "karma-jsdom-launcher": "^7.1.0",
     "karma-mocha": "^1.3.0",
     "karma-mocha-reporter": "^2.2.5",
@@ -108,8 +108,8 @@
     "rollup-plugin-eslint": "^7.0.0",
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-terser": "^5.1.1",
-    "webpack": "^4.39.3"
+    "rollup-plugin-terser": "^5.1.2",
+    "webpack": "^4.40.0"
   },
   "dependencies": {}
 }
