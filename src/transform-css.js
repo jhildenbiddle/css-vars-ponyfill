@@ -6,10 +6,11 @@
 
 // Dependencies
 // =============================================================================
-import balanced     from 'balanced-match';
-import parseCss     from './parse-css';
-import stringifyCss from './stringify-css';
-import walkCss      from './walk-css';
+import balanced      from 'balanced-match';
+import parseCss      from './parse-css';
+import stringifyCss  from './stringify-css';
+import walkCss       from './walk-css';
+import reduceCssCalc from '../node_modules/reduce-css-calc';
 
 
 // Constants & Variables
@@ -41,9 +42,11 @@ const VAR_FUNC_IDENTIFIER = 'var';
  */
 function transformCss(cssData, options = {}) {
     const defaults = {
-        preserveStatic: true,
-        preserveVars  : false,
-        variables     : {},
+        preserveStatic     : true,
+        preserveVars       : false,
+        reduceCalc         : false,
+        reduceCalcPrecision: 5,
+        variables          : {},
         onWarning() {}
     };
     const settings = Object.assign({}, defaults, options);
@@ -80,6 +83,11 @@ function transformCss(cssData, options = {}) {
                 if (resolvedValue !== decl.value) {
                     // Fix nested calc
                     resolvedValue = fixNestedCalc(resolvedValue);
+
+                    // Reduce CSS calc
+                    if (settings.reduceCalc) {
+                        resolvedValue = reduceCssCalc(resolvedValue, settings.reduceCalcPrecision);
+                    }
 
                     // Overwrite value
                     if (!settings.preserveVars) {

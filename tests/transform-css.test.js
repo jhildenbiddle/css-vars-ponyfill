@@ -177,6 +177,25 @@ describe('transform-css', function() {
 
             expect(cssOut).to.equal(expectCss);
         });
+
+        it('transforms hsl color calc', function() {
+            const cssIn     = `
+                :root {
+                    --h: 120;
+                    --s: 50%;
+                    --l: 50.12345%;
+                }
+                p { color: hsl(var(--h), var(--s), calc(var(--l) - 12%)) }
+            `;
+            const cssOut    = transformCss(cssIn, {
+                variables: parseVars(cssIn),
+                reduceCalc: true,
+                reduceCalcPrecision: 2
+            });
+            const expectCss = 'p{color:hsl(120, 50%, 38.12%);}';
+
+            expect(cssOut).to.equal(expectCss);
+        });
     });
 
     // Tests: Undefined

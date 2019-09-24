@@ -111,5 +111,7 @@
     "rollup-plugin-terser": "^5.1.2",
     "webpack": "^4.40.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "reduce-css-calc": "^2.1.6"
+  }
 }
