@@ -32,6 +32,7 @@ const defaults = {
     updateDOM     : true,  // cssVars
     updateURLs    : true,  // cssVars
     watch         : null,  // cssVars
+    allowSyncLoad : false,  // cssVars
     // Callbacks
     onBeforeSend() {},     // cssVars
     onWarning() {},        // transformCss
@@ -130,6 +131,8 @@ let isShadowDOMReady = false;
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed
+ * @param {boolean}  [options.allowSyncLoad=false] Allows blocking syncronous
+ *                   loading to help with FOUC
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
  *                   source URL as arguments
@@ -169,6 +172,7 @@ let isShadowDOMReady = false;
  *     updateDOM     : true,
  *     updateURLs    : true,
  *     watch         : false,
+ *     allowSyncLoad : false,
  *     onBeforeSend(xhr, node, url) {},
  *     onWarning(message) {},
  *     onError(message, node, xhr, url) {},
@@ -274,7 +278,7 @@ function cssVars(options = {}) {
     }
 
     // Verify readyState to ensure all <link> and <style> nodes are available
-    if (document.readyState !== 'loading') {
+    if (document.readyState !== 'loading' || settings.allowSyncLoad) {
         // Native support
         if (isNativeSupport && settings.onlyLegacy) {
             // Apply settings.variables
