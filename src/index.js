@@ -25,6 +25,7 @@ const defaults = {
     exclude       : '',
     variables     : {},    // cssVars, transformCss
     // Options
+    allowSyncLoad : false, // cssVars
     onlyLegacy    : true,  // cssVars
     preserveStatic: true,  // parseCSS
     preserveVars  : false, // transformCss
@@ -32,7 +33,6 @@ const defaults = {
     updateDOM     : true,  // cssVars
     updateURLs    : true,  // cssVars
     watch         : null,  // cssVars
-    allowSyncLoad : false,  // cssVars
     // Callbacks
     onBeforeSend() {},     // cssVars
     onWarning() {},        // transformCss
@@ -113,6 +113,8 @@ let isShadowDOMReady = false;
  *                   pairs. Property names can omit or include the leading
  *                   double-hyphen (—), and values specified will override
  *                   previous values
+ * @param {boolean}  [options.allowSyncLoad=false] Allows blocking synchronous
+ *                   loading to help with FOUC
  * @param {boolean}  [options.onlyLegacy=true] Determines if the ponyfill will
  *                   only generate legacy-compatible CSS in browsers that lack
  *                   native support (i.e., legacy browsers)
@@ -131,8 +133,6 @@ let isShadowDOMReady = false;
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed
- * @param {boolean}  [options.allowSyncLoad=false] Allows blocking synchronous
- *                   loading to help with FOUC
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
  *                   source URL as arguments
