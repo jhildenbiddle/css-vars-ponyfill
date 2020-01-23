@@ -131,7 +131,7 @@ let isShadowDOMReady = false;
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed
- * @param {boolean}  [options.allowSyncLoad=false] Allows blocking syncronous
+ * @param {boolean}  [options.allowSyncLoad=false] Allows blocking synchronous
  *                   loading to help with FOUC
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
