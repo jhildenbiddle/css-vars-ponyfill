@@ -393,7 +393,7 @@ function cssVars(options = {}) {
                     }
 
                     // Merge settings.variables into jobVars
-                    Object.assign(jobVars, settings.variables);
+                    Object.assign(jobVars, variableStore.user, settings.variables);
 
                     // Detect new variable declaration or value
                     hasVarChange = Boolean(
