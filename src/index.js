@@ -62,11 +62,11 @@ const regex = {
     cssVars: /(?:(?::(?:root|host)(?![.:#(])[\s,]*[^{]*{\s*[^;]*;*\s*)|(?:var\(\s*))(--[^:)]+)(?:\s*[:)])/
 };
 const variableStore = {
-    // Persisted values (emulates modern browser behavior)
+    // Parsed DOM values (from <link> and <style> nodes)
     dom : {},
-    // Temporary non-persisted values (i.e. options.updateDOM = false)
+    // Temporary storage for each job
     job : {},
-    // Persisted options.variables data
+    // Persisted options.variables values
     user: {}
 };
 
@@ -356,10 +356,12 @@ function cssVars(options = {}) {
                     return cssText;
                 },
                 onComplete(cssText, cssArray, nodeArray = []) {
-                    const jobVars  = {};
-                    const varStore = settings.updateDOM ? variableStore.dom : Object.keys(variableStore.job).length ? variableStore.job : variableStore.job = JSON.parse(JSON.stringify(variableStore.dom));
+                    const currentVars = Object.assign({}, variableStore.dom, variableStore.user);
 
                     let hasVarChange = false;
+
+                    // Reset temporary variable store
+                    variableStore.job = {};
 
                     // Parse CSS and variables
                     nodeArray.forEach((node, i) => {
@@ -375,7 +377,7 @@ function cssVars(options = {}) {
                                 // Parse variables
                                 parseVars(cssTree, {
                                     parseHost: Boolean(settings.rootElement.host),
-                                    store    : jobVars,
+                                    store    : variableStore.dom,
                                     onWarning: handleWarning
                                 });
 
@@ -388,23 +390,40 @@ function cssVars(options = {}) {
                         }
                     });
 
+                    // Merge DOM values with job values
+                    Object.assign(variableStore.job, variableStore.dom);
+
                     if (settings.updateDOM) {
+                        // Persist user values
                         Object.assign(variableStore.user, settings.variables);
+
+                        // Merge persisted user values with job values
+                        Object.assign(variableStore.job, variableStore.user);
+                    }
+                    else {
+                        // Merge persisted and non-persisted user values with job values
+                        Object.assign(variableStore.job, variableStore.user, settings.variables);
+
+                        // Update currentVars with non-persisted user values
+                        Object.assign(currentVars, settings.variables);
                     }
 
-                    // Merge settings.variables into jobVars
-                    Object.assign(jobVars, settings.variables);
-
-                    // Detect new variable declaration or value
-                    hasVarChange = Boolean(
-                        // Ponfill has been called previously
-                        (document.querySelector('[data-cssvars]') || Object.keys(variableStore.dom).length) &&
-                        // Variable declaration or value change detected
-                        Object.keys(jobVars).some(name => jobVars[name] !== varStore[name])
-                    );
-
-                    // Merge jobVars into variable storage
-                    Object.assign(varStore, variableStore.user, jobVars);
+                    // Detect new variable declaration or changed value
+                    hasVarChange =
+                        // Ponyfill has been called before with updateDOM
+                        counters.job > 0 &&
+                        // New/Change
+                        Boolean(
+                            // New declaration
+                            (Object.keys(variableStore.job).length > Object.keys(currentVars).length) ||
+                            // Changed declaration value
+                            Boolean(
+                                // Previous declarations exist
+                                Object.keys(currentVars).length &&
+                                // At least one job value does has changed
+                                Object.keys(variableStore.job).some(key => variableStore.job[key] !== currentVars[key])
+                            )
+                        );
 
                     // New variable declaration or modified value detected
                     if (hasVarChange) {
@@ -418,9 +437,6 @@ function cssVars(options = {}) {
 
                         let hasKeyframesWithVars = false;
 
-                        // Reset temporary variable store
-                        variableStore.job = {};
-
                         // Increment job
                         if (settings.updateDOM) {
                             counters.job++;
@@ -432,7 +448,7 @@ function cssVars(options = {}) {
                             if (node.__cssVars) {
                                 try {
                                     transformCss(node.__cssVars.tree, Object.assign({}, settings, {
-                                        variables: varStore,
+                                        variables: variableStore.job,
                                         onWarning: handleWarning
                                     }));
 
@@ -537,7 +553,7 @@ function cssVars(options = {}) {
                         settings.onComplete(
                             outCssArray.join(''),
                             outNodeArray,
-                            JSON.parse(JSON.stringify(varStore)),
+                            JSON.parse(JSON.stringify(variableStore.job)),
                             getTimeStamp() - settings.__benchmark
                         );
                     }
@@ -558,6 +574,10 @@ function cssVars(options = {}) {
 
 // Ponyfill reset
 cssVars.reset = function() {
+    // Reset counters
+    counters.job = 0;
+    counters.group = 0;
+
     // Reset running flag
     cssVarsIsRunning = false;
 

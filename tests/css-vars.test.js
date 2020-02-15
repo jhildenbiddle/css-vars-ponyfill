@@ -530,9 +530,9 @@ describe('css-vars', function() {
                 ]);
 
                 cssVars({
-                    include    : '[data-test]:not([data-skip])',
-                    onlyLegacy : false,
-                    updateDOM  : true,
+                    include   : '[data-test]:not([data-skip])',
+                    onlyLegacy: false,
+                    updateDOM : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         const isAfterSourceNode = testElms[0].nextSibling === styleNodes[0];
                         const isBeforeSkipNode  = styleNodes[0].nextSibling === testElms[1];
@@ -1446,95 +1446,139 @@ describe('css-vars', function() {
             });
         });
 
-        it('persists options.variables', function(done) {
+        it('persists options.variables with same declarations in DOM', function(done) {
             const expectCss = [
-                'h1{color:red;}',
-                'h2{color:red;}',
+                'h1{color:red;}h2{color:blue;}',
+                'h1{color:green;}h2{color:blue;}',
                 'h1{color:green;}h2{color:green;}',
-                'h1{color:red;}h2{color:red;}',
                 'h1{color:blue;}h2{color:blue;}'
             ];
 
-            // Transforms CSS and persists new value
-            function pass1() {
-                createTestElms({ tag: 'style', text: 'h1 { color: var(--color); }' });
+            createTestElms({ tag: 'style', text: `
+                :root { --color1: red; --color2: blue; }
+                h1 { color: var(--color1); }
+                h2 { color: var(--color2); }
+            `});
 
+            // Transforms CSS with DOM declarations
+            function pass1() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
-                    variables : { color: 'red' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'new value').to.equal(expectCss[0]);
+                        expect(cssText, 'DOM declarations').to.equal(expectCss[0]);
                         pass2();
                     }
                 });
             }
 
-            // Transforms CSS with persisted value
+            // Transforms CSS and persist new options.variables value #1
             function pass2() {
-                createTestElms({ tag: 'style', text: 'h2 { color: var(--color); }' });
-
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
+                    variables : { '--color1': 'green' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'persisted value').to.equal(expectCss[1]);
+                        expect(cssText, 'DOM declaration + options.variables 1').to.equal(expectCss[1]);
                         pass3();
                     }
                 });
             }
 
-            // Transforms CSS with non-persisted value
+            // Transforms CSS and but do not persist new options.variables value #2
             function pass3() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
                     updateDOM : false,
-                    variables : { color: 'green' },
+                    variables : { '--color2': 'green' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'non-persisted value').to.equal(expectCss[2]);
+                        expect(cssText, 'DOM declaration + options.variables 2').to.equal(expectCss[2]);
                         pass4();
                     }
                 });
             }
 
-            // Transforms CSS with persisted value after non-persisted override
+            // Transform CSS with old and new persisted options.variables value
             function pass4() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
+                    variables : { '--color1': 'blue' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'persisted after non-persisted override').to.equal(expectCss[3]);
-                        pass5();
+                        expect(cssText, 'DOM declaration + options.variables 2').to.equal(expectCss[3]);
+                        done();
                     }
                 });
             }
 
-            // Transforms CSS with new DOM value
-            function pass5() {
-                createTestElms({ tag: 'style', text: ':root { --color: blue; }', attr: { 'data-remove': '' } });
+            pass1();
+        });
 
+        it('persists options.variables without same declarations in DOM', function(done) {
+            const expectCss = [
+                'h1{color:red;}h2{color:blue;}',
+                'h1{color:green;}h2{color:blue;}',
+                'h1{color:green;}h2{color:green;}',
+                'h1{color:blue;}h2{color:blue;}'
+            ];
+
+            createTestElms({ tag: 'style', text: `
+                h1 { color: var(--color1); }
+                h2 { color: var(--color2); }
+            `});
+
+            // Transforms CSS with option.variables
+            function pass1() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
+                    variables : {
+                        '--color1': 'red',
+                        '--color2': 'blue',
+                    },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'new DOM value').to.equal(expectCss[4]);
-                        pass6();
+                        expect(cssText, 'Multiple options.variables').to.equal(expectCss[0]);
+                        pass2();
                     }
                 });
             }
 
-            // Transforms CSS with persisted value after removal of DOM override
-            function pass6() {
-                const removeElm = document.querySelector('[data-remove]');
-
-                removeElm.parentNode.removeChild(removeElm);
-
+            // Transforms CSS and persist new options.variables value #1
+            function pass2() {
                 cssVars({
                     include   : '[data-test]',
                     onlyLegacy: false,
+                    variables : { '--color1': 'green' },
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText, 'persisted after removal of DOM override').to.equal(expectCss[3]);
+                        expect(cssText, 'DOM declaration + options.variables 1').to.equal(expectCss[1]);
+                        pass3();
+                    }
+                });
+            }
+
+            // Transforms CSS and but do not persist new options.variables value #2
+            function pass3() {
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    updateDOM : false,
+                    variables : { '--color2': 'green' },
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText, 'DOM declaration + options.variables 2').to.equal(expectCss[2]);
+                        pass4();
+                    }
+                });
+            }
+
+            // Transform CSS with old and new persisted options.variables value
+            function pass4() {
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    variables : { '--color1': 'blue' },
+                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                        expect(cssText, 'DOM declaration + options.variables 2').to.equal(expectCss[3]);
                         done();
                     }
                 });
