@@ -58,10 +58,11 @@
     "prepare": "rimraf dist/*.js* && npm run build",
     "build": "rollup -c",
     "prebuild": "cpy 'src/index.d.ts' 'dist' --rename=css-vars-ponyfill.d.ts",
-    "dev": "npm start | npm run test-watch",
+    "dev": "npm start | npm run test-debug",
     "serve": "node server.js",
     "start": "rimraf coverage/* && npm run serve | npm run build -- --watch",
     "test": "karma start",
+    "test-debug": "npm run test-watch -- --debug",
     "test-watch": "karma start --auto-watch --no-single-run",
     "test-remote": "karma start --remote",
     "version": "npm run build && npm test"

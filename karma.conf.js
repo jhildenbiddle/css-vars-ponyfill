@@ -103,6 +103,7 @@ const settings = {
 // Export
 // =============================================================================
 module.exports = function(config) {
+    const isDebug  = Boolean(process.argv.indexOf('--debug') > -1);
     const isRemote = Boolean(process.argv.indexOf('--remote') > -1);
 
     // Remote test
@@ -177,6 +178,11 @@ module.exports = function(config) {
         );
         settings.webpack.devtool = 'inline-source-map';
         settings.coverageIstanbulReporter.reports.push('html');
+
+        if (isDebug) {
+            // Prevent disconnect during VSCode debugging
+            settings.browserDisconnectTimeout = 1000*6000; // default 2000
+        }
 
         // eslint-disable-next-line
         console.log([
