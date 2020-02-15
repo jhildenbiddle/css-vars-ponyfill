@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.1.3
+
+*2020-02-15*
+
+- Fixed `options.variables` persistence (#99)
+
 ## 2.1.2
 
 *2019-09-04*
