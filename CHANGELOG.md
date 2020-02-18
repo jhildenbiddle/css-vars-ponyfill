@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.2.0
+
+*2020-02-17*
+
+- Added support for HTML `<base>` tag via updated `get-css-data` dependency
+
 ## 2.1.4
 
 *2020-02-17*
