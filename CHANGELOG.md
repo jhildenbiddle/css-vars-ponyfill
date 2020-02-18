@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.1.4
+
+*2020-02-17*
+
+- Fixed "Expected Token" bug in legacy browsers due to babel config error (#111)
+
 ## 2.1.3
 
 *2020-02-15*
