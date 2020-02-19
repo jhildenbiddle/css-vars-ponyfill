@@ -130,6 +130,11 @@ function parseCss(css, options = {}) {
     // Declarations
     // -------------------------------------------------------------------------
     function declaration() {
+        // Nested @ rule(s)
+        if (css[0] === '@') {
+            return at_rule();
+        }
+
         match(/^([;\s]*)+/); // ignore empty declarations + whitespace
 
         const comment_regexp = /\/\*[^*]*\*+([^/*][^*]*\*+)*\//g;
@@ -250,6 +255,13 @@ function parseCss(css, options = {}) {
             return { type: 'page', selectors: sel, declarations: declarations() };
         }
     }
+    function at_page_margin_box() {
+        const m = match(/@(top|bottom|left|right)-(left|center|right|top|middle|bottom)-?(corner)?\s*/);
+        if (m) {
+            const name = `${m[1]}-${m[2]}` + (m[3] ? `-${m[3]}` : '');
+            return { type: 'page-margin-box', name, declarations: declarations() };
+        }
+    }
     function at_fontface() {
         const m = match(/^@font-face\s*/);
         if (m) { return { type: 'font-face', declarations: declarations() }; }
@@ -282,7 +294,17 @@ function parseCss(css, options = {}) {
         whitespace();
 
         if (css[0] === '@') {
-            const ret = at_keyframes() || at_supports() || at_host() || at_media() || at_custom_m() || at_page() || at_document() || at_fontface() || at_x();
+            const ret =
+                at_x() ||
+                at_fontface() ||
+                at_media() ||
+                at_keyframes() ||
+                at_supports() ||
+                at_document() ||
+                at_custom_m() ||
+                at_host() ||
+                at_page() ||
+                at_page_margin_box(); // Must be last
 
             if (ret && !settings.preserveStatic) {
                 let hasVarFunc = false;

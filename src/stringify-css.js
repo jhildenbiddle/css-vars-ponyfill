@@ -57,6 +57,9 @@ function stringifyCss(tree, delim = '', cb) {
         page(node) {
             return '@page ' + (node.selectors.length ? node.selectors.join(', ') : '') + '{' + visit(node.declarations) + '}';
         },
+        'page-margin-box'(node) {
+            return '@' + node.name + '{' + visit(node.declarations) + '}';
+        },
         rule(node) {
             const decls = node.declarations;
 

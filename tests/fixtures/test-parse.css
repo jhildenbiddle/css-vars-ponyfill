@@ -156,7 +156,10 @@ foo bar baz {
     ,
     index:blank
     {
-        margin: 1cm
+        margin: 1cm;
+        @top-left-corner {
+            content: "Page " counter(page);
+        }
     }
 
 /* @supports */

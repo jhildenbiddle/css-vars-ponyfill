@@ -58,7 +58,7 @@ foo bar baz{bizz-buzz:word "ferrets";*even:'ie boo';}
 @page {margin:1cm;}
 @page :first{margin:1cm;}
 @page toc, index:blank{margin:1cm;}
-@page toc, index:blank{margin:1cm;}
+@page toc, index:blank{margin:1cm;@top-left-corner{content:"Page " counter(page);}}
 
 @supports (display: flex){a{height:0;}}
 @supports (display: flex) or (display: box){a{height:0;}}
