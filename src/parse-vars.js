@@ -23,7 +23,7 @@ function parseVars(cssData, options = {}) {
         onWarning() {}
     };
     const settings           = Object.assign({}, defaults, options);
-    const reVarDeclSelectors = new RegExp(`:${ settings.parseHost ? 'host' : 'root' }(?![.:#(])`);
+    const reVarDeclSelectors = new RegExp(`:${ settings.parseHost ? 'host' : 'root' }$`);
 
     // Convert CSS string to AST
     if (typeof cssData === 'string') {
