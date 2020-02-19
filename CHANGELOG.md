@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.2.1
+
+*2020-02-19*
+
+- Fixed parsing of `@page` margin box type rules (#97)
+- Fixed unintended parsing of custom property values from `:host` and `:root`
+  with attribute, descendant, pseudo, sibling, etc. selectors (#112)
+
 ## 2.2.0
 
 *2020-02-17*
