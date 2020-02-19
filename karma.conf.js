@@ -92,10 +92,10 @@ const settings = {
     captureTimeout            : 1000*60, // default 60000
     client: {
         // Prevent browser messages from appearing in terminal
-        captureConsole: false
-        // mocha: {
-        //     timeout: 1000*20 // default 2000
-        // }
+        captureConsole: false,
+        mocha: {
+            timeout: 1000*5 // default 2000
+        }
     }
 };
 
