@@ -193,19 +193,19 @@ cssVars({
   watch         : false,
 
   // Callbacks
-  onBeforeSend(xhr, elm, url) {
+  onBeforeSend: function(xhr, elm, url) {
     // ...
   },
-  onWarning(message) {
+  onWarning: function(message) {
     // ...
   },
-  onError(message, elm, xhr, url) {
+  onError: function(message, elm, xhr, url) {
     // ...
   },
-  onSuccess(cssText, elm, url) {
+  onSuccess: function(cssText, elm, url) {
     // ...
   },
-  onComplete(cssText, styleElms, cssVariables, benchmark) {
+  onComplete: function(cssText, styleElms, cssVariables, benchmark) {
     // ...
   }
 });
@@ -714,7 +714,7 @@ Callback before each [XMLHttpRequest](https://developer.mozilla.org/en-US/docs/W
 
 ```javascript
 cssVars({
-  onBeforeSend(xhr, elm, url) {
+  onBeforeSend: function(xhr, elm, url) {
     // Domain-specific XHR settings
     if (/some-domain.com/.test(url)) {
       xhr.withCredentials = true;
@@ -747,7 +747,7 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onWarning(message) {
+  onWarning: function(message) {
     console.log(message); // 1
   }
 });
@@ -778,7 +778,7 @@ JavaScript:
 
 ```javascript
 cssVars({
-  onError(message, elm, xhr, url) {
+  onError: function(message, elm, xhr, url) {
     console.log(message); // 1
     console.log(elm); // 2
     console.log(xhr.status); // 3
@@ -810,9 +810,9 @@ Callback after CSS data has been collected from each element. Allows modifying t
 
 ```javascript
 cssVars({
-  onSuccess(cssText, elm, url) {
+  onSuccess: function(cssText, elm, url) {
     // Replace all instances of "color: red" with "color: blue"
-    const newCssText = cssText.replace(/color:\s*red\s;/g, 'color: blue;');
+    var newCssText = cssText.replace(/color:\s*red\s;/g, 'color: blue;');
 
     return newCssText;
   }
@@ -834,7 +834,7 @@ Callback after all CSS has been processed, legacy-compatible CSS has been genera
 
 ```javascript
 cssVars({
-  onComplete(cssText, styleElms, cssVariables, benchmark) {
+  onComplete: function(cssText, styleElms, cssVariables, benchmark) {
     // ...
   }
 });
