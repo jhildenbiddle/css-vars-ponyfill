@@ -264,7 +264,7 @@ cssVars({
 - Type: `string`
 - Default: `"link[rel=stylesheet],style"`
 
-CSS selector matching `<link>` and `<style>` elements to process. The default value includes all style and link elements.
+CSS selector matching `<link>` and/or `<style>` elements to process. The default value includes all style and link elements.
 
 **Tip:** For the best performance, avoid unnecessary CSS processing by including only elements that need to be transformed. See [options.exclude](#exclude) for an alternate approach.
 
@@ -302,7 +302,7 @@ cssVars({
 - Type: `string`
 - Default: *none*
 
-CSS selector matching `<link rel="stylesheet">` and `<style>` elements to exclude from those matched by [options.include](#include).
+CSS selector matching `<link>` and/or `<style>` elements to exclude from those matched by [options.include](#include).
 
 **Tip:** For the best performance, avoid unnecessary processing by excluding elements that do not need to be transformed. See [options.include](#include) for an alternate approach.
 
