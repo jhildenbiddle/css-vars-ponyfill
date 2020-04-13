@@ -127,7 +127,7 @@ div {
 To update values:
 
 - Use [options.watch](#watch) to update CSS automatically on `<link>` and `<style>` mutations
-- Manually call the ponyfill after a `<link>` or `style` node has been added or removed
+- Manually call the ponyfill after a `<link>` or `<style>` node has been added or removed
 - Manually call the ponyfill with [options.variables](#variables)
 
 Updated values will be applied in both legacy and modern browsers, providing a single API for handling custom property changes for all browsers:
@@ -164,8 +164,8 @@ Note that the when [options.onlyLegacy](#onlylegacy) is `false`, modern browsers
 **Callbacks**
 
 - [onBeforeSend](#onbeforesend)
-- [onWarning](#onwarning)
 - [onError](#onerror)
+- [onWarning](#onwarning)
 - [onSuccess](#onsuccess)
 - [onComplete](#oncomplete)
 
@@ -196,10 +196,10 @@ cssVars({
   onBeforeSend: function(xhr, elm, url) {
     // ...
   },
-  onWarning: function(message) {
+  onError: function(message, elm, xhr, url) {
     // ...
   },
-  onError: function(message, elm, xhr, url) {
+  onWarning: function(message) {
     // ...
   },
   onSuccess: function(cssText, elm, url) {
@@ -344,7 +344,7 @@ A collection of custom property name/value pairs to apply to both legacy and mod
 
 Legacy browsers (and modern browsers when [options.onlyLegacy](#onlylegacy) is `false`) will process these values while generating legacy-compatible CSS. Modern browsers with native support for CSS custom properties will add/update these values using the [setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method when [options.updateDOM](#updatedom) is `true`.
 
-**Note:** Although these values are applied to both modern and legacy browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be triggered in legacy browsers (or in modern browsers when [onlyLegacy](#onlylegacy) is `false`).
+**Note:** Although these values are applied to both modern and legacy browsers, ponyfill callbacks like (e.g. [onComplete](#oncomplete)) will only be invoked in legacy browsers (or in modern browsers when [onlyLegacy](#onlylegacy) is `false`).
 
 **Example**
 
@@ -366,7 +366,7 @@ Determines how the ponyfill handles modern browsers with native CSS custom prope
 
 When `true`, the ponyfill will only transform CSS and trigger callbacks in browsers that lack native support for CSS custom properties. When `false`, the ponyfill will transform CSS and trigger callbacks in all browsers, regardless of their support for CSS custom properties.
 
-**Tip:** Setting this value to `false` allows for testing in modern browsers when legacy browsers are not accessible and easier debugging using developer tools available only in modern browsers.
+**Tip:** Setting this value to `false` allows for easier testing and debugging in modern browsers when legacy browsers are not accessible.
 
 **Example**
 
@@ -725,6 +725,45 @@ cssVars({
 });
 ```
 
+### onError
+
+- Type: `function`
+- Arguments:
+  1. **message**: The error message
+  1. **elm**: The source element `object` reference
+  1. **xhr**: The XHR `object` containing details of the failed request
+  1. **url**: The source URL `string` (`<link>` href or `@import` url)
+
+Callback after a CSS parsing error has occurred or an XHR request has failed.
+
+**Example**
+
+HTML:
+
+```html
+<link rel="stylesheet" href="path/to/fail.css">
+```
+
+JavaScript:
+
+```javascript
+cssVars({
+  onError: function(message, elm, xhr, url) {
+    console.log(message); // 1
+    console.log(elm); // 2
+    console.log(xhr.status); // 3
+    console.log(xhr.statusText); // 4
+    console.log(url); // 5
+  }
+});
+
+// 1 => 'CSS XHR error: "http://domain.com/path/to/fail.css" 404 (Not Found)'
+// 2 => <link rel="stylesheet" href="path/to/fail.css">
+// 3 => '404'
+// 4 => 'Not Found'
+// 5 => 'http://domain.com/path/to/fail.css'
+```
+
 ### onWarning
 
 - Type: `function`
@@ -755,45 +794,6 @@ cssVars({
 // 1 => 'CSS transform warning: variable "--fail" is undefined'
 ```
 
-### onError
-
-- Type: `function`
-- Arguments:
-  1. **message**: The error message
-  1. **elm**: The source element `object` reference
-  1. **xhr**: The XHR `object` containing details of the failed request
-  1. **url**: The source URL `string` (`<link>` href or `@import` url)
-
-Callback after a CSS parsing error has occurred or an XHR request has failed.
-
-**Example**
-
-HTML:
-
-```css
-<link rel="stylesheet" href="path/to/fail.css">
-```
-
-JavaScript:
-
-```javascript
-cssVars({
-  onError: function(message, elm, xhr, url) {
-    console.log(message); // 1
-    console.log(elm); // 2
-    console.log(xhr.status); // 3
-    console.log(xhr.statusText); // 4
-    console.log(url); // 5
-  }
-});
-
-// 1 => 'CSS XHR error: "http://domain.com/path/to/fail.css" 404 (Not Found)'
-// 2 => <link rel="stylesheet" href="path/to/fail.css">
-// 3 => '404'
-// 4 => 'Not Found'
-// 5 => 'http://domain.com/path/to/fail.css'
-```
-
 ### onSuccess
 
 - Type: `function`
@@ -804,7 +804,7 @@ cssVars({
 
 Callback after CSS data has been collected from each element. Allows modifying the CSS data before it is added to the final output by returning any `string` value or skipping the CSS data by returning `false`, `null`, or an empty string (`""`).
 
-**Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby triggering this callback) is not guaranteed as these requests are asynchronous.
+**Note:** The order in which `<link>` and `@import` CSS data is "successfully" collected (thereby invoking this callback) is not guaranteed as these requests are asynchronous.
 
 **Example**
 
