@@ -13,9 +13,10 @@ declare module 'css-vars-ponyfill' {
         updateURLs?: boolean;
         watch?: null|boolean;
         onBeforeSend?(xhr: XMLHttpRequest, elm: HTMLLinkElement|HTMLStyleElement, url: string): void;
-        onWarning?(message: string): void;
         onError?(message: string, elm: HTMLLinkElement|HTMLStyleElement, xhr: XMLHttpRequest, url: string): void;
+        onWarning?(message: string): void;
         onSuccess?(cssText: string, elm: HTMLLinkElement|HTMLStyleElement, url: string): void;
         onComplete?(cssText: string, styleElms: HTMLStyleElement[], cssVariables: {[key: string]: string}, benchmark: number): void;
+        onFinally?(hasChanged: boolean, hasNativeSupport: boolean, benchmark: number): void;
     }): void;
 }

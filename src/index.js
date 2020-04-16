@@ -34,10 +34,11 @@ const defaults = {
     watch         : null,  // cssVars
     // Callbacks
     onBeforeSend() {},     // cssVars
-    onWarning() {},        // transformCss
     onError() {},          // cssVars
+    onWarning() {},        // transformCss
     onSuccess() {},        // cssVars
-    onComplete() {}        // cssVars
+    onComplete() {},       // cssVars
+    onFinally() {}         // cssVars
 };
 const regex = {
     // CSS comments
@@ -133,12 +134,12 @@ let isShadowDOMReady = false;
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
  *                   source URL as arguments
- * @param {function} [options.onWarning] Callback after each CSS parsing warning
- *                   has occurred. Passes 1) a warning message as an argument.
  * @param {function} [options.onError] Callback after a CSS parsing error has
  *                   occurred or an XHR request has failed. Passes 1) an error
  *                   message, and 2) source node reference, 3) xhr, and 4 url as
  *                   arguments.
+ * @param {function} [options.onWarning] Callback after each CSS parsing warning
+ *                   has occurred. Passes 1) a warning message as an argument.
  * @param {function} [options.onSuccess] Callback after CSS data has been
  *                   collected from each node and before CSS custom properties
  *                   have been transformed. Allows modifying the CSS data before
@@ -153,7 +154,12 @@ let isShadowDOMReady = false;
  *                   the DOM, 3) an object containing all custom properies names
  *                   and values, and 4) the ponyfill execution time in
  *                   milliseconds.
- *
+ * @param {function} [options.onFinally] Callback after changes have been
+ *                   applied in modern and legacy browsers. Passes 1) a boolean
+ *                   indicating if the last ponyfill call resulted in a style
+ *                   change, 2) a boolean indicating if the current browser
+ *                   provides native support for CSS custom properties, and 3)
+ *                   the ponyfill execution time in milliseconds.
  * @example
  *
  *   cssVars({
@@ -170,10 +176,11 @@ let isShadowDOMReady = false;
  *     updateURLs    : true,
  *     watch         : false,
  *     onBeforeSend(xhr, node, url) {},
- *     onWarning(message) {},
  *     onError(message, node, xhr, url) {},
+ *     onWarning(message) {},
  *     onSuccess(cssText, node, url) {},
- *     onComplete(cssText, styleNode, cssVariables, benchmark) {}
+ *     onComplete(cssText, styleNode, cssVariables, benchmark) {},
+ *     onFinally(hasChanged, hasNativeSupport, benchmark)
  *   });
  */
 function cssVars(options = {}) {
@@ -198,6 +205,14 @@ function cssVars(options = {}) {
         }
 
         settings.onWarning(message);
+    }
+
+    function handleFinally(hasChanged) {
+        settings.onFinally(
+            Boolean(hasChanged),
+            isNativeSupport,
+            getTimeStamp() - settings.__benchmark
+        );
     }
 
     // Exit if non-browser environment (e.g. Node)
@@ -281,10 +296,17 @@ function cssVars(options = {}) {
             if (settings.updateDOM) {
                 const targetElm = settings.rootElement.host || (settings.rootElement === document ? document.documentElement : settings.rootElement);
 
+                let hasVarChange = false;
+
                 // Set variables using native methods
                 Object.keys(settings.variables).forEach(key => {
-                    targetElm.style.setProperty(key, settings.variables[key]);
+                    const varValue = settings.variables[key];
+
+                    hasVarChange = hasVarChange || varValue !== getComputedStyle(targetElm).getPropertyValue(key);
+                    targetElm.style.setProperty(key, varValue);
                 });
+
+                handleFinally(hasVarChange);
             }
         }
         // Ponyfill: Handle rootElement set to a shadow host or root
@@ -549,13 +571,15 @@ function cssVars(options = {}) {
                         // flag from being reset after the callback.
                         cssVarsIsRunning = false;
 
-                        // Callback
+                        // Callbacks
                         settings.onComplete(
                             outCssArray.join(''),
                             outNodeArray,
                             JSON.parse(JSON.stringify(variableStore.job)),
                             getTimeStamp() - settings.__benchmark
                         );
+
+                        handleFinally(outNodeArray.length);
                     }
                 }
             });

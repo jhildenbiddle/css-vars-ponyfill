@@ -168,6 +168,7 @@ Note that the when [options.onlyLegacy](#onlylegacy) is `false`, modern browsers
 - [onWarning](#onwarning)
 - [onSuccess](#onsuccess)
 - [onComplete](#oncomplete)
+- [onFinally](#onfinally)
 
 **Example**
 
@@ -206,6 +207,9 @@ cssVars({
     // ...
   },
   onComplete: function(cssText, styleElms, cssVariables, benchmark) {
+    // ...
+  },
+  onFinally: function(hasChanged, hasNativeSupport, benchmark) {
     // ...
   }
 });
@@ -364,7 +368,7 @@ cssVars({
 
 Determines how the ponyfill handles modern browsers with native CSS custom property support.
 
-When `true`, the ponyfill will only transform CSS and trigger callbacks in browsers that lack native support for CSS custom properties. When `false`, the ponyfill will transform CSS and trigger callbacks in all browsers, regardless of their support for CSS custom properties.
+When `true`, the ponyfill will only generate legacy-compatible CSS and invoke associated callbacks in browsers that lack native support for CSS custom properties (i.e. "legacy" browsers). When `false`, the ponyfill will treat all browsers as legacy, generating legacy-compatible CSS and invoking associated callbacks regardless of support for CSS custom properties.
 
 **Tip:** Setting this value to `false` allows for easier testing and debugging in modern browsers when legacy browsers are not accessible.
 
@@ -597,7 +601,7 @@ Console:
 
 Determines if the ponyfill will update the DOM after processing CSS custom properties.
 
-When `true`, transformed CSS will be appended to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the `<link>` or `<style>` element that contains the source CSS. For modern browsers, [options.variables](#variabls) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the ponyfill in either modern or legacy browsers, but transformed CSS can be accessed with the [options.onComplete](#oncomplete) callback.
+When `true`, transformed CSS will be appended to the DOM. For legacy browsers, this is accomplished by appending a `<style>` element with transformed CSS after the `<link>` or `<style>` element that contains the source CSS. For modern browsers, [options.variables](#variables) values will be applied as custom property changes using the native [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) method. When `false`, the DOM will not be updated by the ponyfill in either modern or legacy browsers, but transformed CSS can be accessed with the [options.onComplete](#oncomplete) callback.
 
 **Example**
 
@@ -828,7 +832,7 @@ cssVars({
   1. **cssVariables**: An `object` containing CSS custom property names and values
   1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
 
-Callback after all CSS has been processed, legacy-compatible CSS has been generated, and (optionally) the DOM has been updated.
+Callback after all legacy-compatible CSS has been generated and (optionally) applied to the DOM.
 
 **Example**
 
@@ -836,6 +840,36 @@ Callback after all CSS has been processed, legacy-compatible CSS has been genera
 cssVars({
   onComplete: function(cssText, styleElms, cssVariables, benchmark) {
     // ...
+  }
+});
+```
+
+### onFinally
+
+- Type: `function`
+- Arguments:
+  1. **hasChanged**: A `boolean` indicating if the last ponyfill call resulted in a style change
+  1. **hasNativeSupport**: A `boolean` indicating if the current browser provides [native support](https://caniuse.com/#feat=css-variables) for CSS custom properties
+  1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
+
+Callback after changes have been applied in modern and legacy browsers.
+
+**Example**
+
+```javascript
+cssVars({
+  onFinally: function(hasChanged, hasNativeSupport, benchmark) {
+    // All browsers
+    // ...
+
+    // Modern browsers
+    if (hasNativeSupport) {
+      // ...
+    }
+    // Legacy browsers
+    else {
+      // ...
+    }
   }
 });
 ```

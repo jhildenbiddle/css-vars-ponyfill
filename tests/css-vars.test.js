@@ -879,69 +879,6 @@ describe('css-vars', function() {
             });
         });
 
-        it('triggers onSuccess callback on each success with proper arguments', function(done) {
-            const linkUrl   = '/base/tests/fixtures/test-value.css';
-            const styleElms = createTestElms([
-                { tag: 'style', text: ':root { --color: red; }' },
-                { tag: 'style', text: 'p { color: var(--color); }' },
-                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } }
-            ]);
-
-            const expectCss = 'p{color:red;}'.repeat(2);
-
-            let onSuccessCount = 0;
-
-            cssVars({
-                include    : '[data-test]',
-                onlyLegacy : false,
-                updateDOM  : false,
-                onSuccess(cssText, node, url) {
-                    expect(node, 'onSuccess node').to.equal(styleElms[onSuccessCount]);
-
-                    // Link
-                    if (node.tagName.toLowerCase() === 'link') {
-                        expect(cssText.replace(/\n|\s/g, ''), 'onSuccess cssText').to.equal('p{color:var(--color);}');
-                        expect(url, 'onSuccess url').to.include(linkUrl);
-                    }
-                    // Style
-                    else {
-                        expect(cssText, 'onSuccess cssText').to.equal(styleElms[onSuccessCount].textContent);
-                        expect(url, 'onSuccess url').to.equal(window.location.href);
-                    }
-
-                    onSuccessCount++;
-
-                    return /SKIP/.test(cssText) ? false : cssText;
-                },
-                onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                    expect(onSuccessCount, 'onSuccess count').to.equal(styleElms.length);
-                    expect(cssText).to.equal(expectCss);
-                    done();
-                }
-            });
-        });
-
-        it('triggers onWarning callback on each warning with proper arguments', function(done) {
-            const styleElms = createTestElms([
-                { tag: 'style', text: 'p { color: var(--fail); }' }
-            ]);
-
-            let onWarningCount = 0;
-
-            cssVars({
-                include    : '[data-test]',
-                onlyLegacy : false,
-                silent     : true, // remove to display console error messages
-                onWarning(warningMsg) {
-                    onWarningCount++;
-                },
-                onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                    expect(onWarningCount, 'onWarning count').to.equal(styleElms.length);
-                    done();
-                }
-            });
-        });
-
         it('triggers onError callback on each error with proper arguments', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-onerror.css';
             const styleCss  = ':root { --error: red;';
@@ -1007,6 +944,69 @@ describe('css-vars', function() {
             });
         });
 
+        it('triggers onWarning callback on each warning with proper arguments', function(done) {
+            const styleElms = createTestElms([
+                { tag: 'style', text: 'p { color: var(--fail); }' }
+            ]);
+
+            let onWarningCount = 0;
+
+            cssVars({
+                include    : '[data-test]',
+                onlyLegacy : false,
+                silent     : true, // remove to display console error messages
+                onWarning(warningMsg) {
+                    onWarningCount++;
+                },
+                onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    expect(onWarningCount, 'onWarning count').to.equal(styleElms.length);
+                    done();
+                }
+            });
+        });
+
+        it('triggers onSuccess callback on each success with proper arguments', function(done) {
+            const linkUrl   = '/base/tests/fixtures/test-value.css';
+            const styleElms = createTestElms([
+                { tag: 'style', text: ':root { --color: red; }' },
+                { tag: 'style', text: 'p { color: var(--color); }' },
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } }
+            ]);
+
+            const expectCss = 'p{color:red;}'.repeat(2);
+
+            let onSuccessCount = 0;
+
+            cssVars({
+                include    : '[data-test]',
+                onlyLegacy : false,
+                updateDOM  : false,
+                onSuccess(cssText, node, url) {
+                    expect(node, 'onSuccess node').to.equal(styleElms[onSuccessCount]);
+
+                    // Link
+                    if (node.tagName.toLowerCase() === 'link') {
+                        expect(cssText.replace(/\n|\s/g, ''), 'onSuccess cssText').to.equal('p{color:var(--color);}');
+                        expect(url, 'onSuccess url').to.include(linkUrl);
+                    }
+                    // Style
+                    else {
+                        expect(cssText, 'onSuccess cssText').to.equal(styleElms[onSuccessCount].textContent);
+                        expect(url, 'onSuccess url').to.equal(window.location.href);
+                    }
+
+                    onSuccessCount++;
+
+                    return /SKIP/.test(cssText) ? false : cssText;
+                },
+                onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    expect(onSuccessCount, 'onSuccess count').to.equal(styleElms.length);
+                    expect(cssText).to.equal(expectCss);
+                    done();
+                }
+            });
+        });
+
         it('triggers onComplete callback with proper arguments', function(done) {
             const styleCss   = ':root { --color: red; } p { color: var(--color); }';
             const expectCss  = 'p{color:red;}';
@@ -1014,16 +1014,94 @@ describe('css-vars', function() {
             createTestElms({ tag: 'style', text: styleCss });
 
             cssVars({
-                include    : '[data-test]',
-                onlyLegacy : false,
-                updateDOM  : false,
+                include   : '[data-test]',
+                onlyLegacy: false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText).to.equal(expectCss);
+                    expect(styleNodes.length).to.equal(1);
+                    expect(styleNodes[0].tagName).to.equal('STYLE');
                     expect(cssVariables).to.have.property('--color');
                     expect(cssVariables['--color']).to.equal('red');
+                    expect(typeof benchmark).to.equal('number');
                     done();
                 }
             });
+        });
+
+        it('triggers onFinally callback with proper arguments', function(done) {
+            createTestElms({ tag: 'style', text: ':root { --color: red; }' });
+
+            function step1() {
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    onFinally(hasChanged, hasNativeSupport, benchmark) {
+                        expect(hasChanged, 'step1').to.be.false;
+                        expect(hasNativeSupport).to.equal(hasCustomPropertySupport);
+                        expect(typeof benchmark).to.equal('number');
+                        step2();
+                    }
+                });
+            }
+
+            function step2() {
+                createTestElms({ tag: 'style', text: 'p { color: var(--color); }' });
+
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    onFinally(hasChanged, hasNativeSupport, benchmark) {
+                        expect(hasChanged, 'step2').to.be.true;
+                        step3();
+                    }
+                });
+            }
+
+            function step3() {
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    variables : {
+                        '--color': 'red'
+                    },
+                    onFinally(hasChanged, hasNativeSupport, benchmark) {
+                        expect(hasChanged, 'step3').to.be.false;
+                        step4();
+                    }
+                });
+            }
+
+            function step4() {
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: false,
+                    variables : {
+                        '--color': 'green'
+                    },
+                    onFinally(hasChanged, hasNativeSupport, benchmark) {
+                        expect(hasChanged, 'step4').to.be.true;
+                        step5();
+                    }
+                });
+            }
+
+            function step5() {
+                cssVars({
+                    include   : '[data-test]',
+                    onlyLegacy: true,
+                    variables : {
+                        '--color': 'blue'
+                    },
+                    onFinally(hasChanged, hasNativeSupport, benchmark) {
+                        expect(hasChanged, 'step5').to.be.true;
+                        expect(hasNativeSupport).to.equal(hasCustomPropertySupport);
+                        expect(typeof benchmark).to.equal('number');
+                        done();
+                    }
+                });
+            }
+
+            step1();
         });
     });
 
