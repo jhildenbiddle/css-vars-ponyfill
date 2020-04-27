@@ -313,9 +313,10 @@ function cssVars(options = {}) {
         else if (!isShadowDOMReady && (settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host)) {
             // Get all document-level CSS
             getCssData({
-                rootElement: defaults.rootElement,
-                include: defaults.include,
-                exclude: settings.exclude,
+                rootElement : defaults.rootElement,
+                include     : defaults.include,
+                exclude     : settings.exclude,
+                skipDisabled: false,
                 onSuccess(cssText, node, url) {
                     cssText = cssText
                         .replace(regex.cssComments, '')
@@ -356,6 +357,7 @@ function cssVars(options = {}) {
                 rootElement : settings.rootElement,
                 include     : settings.include,
                 exclude     : settings.exclude,
+                skipDisabled: false,
                 onBeforeSend: settings.onBeforeSend,
                 onError(xhr, node, url) {
                     const responseUrl = xhr.responseURL || getFullUrl(url, location.href);
@@ -387,11 +389,13 @@ function cssVars(options = {}) {
 
                     // Parse CSS and variables
                     nodeArray.forEach((node, i) => {
+                        const nodeCSS = cssArray[i];
+
                         // Only process CSS contains a custom property
                         // declarations or function
-                        if (regex.cssVars.test(cssArray[i])) {
+                        if (regex.cssVars.test(nodeCSS)) {
                             try {
-                                const cssTree = parseCss(cssArray[i], {
+                                const cssTree = parseCss(nodeCSS, {
                                     preserveStatic: settings.preserveStatic,
                                     removeComments: true
                                 });
@@ -464,7 +468,7 @@ function cssVars(options = {}) {
                             counters.job++;
                         }
 
-                        nodeArray.forEach(node => {
+                        nodeArray.forEach((node, i) => {
                             let isSkip = !node.__cssVars;
 
                             if (node.__cssVars) {
@@ -477,16 +481,24 @@ function cssVars(options = {}) {
                                     const outCss = stringifyCss(node.__cssVars.tree);
 
                                     if (settings.updateDOM) {
+                                        const nodeCSS       = cssArray[i];
+                                        const hasCSSVarFunc = regex.cssVarFunc.test(nodeCSS);
+
                                         if (!node.getAttribute('data-cssvars')) {
                                             node.setAttribute('data-cssvars', 'src');
                                         }
 
-                                        if (outCss.length) {
-                                            const dataGroup       = node.getAttribute('data-cssvars-group') || ++counters.group;
+                                        if (outCss.length && hasCSSVarFunc) {
+                                            const dataGroup      = node.getAttribute('data-cssvars-group') || ++counters.group;
                                             const outCssNoSpaces = outCss.replace(/\s/g,'');
                                             const outNode        = settings.rootElement.querySelector(`[data-cssvars="out"][data-cssvars-group="${dataGroup}"]`) || document.createElement('style');
 
                                             hasKeyframesWithVars = hasKeyframesWithVars || regex.cssKeyframes.test(outCss);
+
+                                            // Disable source stylesheet
+                                            if (settings.preserveStatic) {
+                                                node.sheet.disabled = true;
+                                            }
 
                                             if (!outNode.hasAttribute('data-cssvars')) {
                                                 outNode.setAttribute('data-cssvars', 'out');
@@ -639,10 +651,10 @@ function addMutationObserver(settings) {
     function isLink(node) {
         const isStylesheet = node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
 
-        return isStylesheet && !node.disabled;
+        return isStylesheet && !node.sheet.disabled;
     }
     function isStyle(node) {
-        return node.tagName === 'STYLE' && !node.disabled;
+        return node.tagName === 'STYLE' && !node.sheet.disabled;
     }
     function isValidAddMutation(mutationNodes) {
         return Array.apply(null, mutationNodes).some(node => {

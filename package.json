@@ -89,7 +89,7 @@
     "eslint": "^6.8.0",
     "eslint-plugin-chai-expect": "^2.1.0",
     "eslint-plugin-mocha": "^6.3.0",
-    "get-css-data": "^1.7.1",
+    "get-css-data": "^1.8.0",
     "jsdom": "^16.2.2",
     "karma": "^4.4.1",
     "karma-chai": "^0.1.0",
