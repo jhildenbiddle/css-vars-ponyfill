@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.3.0
+
+*2020-04-27*
+
+- Added `options.onFinally` callback (#113)
+- Added disabling of CSS source nodes after ponyfill-generated CSS has been
+  appended to the DOM. This change prevents duplicate CSS rules which improves
+  style recalculation times in the browser. (#120)
+
 ## 2.2.1
 
 *2020-02-19*
