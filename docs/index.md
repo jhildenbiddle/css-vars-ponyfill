@@ -852,7 +852,7 @@ cssVars({
   1. **hasNativeSupport**: A `boolean` indicating if the current browser provides [native support](https://caniuse.com/#feat=css-variables) for CSS custom properties
   1. **benchmark**: A `number` representing to the ponyfill execution time in milliseconds
 
-Callback after changes have been applied in modern and legacy browsers.
+Callback in modern and legacy browsers after the ponyfill has finished all tasks.
 
 **Example**
 
@@ -862,13 +862,16 @@ cssVars({
     // All browsers
     // ...
 
-    // Modern browsers
-    if (hasNativeSupport) {
-      // ...
-    }
-    // Legacy browsers
-    else {
-      // ...
+    // If a CSS change has occurred...
+    if (hasChanged) {
+      // Modern browsers
+      if (hasNativeSupport) {
+        // ...
+      }
+      // Legacy browsers
+      else {
+        // ...
+      }
     }
   }
 });

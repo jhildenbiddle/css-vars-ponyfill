@@ -154,12 +154,12 @@ let isShadowDOMReady = false;
  *                   the DOM, 3) an object containing all custom properies names
  *                   and values, and 4) the ponyfill execution time in
  *                   milliseconds.
- * @param {function} [options.onFinally] Callback after changes have been
- *                   applied in modern and legacy browsers. Passes 1) a boolean
- *                   indicating if the last ponyfill call resulted in a style
- *                   change, 2) a boolean indicating if the current browser
- *                   provides native support for CSS custom properties, and 3)
- *                   the ponyfill execution time in milliseconds.
+ * @param {function} [options.onFinally] Callback in modern and legacy browsers
+ *                   after the ponyfill has finished all tasks. Passes 1) a
+ *                   boolean indicating if the last ponyfill call resulted in a
+ *                   style change, 2) a boolean indicating if the current
+ *                   browser provides native support for CSS custom properties,
+ *                   and 3) the ponyfill execution time in milliseconds.
  * @example
  *
  *   cssVars({
@@ -292,11 +292,11 @@ function cssVars(options = {}) {
     if (document.readyState !== 'loading') {
         // Native support
         if (isNativeSupport && settings.onlyLegacy) {
+            let hasVarChange = false;
+
             // Apply settings.variables
             if (settings.updateDOM) {
                 const targetElm = settings.rootElement.host || (settings.rootElement === document ? document.documentElement : settings.rootElement);
-
-                let hasVarChange = false;
 
                 // Set variables using native methods
                 Object.keys(settings.variables).forEach(key => {
@@ -305,9 +305,9 @@ function cssVars(options = {}) {
                     hasVarChange = hasVarChange || varValue !== getComputedStyle(targetElm).getPropertyValue(key);
                     targetElm.style.setProperty(key, varValue);
                 });
-
-                handleFinally(hasVarChange);
             }
+
+            handleFinally(hasVarChange);
         }
         // Ponyfill: Handle rootElement set to a shadow host or root
         else if (!isShadowDOMReady && (settings.shadowDOM || settings.rootElement.shadowRoot || settings.rootElement.host)) {
