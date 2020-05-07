@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.3.1
+
+*2020-05-07*
+
+- Fixed `disabled` state check on injected `<link>` nodes
+
 ## 2.3.0
 
 *2020-04-27*
