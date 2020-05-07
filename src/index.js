@@ -648,13 +648,19 @@ cssVars.reset = function() {
  * @param {object} settings
  */
 function addMutationObserver(settings) {
+    function isDisabled(node) {
+        const isDisabledAttr  = node.hasAttribute('disabled');
+        const isDisabledSheet = (node.sheet || {}).disabled;
+
+        return isDisabledAttr || isDisabledSheet;
+    }
     function isLink(node) {
         const isStylesheet = node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
 
-        return isStylesheet && !node.sheet.disabled;
+        return isStylesheet && !isDisabled(node);
     }
     function isStyle(node) {
-        return node.tagName === 'STYLE' && !node.sheet.disabled;
+        return node.tagName === 'STYLE' && !isDisabled(node);
     }
     function isValidAddMutation(mutationNodes) {
         return Array.apply(null, mutationNodes).some(node => {
