@@ -12,6 +12,7 @@ declare module 'css-vars-ponyfill' {
         updateDOM?: boolean;
         updateURLs?: boolean;
         watch?: null|boolean;
+        watchTarget?: string;
         onBeforeSend?(xhr: XMLHttpRequest, elm: HTMLLinkElement|HTMLStyleElement, url: string): void;
         onError?(message: string, elm: HTMLLinkElement|HTMLStyleElement, xhr: XMLHttpRequest, url: string): void;
         onWarning?(message: string): void;

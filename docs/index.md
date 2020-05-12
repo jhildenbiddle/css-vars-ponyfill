@@ -704,6 +704,23 @@ cssVars({
 });
 ```
 
+### watchTarget
+
+- Type: `string`
+- Default: `undefined`
+
+Determines the target that will be bound to the MutationObserver when `watch` is set to `true`. By default, the MutationObserver will be bound to `document.documentElement`.
+
+**Example**
+
+```javascript
+cssVars({
+  // Connect MutationObserver to head element
+  watch: true,
+  watchTarget: "head",
+});
+```
+
 ### onBeforeSend
 
 - Type: `function`

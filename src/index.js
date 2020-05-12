@@ -32,6 +32,7 @@ const defaults = {
     updateDOM     : true,  // cssVars
     updateURLs    : true,  // cssVars
     watch         : null,  // cssVars
+    watchTarget   : undefined, // cssVars
     // Callbacks
     onBeforeSend() {},     // cssVars
     onError() {},          // cssVars
@@ -131,6 +132,8 @@ let isShadowDOMReady = false;
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed
+ * @param {string}   [options.watchTarget=undefined] Determines the target that 
+ *                   MutationObserver will observe.
  * @param {function} [options.onBeforeSend] Callback before XHR is sent. Passes
  *                   1) the XHR object, 2) source node reference, and 3) the
  *                   source URL as arguments
@@ -175,6 +178,7 @@ let isShadowDOMReady = false;
  *     updateDOM     : true,
  *     updateURLs    : true,
  *     watch         : false,
+ *     watchTarget   : undefined
  *     onBeforeSend(xhr, node, url) {},
  *     onError(message, node, xhr, url) {},
  *     onWarning(message) {},
@@ -725,7 +729,13 @@ function addMutationObserver(settings) {
         }
     });
 
-    cssVarsObserver.observe(document.documentElement, {
+    let watchTarget = null;
+    if (settings.watchTarget) {
+        watchTarget = document.querySelector(settings.watchTarget);
+    }
+    watchTarget = watchTarget !== null ? watchTarget : document.documentElement;
+
+    cssVarsObserver.observe(watchTarget, {
         attributes     : true,
         attributeFilter: ['disabled', 'href'],
         childList      : true,
