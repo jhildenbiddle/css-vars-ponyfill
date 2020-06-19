@@ -40,20 +40,9 @@ const settings = {
                         {
                             loader : 'babel-loader',
                             options: {
-                                presets: [
-                                    [
-                                        '@babel/env',
-                                        {
-                                            targets: {
-                                                browsers: ['ie >= 9']
-                                            }
-                                        }
-                                    ]
-                                ],
+                                // See .babelrc
                                 plugins: [
-                                    '@babel/plugin-transform-object-assign',
-                                    'transform-custom-element-classes',
-                                    ['istanbul', { exclude: 'tests/*' }]
+                                    ['istanbul', { include: 'src/*' }]
                                 ]
                             },
                         }

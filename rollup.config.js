@@ -40,18 +40,7 @@ const pluginSettings = {
         throwOnError  : true
     },
     babel: {
-        exclude: ['node_modules/**'],
-        presets: [
-            ['@babel/env', {
-                modules: false,
-                targets: {
-                    browsers: ['ie >= 9']
-                }
-            }]
-        ],
-        plugins: [
-            '@babel/plugin-transform-object-assign'
-        ]
+        // See .babelrc
     },
     terser: {
         beautify: {
