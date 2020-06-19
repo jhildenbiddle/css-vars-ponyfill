@@ -12,7 +12,7 @@ describe('parse-css', function() {
     // Tests: Parsing
     // -------------------------------------------------------------------------
     describe('Parsing', function() {
-        it('parses CSS to an AST (object)', async function() {
+        it('parses CSS to an AST (object)', function() {
             const css = fixtures['test-parse.css'];
             const ast = parseCss(css);
 

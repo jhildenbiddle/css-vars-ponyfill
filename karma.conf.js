@@ -16,7 +16,6 @@ const files = {
 // =============================================================================
 const settings = {
     files: [
-        'node_modules/@babel/polyfill/dist/polyfill.js',
         files.test,
         // Served only (Access in tests by prepending /base/ to path)
         { pattern: files.fixtures, included: false, served: true, watched: true }

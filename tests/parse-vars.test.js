@@ -10,14 +10,14 @@ describe('parse-vars', function() {
     // Tests: Parsing
     // -------------------------------------------------------------------------
     describe('Parsing', function() {
-        it('parses from single selector', async function() {
+        it('parses from single selector', function() {
             const css  = ':root { --color: red; }';
             const vars = parseVars(css);
 
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('parses from comma-separated selector', async function() {
+        it('parses from comma-separated selector', function() {
             const css  = ':root, html { --color: red; }';
             const vars = parseVars(css);
 
@@ -26,7 +26,7 @@ describe('parse-vars', function() {
     });
 
     describe('Ignoring', function() {
-        it('ignores :root with class selector', async function() {
+        it('ignores :root with class selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root.foo { --color: green; }
@@ -36,7 +36,7 @@ describe('parse-vars', function() {
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('ignores :root with attribute selector', async function() {
+        it('ignores :root with attribute selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root[foo="bar"] { --color: green; }
@@ -46,7 +46,7 @@ describe('parse-vars', function() {
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('ignores :root with pseudo selector', async function() {
+        it('ignores :root with pseudo selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root:hover { --color: green; }
@@ -57,7 +57,7 @@ describe('parse-vars', function() {
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('ignores :root with descendant selector', async function() {
+        it('ignores :root with descendant selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root #foo { --color: green; }
@@ -68,7 +68,7 @@ describe('parse-vars', function() {
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('ignores :root with child selector', async function() {
+        it('ignores :root with child selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root > #foo { --color: green; }
@@ -79,7 +79,7 @@ describe('parse-vars', function() {
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('ignores :root with sibling selector', async function() {
+        it('ignores :root with sibling selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root ~ #foo { --color: green; }
@@ -90,7 +90,7 @@ describe('parse-vars', function() {
             expect(vars).to.eql({ '--color': 'red' });
         });
 
-        it('ignores :root with adjacent sibling selector', async function() {
+        it('ignores :root with adjacent sibling selector', function() {
             const css  = `
                 :root { --color: red; }
                 :root + #foo { --color: green; }

@@ -973,7 +973,7 @@ describe('css-vars', function() {
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrl } }
             ]);
 
-            const expectCss = 'p{color:red;}'.repeat(2);
+            const expectCss = 'p{color:red;}p{color:red;}';
 
             let onSuccessCount = 0;
 
