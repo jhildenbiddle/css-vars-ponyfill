@@ -569,10 +569,9 @@ describe('css-vars', function() {
         });
 
         describe('updateURLs', function() {
-            it('true - updates relative page url(...) paths to absolute URLs', function(done) {
-                const baseUrl   = location.href.replace(/\/(?:context|debug).html/, '');
+            it('true - skips <style> URLs', function(done) {
                 const styleCss  = ':root{--color:red;}p{color:var(--color);background:url(image.png);}';
-                const expectCss = `p{color:red;background:url(${baseUrl}/image.png);}`;
+                const expectCss = 'p{color:red;background:url(image.png);}';
 
                 createTestElms({ tag: 'style', text: styleCss });
 
@@ -588,8 +587,22 @@ describe('css-vars', function() {
             });
 
             it('true - updates relative @import url(...) paths to absolute URLs', function(done) {
-                const baseUrl   = location.href.replace(/\/(?:context|debug).html/, '');
-                const styleCss  = '@import "/base/tests/fixtures/test-urls.css";';
+                const baseUrl  = location.href.replace(/\/(?:context|debug).html/, '');
+                const styleCss = `
+                    @import "/base/tests/fixtures/test-urls.css";
+
+                    :root {
+                        --color: green;
+                    }
+
+                    h1 {
+                        background: url(image.jpg);
+                        background: url('image.jpg');
+                        background: url("image.jpg");
+                        background: url(image1.jpg) url('image2.jpg') url("image3.jpg");
+                        background: url(data:image/gif;base64,IMAGEDATA);
+                    }
+                `;
                 const expectCss = `
                     p {
                         background: url(${baseUrl}/base/tests/fixtures/a/image.jpg);
@@ -600,11 +613,19 @@ describe('css-vars', function() {
                     }
 
                     p {
-                        color: red;
+                        color: green;
                         background: url(${baseUrl}/base/tests/fixtures/image.jpg);
                         background: url('${baseUrl}/base/tests/fixtures/image.jpg');
                         background: url("${baseUrl}/base/tests/fixtures/image.jpg");
                         background: url(${baseUrl}/base/tests/fixtures/image1.jpg) url('${baseUrl}/base/tests/fixtures/image2.jpg') url("${baseUrl}/base/tests/fixtures/image3.jpg");
+                        background: url(data:image/gif;base64,IMAGEDATA);
+                    }
+
+                    h1 {
+                        background: url(image.jpg);
+                        background: url('image.jpg');
+                        background: url("image.jpg");
+                        background: url(image1.jpg) url('image2.jpg') url("image3.jpg");
                         background: url(data:image/gif;base64,IMAGEDATA);
                     }
                 `.replace(/\n|\s/g, '');
@@ -617,23 +638,6 @@ describe('css-vars', function() {
                     updateURLs : true,
                     onComplete(cssText, styleNodes, cssVariables, benchmark) {
                         expect(cssText.replace(/\n|\s/g, '')).to.equal(expectCss);
-                        done();
-                    }
-                });
-            });
-
-            it('false - does not update relative url(...) paths', function(done) {
-                const styleCss  = ':root{--color:red;}p{color:var(--color);background:url(image.png);}';
-                const expectCss = 'p{color:red;background:url(image.png);}';
-
-                createTestElms({ tag: 'style', text: styleCss });
-
-                cssVars({
-                    include    : '[data-test]',
-                    onlyLegacy : false,
-                    updateURLs : false,
-                    onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                        expect(cssText).to.equal(expectCss);
                         done();
                     }
                 });

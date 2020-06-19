@@ -126,8 +126,8 @@ let isShadowDOMReady = false;
  *                   messages will be displayed on the console
  * @param {boolean}  [options.updateDOM=true] Determines if the ponyfill will
  *                   update the DOM after processing CSS custom properties
- * @param {boolean}  [options.updateURLs=true] Determines if the ponyfill will
- *                   convert relative url() paths to absolute urls
+ * @param {boolean}  [options.updateURLs=true] Determines if relative url()
+ *                   paths will be converted to absolute urls in external CSS
  * @param {boolean}  [options.watch=false] Determines if a MutationObserver will
  *                   be created that will execute the ponyfill when a <link> or
  *                   <style> DOM mutation is observed
@@ -367,13 +367,15 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onSuccess(cssText, node, url) {
-                    const returnVal = settings.onSuccess(cssText, node, url);
+                    const isLink         = node.tagName === 'LINK';
+                    const isStyleImport  = node.tagName === 'STYLE' && cssText !== node.textContent;
+                    const returnVal      = settings.onSuccess(cssText, node, url);
 
                     // Use callback return value if provided (skip CSS if false)
                     cssText = returnVal !== undefined && Boolean(returnVal) === false ? '' : returnVal || cssText;
 
                     // Convert relative url(...) values to absolute
-                    if (settings.updateURLs) {
+                    if (settings.updateURLs && (isLink || isStyleImport)) {
                         cssText = fixRelativeCssUrls(cssText, url);
                     }
 
