@@ -25,17 +25,17 @@ describe('css-vars', function() {
     // -------------------------------------------------------------------------
     // Conditionally include web component+polyfill to avoid errors in IE < 11
     before(function() {
-        const hasWebComponentSupport = () => 'customElements' in window;
-        const isIELessThan11 = navigator.userAgent.indexOf('MSIE') !== -1;
-        const isJSDOM        = navigator.userAgent.indexOf('jsdom') !== -1;
+        const hasWebComponentSupport = 'customElements' in window;
+        const isIELessThan11         = navigator.userAgent.indexOf('MSIE') !== -1;
+        const isJSDOM                = navigator.userAgent.indexOf('jsdom') !== -1;
 
-        if (!hasWebComponentSupport() && !isIELessThan11 && !isJSDOM) {
+        if (!hasWebComponentSupport && !isIELessThan11 && !isJSDOM) {
             console.log('*** Injected: Web Component Polyfill ***');
 
             require('@webcomponents/webcomponentsjs/webcomponents-bundle.js');
         }
 
-        if (hasWebComponentSupport()) {
+        if (hasWebComponentSupport) {
             console.log('*** Injected: Web Component ***');
 
             require('./helpers/inject-test-component.js')();
