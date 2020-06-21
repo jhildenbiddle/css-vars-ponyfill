@@ -1,8 +1,8 @@
 // Dependencies
 // =============================================================================
+const fs          = require('fs');
 const getRepoInfo = require('git-repo-info');
-const pkg         = require('./package');
-
+const pkg         = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 
 // Variables
@@ -127,8 +127,8 @@ module.exports = function(config) {
             username : process.env.BROWSERSTACK_USERNAME,
             accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
             build    : `${gitInfo.branch}: ${gitInfo.commitMessage}`,
-            name     : process.env.TRAVIS_BUILD_NUMBER ? `Travis ${process.env.TRAVIS_BUILD_NUMBER}` : 'Local' + ` @ ${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short', hour12: true })}`,
-            project  : `${pkg.name}`,
+            name     : (process.env.TRAVIS_BUILD_NUMBER ? `Travis ${process.env.TRAVIS_BUILD_NUMBER}` : 'Local') + ` @ ${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short', hour12: true })}`,
+            project  : pkg.name,
             video    : false
         };
     }
