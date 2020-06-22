@@ -1,5 +1,5 @@
 declare module 'css-vars-ponyfill' {
-    export default function cssVars(options?: {
+    export interface CSSVarsPonyfillOptions {
         rootElement?: Document|HTMLElement;
         shadowDOM?: boolean;
         include?: string;
@@ -18,5 +18,7 @@ declare module 'css-vars-ponyfill' {
         onSuccess?(cssText: string, elm: HTMLLinkElement|HTMLStyleElement, url: string): void;
         onComplete?(cssText: string, styleElms: HTMLStyleElement[], cssVariables: {[key: string]: string}, benchmark: number): void;
         onFinally?(hasChanged: boolean, hasNativeSupport: boolean, benchmark: number): void;
-    }): void;
+    }
+    
+    export default function cssVars(options?: CSSVarsPonyfillOptions): void;
 }
