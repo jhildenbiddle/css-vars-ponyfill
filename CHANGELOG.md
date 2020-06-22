@@ -2,10 +2,11 @@
 
 ## 2.3.2
 
-*Unreleased*
+*2020-06-21*
 
 - Fix `options.updateURLs` behavior so relative `url()` paths in `<style>`
   elements are not updated (#129)
+- Add interface export for options typings (#126)
 
 ## 2.3.1
 
