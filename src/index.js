@@ -241,6 +241,8 @@ function cssVars(options = {}) {
             return;
         }
 
+        const srcNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])');
+
         // Store benchmark start time
         settings.__benchmark = getTimeStamp();
 
@@ -259,6 +261,17 @@ function cssVars(options = {}) {
         // Fix malformed custom property names (e.g. "color" or "-color")
         settings.variables = fixVarNames(settings.variables);
 
+        // Reset previously processed <style> nodes if textContent has changed
+        srcNodes.forEach(srcNode => {
+            const hasStyleCache = srcNode.tagName === 'STYLE' && srcNode.__cssVars.text;
+            const hasStyleChanged = hasStyleCache && srcNode.textContent !== srcNode.__cssVars.text;
+
+            if (hasStyleCache && hasStyleChanged) {
+                srcNode.sheet.disabled = false;
+                srcNode.setAttribute('data-cssvars', '');
+            }
+        });
+
         // Direct call preparation (i.e. non-MutationObserver call)
         if (!cssVarsObserver) {
             const outNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="out"]'));
@@ -274,16 +287,12 @@ function cssVars(options = {}) {
             });
 
             // Handle removed source nodes
-            if (cssVarsSrcNodeCount) {
-                const srcNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])');
+            if (cssVarsSrcNodeCount && (srcNodes.length < cssVarsSrcNodeCount)) {
+                // Update source node count
+                cssVarsSrcNodeCount = srcNodes.length;
 
-                if (srcNodes.length < cssVarsSrcNodeCount) {
-                    // Update source node count
-                    cssVarsSrcNodeCount = srcNodes.length;
-
-                    // Reset variableStore
-                    variableStore.dom = {};
-                }
+                // Reset variableStore
+                variableStore.dom = {};
             }
         }
     }
@@ -349,7 +358,7 @@ function cssVars(options = {}) {
         else {
             // Set flag to prevent successive call from stacking. Using the
             // rootElement insead of `true` allows simultaneous ponyfill calls
-            // using different rootElement values (e.g. documetn and one-or-more
+            // using different rootElement values (e.g. document and one-or-more
             // shadowDOM nodes).
             cssVarsIsRunning = settings.rootElement;
 
@@ -393,6 +402,10 @@ function cssVars(options = {}) {
                     nodeArray.forEach((node, i) => {
                         const nodeCSS = cssArray[i];
 
+                        // Node data cache
+                        node.__cssVars = node.__cssVars || {};
+                        node.__cssVars.text = nodeCSS;
+
                         // Only process CSS contains a custom property
                         // declarations or function
                         if (regex.cssVars.test(nodeCSS)) {
@@ -410,7 +423,7 @@ function cssVars(options = {}) {
                                 });
 
                                 // Cache data
-                                node.__cssVars = { tree: cssTree };
+                                node.__cssVars.tree = cssTree;
                             }
                             catch(err) {
                                 handleError(err.message, node);
@@ -471,9 +484,9 @@ function cssVars(options = {}) {
                         }
 
                         nodeArray.forEach((node, i) => {
-                            let isSkip = !node.__cssVars;
+                            let isSkip = !node.__cssVars.tree;
 
-                            if (node.__cssVars) {
+                            if (node.__cssVars.tree) {
                                 try {
                                     transformCss(node.__cssVars.tree, Object.assign({}, settings, {
                                         variables: variableStore.job,
