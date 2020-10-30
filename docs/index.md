@@ -33,15 +33,15 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 **Browser Support**
 
-<img src="https://icongr.am/devicon/chrome-original.svg?size=19" style="margin-right: 0.4em; vertical-align: text-bottom;"> Chrome 19+
+<img src="assets/img/chrome.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> Chrome 19+
 <br>
-<img src="https://icongr.am/simple/microsoftedge.svg?size=19&colored=true" style="margin-right: 0.4em; vertical-align: text-bottom;"> Edge 12+
+<img src="assets/img/edge.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> Edge 12+
 <br>
-<img src="https://icongr.am/devicon/firefox-original.svg?size=19" style="margin-right: 0.4em; vertical-align: text-bottom;"> Firefox 6+
+<img src="assets/img/firefox.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> Firefox 6+
 <br>
-<img src="https://icongr.am/simple/internetexplorer.svg?size=19&colored=true" style="margin-right: 0.4em; vertical-align: text-bottom;"> IE 9+
+<img src="assets/img/ie.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> IE 9+
 <br>
-<img src="https://icongr.am/devicon/safari-original.svg?size=19" style="margin-right: 0.4em; vertical-align: text-bottom;"> Safari 6+
+<img src="assets/img/safari.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> Safari 6+
 
 ## Installation
 
@@ -84,6 +84,7 @@ For each `<link>` and `<style>` element processed the ponyfill will:
 1. Fix nested `calc()` functions
 1. Convert the AST back to CSS
 1. Append legacy-compatible CSS to the DOM
+1. Disable the original stylesheet if styles are no longer needed
 
 Example:
 
@@ -126,14 +127,13 @@ div {
 
 To update values:
 
-- Use [options.watch](#watch) to update CSS automatically on `<link>` and `<style>` mutations
-- Manually call the ponyfill after a `<link>` or `<style>` node has been added or removed
-- Manually call the ponyfill with [options.variables](#variables)
+- Use [options.watch](#watch) to update automatically on `<link>` and `<style>` mutations
+- ... or manually call the ponyfill after a `<link>` or `<style>` node has been added or removed
+- ... or manually call the ponyfill with [options.variables](#variables) to change values
 
 Updated values will be applied in both legacy and modern browsers, providing a single API for handling custom property changes for all browsers:
 
 - In legacy browsers, the ponyfill will determine which `<link>` and `<style>` elements contain CSS affected by the new custom property value(s), then transform and append legacy-compatible CSS to the DOM for each one.
-
 - In modern browsers with native support for CSS custom properties, the ponyfill will update values using the [style.setProperty()](https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/setProperty) interface.
 
 Note that the when [options.onlyLegacy](#onlylegacy) is `false`, modern browsers with native support for CSS custom properties are treated as legacy browsers.
@@ -397,9 +397,9 @@ cssVars({
 
 Determines if CSS declarations that do not reference a custom property will be preserved in the transformed CSS.
 
-When `true`, CSS declarations that do not reference a custom property value will be preserved in the transformed CSS. This requires additional processing but ensures that the original cascade order is maintained after the transformed CSS is appended to the DOM. When `false`, these declarations will be omitted from the transformed CSS. This can increase performance by reducing the amount of CSS that needs to be processed, but doing so runs the risk of breaking the original cascade when the transformed CSS is appended to the DOM (see example below).
+When `true`, CSS declarations that do not reference a custom property value will be preserved in the transformed CSS. This ensures that the original cascade order is maintained after the transformed CSS is appended to the DOM. It also allows the ponyfill to automatically disable source stylesheets because the styles they contain will be redundant. This provides a significant performance boost by limiting the number of style recalculations necessary when transformed CSS is appended to the DOM.
 
-**Note:** Earlier versions of the ponyfill (1.x) required setting this option to `true` for optimal performance. With the optimizations introduced in 2.x, this is no longer necessary.
+When `false`, these declarations will be omitted from the transformed CSS. This can increase performance by reducing the amount of CSS that needs to be processed, but doing so runs the risk of breaking the original cascade when the transformed CSS is appended to the DOM (see example below).
 
 **Example**
 
@@ -477,7 +477,7 @@ p {
 }
 ```
 
-When the above CSS output is appended to the DOM, the `color: red;` declaration overrides the `@media` rule's `color: blue;` declaration. This is because the two `p` rules have the same [CSS specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity) so the last rule wins.
+When the above output is appended to the DOM, the `color: red` declaration overrides the `@media` rule's `color: blue` declaration. This is because the two `p` rules have the same [CSS specificity](https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity) and the output CSS is appended *after* the source CSS.
 
 A workaround for this issue is force the ponyfill to include a declaration in the output by using a bogus CSS custom property with a fallback value:
 
@@ -686,7 +686,7 @@ div {
 
 Determines if a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) will be created to watch for `<link>` and `<style>` DOM mutations.
 
-When `true`, the ponyfill will call itself when a `<link>` or `<style>` element is added, removed, or has its `disabled` or `href` attribute modified. The ponyfill settings used by the MutationObserver will be the same as the settings used the last time `options.watch` was set to `true`. When `false`, the ponyfill will disconnect the previously created MutationObserver if it exists. When `null`, the ponyfill will make no watch-related changes.
+When `true`, the ponyfill will call itself when a `<link>` or `<style>` element is added/removed, has a `disabled` or `href` attribute modified, or has its `textContent` changed (`<style>` elements only). The ponyfill settings used by the MutationObserver will be the same as the settings used the last time `options.watch` was set to `true`. When `false`, the ponyfill will disconnect the previously created MutationObserver if it exists. When `null`, the ponyfill will make no watch-related changes.
 
 **Note:** This feature requires native [support for MutationObserver](https://caniuse.com/#feat=mutationobserver) or a [polyfill](https://polyfill.io/v2/docs/) for legacy browsers.
 
@@ -876,6 +876,52 @@ cssVars({
   }
 });
 ```
+
+## FAQ
+
+- **Are scoped custom property declarations supported?**
+
+  ```css
+  p {
+    --color: red;
+  }
+  ```
+
+  No. See [#26](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/26) for details.
+
+- **Are custom property declarations in `style` attributes supported?**
+
+  ```html
+  <p style="--color: red;">Hello</p>
+  ```
+
+  No. See [#12](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/12) for details.
+
+- **Are custom property declarations in `@media` blocks supported?**
+
+  ```css
+  @media (max-width: 1024px) {
+    :root {
+      --color: red;
+    }
+  }
+  ```
+
+  No. See [#31](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/31) for details.
+
+- **Are `media` attributes on stylesheets supported?**
+
+  ```html
+  <link rel="stylesheet" href="style.css" media="screen and (max-width: 1024px)">
+  ```
+
+  No. See [#103](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/103) for details.
+
+- **Will the ponyfill support any of the above scenarios in the future?**
+
+  From [this comment](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/31#issuecomment-527674559):
+
+  > I also have to consider the fact that as time marches on, legacy browser support becomes less of an issue and so it becomes harder to justify time spent supporting them. If feedback proved that this was a critical issue for folks or if we were having this discussion in 2014/2015, I'd be much more likely to take on the work. Since neither of those are the case, it seems focusing on other tasks is a better use of time. That being said, I would be happy to review and assist with a PR if someone else wanted to have a go at it.
 
 ## Attribution
 
