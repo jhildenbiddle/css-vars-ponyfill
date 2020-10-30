@@ -99,17 +99,16 @@ module.exports = function(config) {
         // Browsers
         // https://www.browserstack.com/automate/capabilities
         settings.customLaunchers = {
+            bs_chrome_latest: {
+                base           : 'BrowserStack',
+                browser        : 'Chrome',
+                os             : 'Windows',
+                os_version     : '10'
+            },
             bs_chrome: {
                 base           : 'BrowserStack',
                 browser        : 'Chrome',
                 browser_version: '48.0',
-                os             : 'Windows',
-                os_version     : '10'
-            },
-            bs_firefox: {
-                base           : 'BrowserStack',
-                browser        : 'Firefox',
-                browser_version: '32.0',
                 os             : 'Windows',
                 os_version     : '10'
             },
