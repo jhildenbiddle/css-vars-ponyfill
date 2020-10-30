@@ -677,39 +677,72 @@ function addMutationObserver(settings) {
     function isStyle(node) {
         return node.tagName === 'STYLE' && !isDisabled(node);
     }
-    function isValidAddMutation(mutationNodes) {
-        return Array.apply(null, mutationNodes).some(node => {
-            const isElm           = node.nodeType === 1;
-            const hasAttr         = isElm && node.hasAttribute('data-cssvars');
-            const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
-            const isValid         = !hasAttr && (isLink(node) || isStyleWithVars);
+    function isValidAttributeMutation(mutation) {
+        let isValid = false;
 
-            return isValid;
-        });
+        if (mutation.type === 'attributes') {
+            isValid = isLink(mutation.target);
+        }
+
+        return isValid;
     }
-    function isValidRemoveMutation(mutationNodes) {
-        return Array.apply(null, mutationNodes).some(node => {
-            const isElm     = node.nodeType === 1;
-            const isOutNode = isElm && node.getAttribute('data-cssvars') === 'out';
-            const isSrcNode = isElm && node.getAttribute('data-cssvars') === 'src';
-            const isValid   = isSrcNode;
+    function isValidStyleTextMutation(mutation) {
+        let isValid = false;
 
-            if (isSrcNode || isOutNode) {
-                const dataGroup  = node.getAttribute('data-cssvars-group');
-                const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
+        if (mutation.type === 'childList') {
+            const isStyleElm = isStyle(mutation.target);
+            const isOutNode = mutation.target.getAttribute('data-cssvars') === 'out';
 
-                if (isSrcNode) {
-                    resetCssNodes(settings.rootElement);
-                    variableStore.dom = {};
+            isValid = isStyleElm && !isOutNode;
+        }
+
+        return isValid;
+    }
+    function isValidAddMutation(mutation) {
+        let isValid = false;
+
+        if (mutation.type === 'childList') {
+            isValid =  Array.apply(null, mutation.addedNodes).some(node => {
+                const isElm           = node.nodeType === 1;
+                const hasAttr         = isElm && node.hasAttribute('data-cssvars');
+                const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
+                const isValid         = !hasAttr && (isLink(node) || isStyleWithVars);
+
+                return isValid;
+            });
+        }
+
+        return isValid;
+    }
+    function isValidRemoveMutation(mutation) {
+        let isValid = false;
+
+        if (mutation.type === 'childList') {
+            isValid = Array.apply(null, mutation.removedNodes).some(node => {
+                const isElm     = node.nodeType === 1;
+                const isOutNode = isElm && node.getAttribute('data-cssvars') === 'out';
+                const isSrcNode = isElm && node.getAttribute('data-cssvars') === 'src';
+                const isValid   = isSrcNode;
+
+                if (isSrcNode || isOutNode) {
+                    const dataGroup  = node.getAttribute('data-cssvars-group');
+                    const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
+
+                    if (isSrcNode) {
+                        resetCssNodes(settings.rootElement);
+                        variableStore.dom = {};
+                    }
+
+                    if (orphanNode) {
+                        orphanNode.parentNode.removeChild(orphanNode);
+                    }
                 }
 
-                if (orphanNode) {
-                    orphanNode.parentNode.removeChild(orphanNode);
-                }
-            }
+                return isValid;
+            });
+        }
 
-            return isValid;
-        });
+        return isValid;
     }
 
     if (!window.MutationObserver) {
@@ -723,16 +756,12 @@ function addMutationObserver(settings) {
 
     cssVarsObserver = new MutationObserver(function(mutations) {
         const hasValidMutation = mutations.some((mutation) => {
-            let isValid = false;
-
-            if (mutation.type === 'attributes') {
-                isValid = isLink(mutation.target);
-            }
-            else if (mutation.type === 'childList') {
-                isValid = isValidAddMutation(mutation.addedNodes) || isValidRemoveMutation(mutation.removedNodes);
-            }
-
-            return isValid;
+            return (
+                isValidAttributeMutation(mutation) ||
+                isValidStyleTextMutation(mutation) ||
+                isValidAddMutation(mutation) ||
+                isValidRemoveMutation(mutation)
+            );
         });
 
         if (hasValidMutation) {
