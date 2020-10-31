@@ -672,10 +672,10 @@ function addMutationObserver(settings) {
     function isLink(node) {
         const isStylesheet = node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
 
-        return isStylesheet && !isDisabled(node);
+        return isStylesheet;
     }
     function isStyle(node) {
-        return node.tagName === 'STYLE' && !isDisabled(node);
+        return node.tagName === 'STYLE';
     }
     function isValidAttributeMutation(mutation) {
         let isValid = false;
@@ -684,7 +684,7 @@ function addMutationObserver(settings) {
             isValid = isLink(mutation.target);
         }
 
-        return isValid;
+        return isValid && !isDisabled(mutation.target);
     }
     function isValidStyleTextMutation(mutation) {
         let isValid = false;
@@ -708,7 +708,7 @@ function addMutationObserver(settings) {
                 const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
                 const isValid         = !hasAttr && (isLink(node) || isStyleWithVars);
 
-                return isValid;
+                return isValid && !isDisabled(node);
             });
         }
 
