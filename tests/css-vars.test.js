@@ -728,10 +728,11 @@ describe('css-vars', function() {
 
         if ('MutationObserver' in window) {
             describe('watch', function() {
-                it('true - observe add/remove mutations', function(done) {
+                it('true - observe add/remove/modify mutations', function(done) {
                     const expectCss = [
                         'h1{color:red;}h2{color:red;}',
-                        'h1{color:green;}h2{color:green;}'
+                        'h1{color:green;}h2{color:green;}',
+                        'h1{color:purple;}h2{color:purple;}'
                     ];
 
                     let onCompleteCount = 0;
@@ -796,6 +797,24 @@ describe('css-vars', function() {
                                     expect(srcNodes, 'Pass4:srcNodes').to.have.lengthOf(0);
                                     expect(skipNodes, 'Pass4:skipNodes').to.have.lengthOf(2);
                                     expect(styleNodes, 'Pass4:styleNodes').to.have.lengthOf(0);
+
+                                    // Modify existing <style> content
+                                    styleElms[1].textContent += `
+                                        :root {
+                                            --color: purple;
+                                        }
+                                    `;
+
+                                    break;
+                                // Modified styles handled
+                                case 4:
+                                    expect(cssText, 'Pass5:cssText').to.equal(expectCss[2]);
+                                    expect(outNodes, 'Pass5:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass5:srcNodes').to.have.lengthOf(2);
+                                    expect(skipNodes, 'Pass5:skipNodes').to.have.lengthOf(0);
+                                    expect(styleNodes, 'Pass5:styleNodes').to.have.lengthOf(2);
+
+                                    console.log({ cssText });
                                     done();
                             }
 
