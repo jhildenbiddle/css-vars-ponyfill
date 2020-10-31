@@ -813,8 +813,6 @@ describe('css-vars', function() {
                                     expect(srcNodes, 'Pass5:srcNodes').to.have.lengthOf(2);
                                     expect(skipNodes, 'Pass5:skipNodes').to.have.lengthOf(0);
                                     expect(styleNodes, 'Pass5:styleNodes').to.have.lengthOf(2);
-
-                                    console.log({ cssText });
                                     done();
                             }
 
