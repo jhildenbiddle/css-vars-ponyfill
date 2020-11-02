@@ -681,11 +681,30 @@ function addMutationObserver(settings) {
     function isValidAttributeMutation(mutation) {
         let isValid = false;
 
-        if (mutation.type === 'attributes') {
-            isValid = isLink(mutation.target);
+        if (mutation.type === 'attributes' && isLink(mutation.target) && !isDisabled(mutation.target)) {
+            const isEnabledMutation = mutation.attributeName === 'disabled';
+            const isHrefMutation = mutation.attributeName === 'href';
+            const isSkipNode = mutation.target.getAttribute('data-cssvars') === 'skip';
+            const isSrcNode = mutation.target.getAttribute('data-cssvars') === 'src';
+
+            // Enabled
+            if (isEnabledMutation) {
+                isValid = !isSkipNode && !isSrcNode;
+            }
+            // Href
+            else if (isHrefMutation) {
+                if (isSkipNode) {
+                    mutation.target.setAttribute('data-cssvars', '');
+                }
+                else if (isSrcNode) {
+                    resetCssNodes(settings.rootElement, true);
+                }
+
+                isValid = true;
+            }
         }
 
-        return isValid && !isDisabled(mutation.target);
+        return isValid;
     }
     function isValidStyleTextMutation(mutation) {
         let isValid = false;
@@ -730,8 +749,7 @@ function addMutationObserver(settings) {
                     const orphanNode = settings.rootElement.querySelector(`[data-cssvars-group="${dataGroup}"]`);
 
                     if (isSrcNode) {
-                        resetCssNodes(settings.rootElement);
-                        variableStore.dom = {};
+                        resetCssNodes(settings.rootElement, true);
                     }
 
                     if (orphanNode) {
@@ -903,10 +921,14 @@ function getTimeStamp() {
     return isBrowser && (window.performance || {}).now ? window.performance.now() : new Date().getTime();
 }
 
-function resetCssNodes(rootElement) {
+function resetCssNodes(rootElement, resetDOMVariableStore = false) {
     const resetNodes = Array.apply(null, rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
 
     resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
+
+    if (resetDOMVariableStore) {
+        variableStore.dom = {};
+    }
 }
 
 
