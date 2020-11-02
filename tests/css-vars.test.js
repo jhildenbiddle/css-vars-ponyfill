@@ -172,6 +172,31 @@ describe('css-vars', function() {
             });
         });
 
+        it('handles disabled <link> elements', function(done) {
+            const linkUrls = [
+                '/base/tests/fixtures/test-declaration.css',
+                '/base/tests/fixtures/test-value.css',
+                '/base/tests/fixtures/test-value.css'
+            ];
+            const expectCss = '';
+
+            createTestElms([
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[0], disabled: '' } },
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[1], disabled: '' } },
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[2], disabled: '' } }
+            ]);
+
+            cssVars({
+                include   : '[data-test]',
+                onlyLegacy: false,
+                onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    expect(cssText, 'cssText').to.equal(expectCss);
+                    expect(styleNodes, 'styleNodes').to.have.lengthOf(0);
+                    done();
+                }
+            });
+        });
+
         it('handles skippable <link> and <style> elements', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-skip.css';
             const expectCss = '';

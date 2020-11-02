@@ -255,6 +255,7 @@ function cssVars(options = {}) {
             //    excluded. This allows the ponyfill to update skip/src nodes
             //    after a previously processed link/style node has been removed.
             cssVarsObserver ? '[data-cssvars]:not([data-cssvars=""])' : '[data-cssvars="out"]',
+            'link[disabled]',
             settings.exclude
         ].filter(selector => selector).join(',');
 
@@ -664,7 +665,7 @@ cssVars.reset = function() {
  */
 function addMutationObserver(settings) {
     function isDisabled(node) {
-        const isDisabledAttr  = node.hasAttribute('disabled');
+        const isDisabledAttr  = isLink(node) && node.hasAttribute('disabled');
         const isDisabledSheet = (node.sheet || {}).disabled;
 
         return isDisabledAttr || isDisabledSheet;
