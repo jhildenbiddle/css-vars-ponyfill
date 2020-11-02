@@ -728,18 +728,17 @@ describe('css-vars', function() {
 
         if ('MutationObserver' in window) {
             describe('watch', function() {
-                it('true - observe add/remove/modify mutations', function(done) {
+                it('true - handles add mutation', function(done) {
                     const expectCss = [
                         'h1{color:red;}h2{color:red;}',
-                        'h1{color:green;}h2{color:green;}',
-                        'h1{color:purple;}h2{color:purple;}'
+                        'h1{color:green;}h2{color:green;}'
                     ];
 
                     let onCompleteCount = 0;
-                    let newVarDeclElm;
 
-                    const styleElms = createTestElms([
+                    createTestElms([
                         { tag: 'style', text: ':root { --color: red; }' },
+                        { tag: 'style', text: 'p { color: black; }' },
                         { tag: 'style', text: 'h1 { color: var(--color); }' },
                         { tag: 'style', text: 'h2 { color: var(--color); }' }
                     ]);
@@ -760,10 +759,11 @@ describe('css-vars', function() {
                                     expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
                                     expect(outNodes, 'Pass1:outNodes').to.have.lengthOf(2);
                                     expect(srcNodes, 'Pass1:srcNodes').to.have.lengthOf(3);
-                                    expect(skipNodes, 'Pass1:skipNodes').to.have.lengthOf(0);
+                                    expect(skipNodes, 'Pass1:skipNodes').to.have.lengthOf(1);
                                     expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(2);
 
-                                    newVarDeclElm = createTestElms({ tag: 'style', text: ':root { --color: green; }' })[0];
+                                    // Add <style> element
+                                    createTestElms({ tag: 'style', text: ':root { --color: green; }' })[0];
 
                                     break;
                                 // Add mutation handled
@@ -771,48 +771,119 @@ describe('css-vars', function() {
                                     expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
                                     expect(outNodes, 'Pass2:outNodes').to.have.lengthOf(2);
                                     expect(srcNodes, 'Pass2:srcNodes').to.have.lengthOf(4);
-                                    expect(skipNodes, 'Pass2:skipNodes').to.have.lengthOf(0);
+                                    expect(skipNodes, 'Pass2:skipNodes').to.have.lengthOf(1);
                                     expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(2);
+                                    done();
+                            }
 
-                                    // Remove last custom property declaration
-                                    newVarDeclElm.parentNode.removeChild(newVarDeclElm);
+                            onCompleteCount++;
+                        }
+                    });
+                });
+
+                it('true - handles remove mutation', function(done) {
+                    const expectCss = [
+                        'h1{color:red;}h2{color:red;}',
+                        'h1{color:green;}h2{color:green;}'
+                    ];
+
+                    let onCompleteCount = 0;
+
+                    const styleElms = createTestElms([
+                        { tag: 'style', text: ':root { --color: green; }' },
+                        { tag: 'style', text: ':root { --color: red; }' },
+                        { tag: 'style', text: 'p { color: black; }' },
+                        { tag: 'style', text: 'h1 { color: var(--color); }' },
+                        { tag: 'style', text: 'h2 { color: var(--color); }' }
+                    ]);
+
+                    cssVars({
+                        include    : '[data-test]',
+                        onlyLegacy : false,
+                        silent     : true,
+                        watch      : true,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            const outNodes  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipNodes = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcNodes  = document.querySelectorAll('[data-cssvars="src"]');
+
+                            switch(onCompleteCount) {
+                                // styleElms processed
+                                case 0:
+                                    expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
+                                    expect(outNodes, 'Pass1:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass1:srcNodes').to.have.lengthOf(4);
+                                    expect(skipNodes, 'Pass1:skipNodes').to.have.lengthOf(1);
+                                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(2);
+
+                                    // Remove <style> element
+                                    styleElms[1].parentNode.removeChild(styleElms[1]);
 
                                     break;
                                 // Remove mutation handled
-                                case 2:
-                                    expect(cssText, 'Pass3:cssText').to.equal(expectCss[0]);
-                                    expect(outNodes, 'Pass3:outNodes').to.have.lengthOf(2);
-                                    expect(srcNodes, 'Pass3:srcNodes').to.have.lengthOf(3);
-                                    expect(skipNodes, 'Pass3:skipNodes').to.have.lengthOf(0);
-                                    expect(styleNodes, 'Pass3:styleNodes').to.have.lengthOf(2);
+                                case 1:
+                                    expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
+                                    expect(outNodes, 'Pass2:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass2:srcNodes').to.have.lengthOf(3);
+                                    expect(skipNodes, 'Pass2:skipNodes').to.have.lengthOf(1);
+                                    expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(2);
+                                    done();
+                            }
 
-                                    // Remove first custom property declaration
-                                    styleElms[0].parentNode.removeChild(styleElms[0]);
+                            onCompleteCount++;
+                        }
+                    });
+                });
 
-                                    break;
-                                // Remove mutation handled
-                                case 3:
-                                    expect(cssText, 'Pass4:cssText').to.equal('');
-                                    expect(outNodes, 'Pass4:outNodes').to.have.lengthOf(0);
-                                    expect(srcNodes, 'Pass4:srcNodes').to.have.lengthOf(0);
-                                    expect(skipNodes, 'Pass4:skipNodes').to.have.lengthOf(2);
-                                    expect(styleNodes, 'Pass4:styleNodes').to.have.lengthOf(0);
+                it('true - handles <style> content change', function(done) {
+                    const expectCss = [
+                        'h1{color:red;}h2{color:red;}',
+                        'h1{color:green;}h2{color:green;}'
+                    ];
 
-                                    // Modify existing <style> content
+                    let onCompleteCount = 0;
+
+                    const styleElms = createTestElms([
+                        { tag: 'style', text: ':root { --color: red; }' },
+                        { tag: 'style', text: 'p { color: black; }' },
+                        { tag: 'style', text: 'h1 { color: var(--color); }' },
+                        { tag: 'style', text: 'h2 { color: var(--color); }' }
+                    ]);
+
+                    cssVars({
+                        include    : '[data-test]',
+                        onlyLegacy : false,
+                        silent     : true,
+                        watch      : true,
+                        onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                            const outNodes  = document.querySelectorAll('[data-cssvars="out"]');
+                            const skipNodes = document.querySelectorAll('[data-cssvars="skip"]');
+                            const srcNodes  = document.querySelectorAll('[data-cssvars="src"]');
+
+                            switch(onCompleteCount) {
+                                // styleElms processed
+                                case 0:
+                                    expect(cssText, 'Pass1:cssText').to.equal(expectCss[0]);
+                                    expect(outNodes, 'Pass1:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass1:srcNodes').to.have.lengthOf(3);
+                                    expect(skipNodes, 'Pass1:skipNodes').to.have.lengthOf(1);
+                                    expect(styleNodes, 'Pass1:styleNodes').to.have.lengthOf(2);
+
+                                    // Modify <style> content
                                     styleElms[1].textContent += `
                                         :root {
-                                            --color: purple;
+                                            --color: green;
                                         }
                                     `;
 
                                     break;
                                 // Modified styles handled
-                                case 4:
-                                    expect(cssText, 'Pass5:cssText').to.equal(expectCss[2]);
-                                    expect(outNodes, 'Pass5:outNodes').to.have.lengthOf(2);
-                                    expect(srcNodes, 'Pass5:srcNodes').to.have.lengthOf(2);
-                                    expect(skipNodes, 'Pass5:skipNodes').to.have.lengthOf(0);
-                                    expect(styleNodes, 'Pass5:styleNodes').to.have.lengthOf(2);
+                                case 1:
+                                    expect(cssText, 'Pass2:cssText').to.equal(expectCss[1]);
+                                    expect(outNodes, 'Pass2:outNodes').to.have.lengthOf(2);
+                                    expect(srcNodes, 'Pass2:srcNodes').to.have.lengthOf(4);
+                                    expect(skipNodes, 'Pass2:skipNodes').to.have.lengthOf(0);
+                                    expect(styleNodes, 'Pass2:styleNodes').to.have.lengthOf(2);
                                     done();
                             }
 
