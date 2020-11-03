@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.4.0
+
+*2020-11-03*
+
+- Add `watch` detection of `<style>` text content changes (#135)
+- Fix `watch` detection of `<link>` attribute changes (#138)
+- Fix skip behavior of `<link>` elements with `disabled` attribute
+
 ## 2.3.2
 
 *2020-06-21*
