@@ -241,7 +241,7 @@ function cssVars(options = {}) {
             return;
         }
 
-        const srcNodes = settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])');
+        const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])'));
 
         // Store benchmark start time
         settings.__benchmark = getTimeStamp();
