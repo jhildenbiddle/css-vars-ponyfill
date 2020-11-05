@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.4.1
+
+*2020-11-05*
+
+- Fix `forEach` error in legacy browsers
+
 ## 2.4.0
 
 *2020-11-03*
