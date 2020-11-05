@@ -570,10 +570,9 @@ function cssVars(options = {}) {
 
                         // Process shadow DOM
                         if (settings.shadowDOM) {
-                            const elms = [
-                                settings.rootElement,
-                                ...settings.rootElement.querySelectorAll('*')
-                            ];
+                            const elms = []
+                                .concat(settings.rootElement)
+                                .concat(Array.apply(null, settings.rootElement.querySelectorAll('*')));
 
                             // Iterates over all elements in rootElement and calls
                             // cssVars on each shadowRoot, passing document-level
