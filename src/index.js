@@ -268,7 +268,7 @@ function cssVars(options = {}) {
             const hasStyleChanged = hasStyleCache && srcNode.textContent !== srcNode.__cssVars.text;
 
             if (hasStyleCache && hasStyleChanged) {
-                srcNode.sheet.disabled = false;
+                srcNode.sheet && (srcNode.sheet.disabled = false);
                 srcNode.setAttribute('data-cssvars', '');
             }
         });
@@ -513,7 +513,7 @@ function cssVars(options = {}) {
 
                                             // Disable source stylesheet
                                             if (settings.preserveStatic) {
-                                                node.sheet.disabled = true;
+                                                node.sheet && (node.sheet.disabled = true);
                                             }
 
                                             if (!outNode.hasAttribute('data-cssvars')) {
