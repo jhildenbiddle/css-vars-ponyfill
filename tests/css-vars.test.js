@@ -83,6 +83,32 @@ describe('css-vars', function() {
             });
         });
 
+        it('handles SVG <style> elements', function(done) {
+            const styleCss = [
+                ':root { --color: red; }',
+                'circle { stroke: var(--color); }'
+            ];
+            const expectCss = 'circle{stroke:red;}';
+
+            createTestElms({ tag: 'style', text: styleCss[0] });
+            createTestElms(`
+                <svg width="50" height="50" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                    <style>${ styleCss[1] }</style>
+                    <circle cx="25" cy="25" r="20" fill="yellow" stroke-width="5"/>
+                </svg>
+            `);
+
+            cssVars({
+                include    : '[data-test], svg style',
+                onlyLegacy : false,
+                onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    expect(cssText, 'cssText').to.equal(expectCss);
+                    expect(styleNodes, 'styleNodes').to.have.lengthOf(styleCss.length - 1);
+                    done();
+                }
+            });
+        });
+
         it('handles <style> element with @import', function(done) {
             const styleCss = `
                 @import "/base/tests/fixtures/test-declaration.css";
@@ -1232,7 +1258,7 @@ describe('css-vars', function() {
                     expect(node, 'onSuccess node').to.equal(styleElms[onSuccessCount]);
 
                     // Link
-                    if (node.tagName.toLowerCase() === 'link') {
+                    if (node.nodeName.toLowerCase() === 'link') {
                         expect(cssText.replace(/\n|\s/g, ''), 'onSuccess cssText').to.equal('p{color:var(--color);}');
                         expect(url, 'onSuccess url').to.include(linkUrl);
                     }
@@ -1266,7 +1292,7 @@ describe('css-vars', function() {
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
                     expect(cssText).to.equal(expectCss);
                     expect(styleNodes.length).to.equal(1);
-                    expect(styleNodes[0].tagName).to.equal('STYLE');
+                    expect(styleNodes[0].nodeName.toLowerCase()).to.equal('style');
                     expect(cssVariables).to.have.property('--color');
                     expect(cssVariables['--color']).to.equal('red');
                     expect(typeof benchmark).to.equal('number');

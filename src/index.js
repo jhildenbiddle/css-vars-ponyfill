@@ -264,7 +264,7 @@ function cssVars(options = {}) {
 
         // Reset previously processed <style> nodes if textContent has changed
         srcNodes.forEach(srcNode => {
-            const hasStyleCache = srcNode.tagName === 'STYLE' && srcNode.__cssVars.text;
+            const hasStyleCache = srcNode.nodeName.toLowerCase() === 'style' && srcNode.__cssVars.text;
             const hasStyleChanged = hasStyleCache && srcNode.textContent !== srcNode.__cssVars.text;
 
             if (hasStyleCache && hasStyleChanged) {
@@ -377,8 +377,8 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onSuccess(cssText, node, url) {
-                    const isLink         = node.tagName === 'LINK';
-                    const isStyleImport  = node.tagName === 'STYLE' && cssText !== node.textContent;
+                    const isLink         = node.nodeName.toLowerCase() === 'link';
+                    const isStyleImport  = node.nodeName.toLowerCase() === 'style' && cssText !== node.textContent;
                     const returnVal      = settings.onSuccess(cssText, node, url);
 
                     // Use callback return value if provided (skip CSS if false)
@@ -670,12 +670,12 @@ function addMutationObserver(settings) {
         return isDisabledAttr || isDisabledSheet;
     }
     function isLink(node) {
-        const isStylesheet = node.tagName === 'LINK' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
+        const isStylesheet = node.nodeName.toLowerCase() === 'link' && (node.getAttribute('rel') || '').indexOf('stylesheet') !== -1;
 
         return isStylesheet;
     }
     function isStyle(node) {
-        return node.tagName === 'STYLE';
+        return node.nodeName.toLowerCase() === 'style';
     }
     function isValidAttributeMutation(mutation) {
         let isValid = false;
