@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.4.2
+
+*2020-11-21*
+
+- Fix error when attempting to disable an undefined `node.sheet` (#144)
+- Fix detection of SVG `<style>` nodes (#146)
+
 ## 2.4.1
 
 *2020-11-05*
