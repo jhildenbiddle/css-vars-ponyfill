@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.4.3
+
+*2021-01-30*
+
+- Fix subsequent calls with disabled `<link>` nodes
+- Fix handling of user-disabled `<link>` and `<style>` nodes
+
 ## 2.4.2
 
 *2020-11-21*
