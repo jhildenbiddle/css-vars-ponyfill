@@ -328,6 +328,12 @@ function cssVars(options = {}) {
                 exclude     : settings.exclude,
                 skipDisabled: false,
                 onSuccess(cssText, node, url) {
+                    const isUserDisabled = (node.sheet || {}).disabled && !node.__cssVars;
+
+                    if (isUserDisabled) {
+                        return false;
+                    }
+
                     cssText = cssText
                         .replace(regex.cssComments, '')
                         .replace(regex.cssMediaQueries, '');
@@ -377,9 +383,15 @@ function cssVars(options = {}) {
                     handleError(errorMsg, node, xhr, responseUrl);
                 },
                 onSuccess(cssText, node, url) {
-                    const isLink         = node.nodeName.toLowerCase() === 'link';
-                    const isStyleImport  = node.nodeName.toLowerCase() === 'style' && cssText !== node.textContent;
-                    const returnVal      = settings.onSuccess(cssText, node, url);
+                    const isUserDisabled = (node.sheet || {}).disabled && !node.__cssVars;
+
+                    if (isUserDisabled) {
+                        return false;
+                    }
+
+                    const isLink        = node.nodeName.toLowerCase() === 'link';
+                    const isStyleImport = node.nodeName.toLowerCase() === 'style' && cssText !== node.textContent;
+                    const returnVal     = settings.onSuccess(cssText, node, url);
 
                     // Use callback return value if provided (skip CSS if false)
                     cssText = returnVal !== undefined && Boolean(returnVal) === false ? '' : returnVal || cssText;

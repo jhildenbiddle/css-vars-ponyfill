@@ -198,26 +198,44 @@ describe('css-vars', function() {
             });
         });
 
-        it('handles disabled <link> elements', function(done) {
+        it('handles user-disabled <link> and <style> elements', function(done) {
             const linkUrls = [
                 '/base/tests/fixtures/test-declaration.css',
                 '/base/tests/fixtures/test-value.css',
                 '/base/tests/fixtures/test-value.css'
             ];
-            const expectCss = '';
+            const styleCss  = `
+                :root { --color: red; }
+                p { color: var(--color); }
+            `;
 
-            createTestElms([
+            const testElms = createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[0], disabled: '' } },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[1], disabled: '' } },
-                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[2], disabled: '' } }
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[0] }},
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[1] }},
+                { tag: 'style', text: styleCss }
             ]);
+
+            // Disable stylehseets
+            testElms.forEach(elm => {
+                if (elm.sheet) {
+                    elm.sheet.disabled = true;
+                }
+                else {
+                    elm.addEventListener('load', function(evt) {
+                        evt.target.sheet.disabled = true;
+                    });
+                }
+            });
 
             cssVars({
                 include   : '[data-test]',
                 onlyLegacy: false,
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
-                    expect(cssText, 'cssText').to.equal(expectCss);
+                    expect(cssText, 'cssText').to.equal('');
                     expect(styleNodes, 'styleNodes').to.have.lengthOf(0);
+                    expect(Object.keys(cssVariables), 'cssVariables').to.have.lengthOf(0);
                     done();
                 }
             });
