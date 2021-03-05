@@ -241,7 +241,7 @@ function cssVars(options = {}) {
             return;
         }
 
-        const srcNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])'));
+        const srcNodes = [].slice.call(settings.rootElement.querySelectorAll('[data-cssvars]:not([data-cssvars="out"])'));
 
         // Store benchmark start time
         settings.__benchmark = getTimeStamp();
@@ -275,7 +275,7 @@ function cssVars(options = {}) {
 
         // Direct call preparation (i.e. non-MutationObserver call)
         if (!cssVarsObserver) {
-            const outNodes = Array.apply(null, settings.rootElement.querySelectorAll('[data-cssvars="out"]'));
+            const outNodes = [].slice.call(settings.rootElement.querySelectorAll('[data-cssvars="out"]'));
 
             // Remove orphaned output nodes
             outNodes.forEach(outNode => {
@@ -584,7 +584,7 @@ function cssVars(options = {}) {
                         if (settings.shadowDOM) {
                             const elms = []
                                 .concat(settings.rootElement)
-                                .concat(Array.apply(null, settings.rootElement.querySelectorAll('*')));
+                                .concat([].slice.call(settings.rootElement.querySelectorAll('*')));
 
                             // Iterates over all elements in rootElement and calls
                             // cssVars on each shadowRoot, passing document-level
@@ -733,7 +733,7 @@ function addMutationObserver(settings) {
         let isValid = false;
 
         if (mutation.type === 'childList') {
-            isValid =  Array.apply(null, mutation.addedNodes).some(node => {
+            isValid = [].slice.call(mutation.addedNodes).some(node => {
                 const isElm           = node.nodeType === 1;
                 const hasAttr         = isElm && node.hasAttribute('data-cssvars');
                 const isStyleWithVars = isStyle(node) && regex.cssVars.test(node.textContent);
@@ -749,7 +749,7 @@ function addMutationObserver(settings) {
         let isValid = false;
 
         if (mutation.type === 'childList') {
-            isValid = Array.apply(null, mutation.removedNodes).some(node => {
+            isValid = [].slice.call(mutation.removedNodes).some(node => {
                 const isElm     = node.nodeType === 1;
                 const isOutNode = isElm && node.getAttribute('data-cssvars') === 'out';
                 const isSrcNode = isElm && node.getAttribute('data-cssvars') === 'src';
@@ -933,7 +933,7 @@ function getTimeStamp() {
 }
 
 function resetCssNodes(rootElement, resetDOMVariableStore = false) {
-    const resetNodes = Array.apply(null, rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
+    const resetNodes = [].slice.call(rootElement.querySelectorAll('[data-cssvars="skip"],[data-cssvars="src"]'));
 
     resetNodes.forEach(node => node.setAttribute('data-cssvars', ''));
 
