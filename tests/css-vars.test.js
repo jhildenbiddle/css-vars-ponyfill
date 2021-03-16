@@ -132,23 +132,34 @@ describe('css-vars', function() {
         it('handles <link> elements', function(done) {
             const linkUrls = [
                 '/base/tests/fixtures/test-declaration.css',
+                '/base/tests/fixtures/test-empty.css',
                 '/base/tests/fixtures/test-value.css',
                 '/base/tests/fixtures/test-value.css'
             ];
             const expectCss = 'p{color:red;}p{color:red;}';
 
+            let onErrorCount = 0;
+
             createTestElms([
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[0] } },
                 { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[1] } },
-                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[2] } }
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[2] } },
+                { tag: 'link', attr: { rel: 'stylesheet', href: linkUrls[3] } }
             ]);
 
             cssVars({
                 include    : '[data-test]',
                 onlyLegacy : false,
+                onError(errorMsg, node, xhr, url) {
+                    onErrorCount++;
+                },
                 onComplete(cssText, styleNodes, cssVariables, benchmark) {
+                    console.log({
+                        cssText, styleNodes, cssVariables
+                    });
+                    expect(onErrorCount).to.equal(0);
                     expect(cssText, 'cssText').to.equal(expectCss);
-                    expect(styleNodes, 'styleNodes').to.have.lengthOf(linkUrls.length - 1);
+                    expect(styleNodes, 'styleNodes').to.have.lengthOf(2);
                     done();
                 }
             });
@@ -217,7 +228,7 @@ describe('css-vars', function() {
                 { tag: 'style', text: styleCss }
             ]);
 
-            // Disable stylehseets
+            // Disable stylesheets
             testElms.forEach(elm => {
                 if (elm.sheet) {
                     elm.sheet.disabled = true;
@@ -241,7 +252,7 @@ describe('css-vars', function() {
             });
         });
 
-        it('handles skippable <link> and <style> elements', function(done) {
+        it('handles skip <link> and <style> elements', function(done) {
             const linkUrl   = '/base/tests/fixtures/test-skip.css';
             const expectCss = '';
 

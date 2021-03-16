@@ -67,6 +67,10 @@
     "test-remote": "karma start -- --remote",
     "version": "npm run build && npm test"
   },
+  "dependencies": {
+    "balanced-match": "^1.0.0",
+    "get-css-data": "^2.0.2"
+  },
   "devDependencies": {
     "@babel/core": "^7.12.7",
     "@babel/plugin-transform-object-assign": "^7.12.1",
@@ -78,7 +82,6 @@
     "babel-loader": "^8.2.1",
     "babel-plugin-istanbul": "^6.0.0",
     "babel-plugin-transform-custom-element-classes": "^0.1.0",
-    "balanced-match": "^1.0.0",
     "browser-sync": "^2.26.13",
     "chai": "^4.2.0",
     "chai-colors": "^1.0.1",
@@ -88,7 +91,6 @@
     "eslint": "^7.14.0",
     "eslint-plugin-chai-expect": "^2.2.0",
     "eslint-plugin-mocha": "^8.0.0",
-    "get-css-data": "^2.0.0",
     "git-repo-info": "^2.1.1",
     "jsdom": "^16.4.0",
     "karma": "^5.2.3",
