@@ -30,6 +30,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 - Custom property declaration support is limited to `:root` and `:host` rulesets
 - The use of `var()` is limited to property values (per [W3C specification](https://www.w3.org/TR/css-variables/))
+- CSS changes made using [CSSOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Object_Model) are not supported (see [#19](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/19), [#23](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/23), [#77](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/77), [#154](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/154)).
 
 **Browser Support**
 
