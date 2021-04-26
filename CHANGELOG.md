@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.4.4
+
+*2021-04-26*
+
+- Add CSSOM limitation notes and related links to docs
+- Fix rare exception when converting node lists to arrays (#153)
+- Fix empty `<link>` stylesheet triggering `onError()` (#155)
+
 ## 2.4.3
 
 *2021-01-30*
