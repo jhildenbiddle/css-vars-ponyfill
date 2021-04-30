@@ -68,12 +68,14 @@
     "version": "npm run build && npm test"
   },
   "dependencies": {
+    "balanced-match": "^1.0.2",
     "get-css-data": "^2.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.7",
     "@babel/plugin-transform-object-assign": "^7.12.1",
     "@babel/preset-env": "^7.12.7",
+    "@rollup/plugin-babel": "^5.3.0",
     "@rollup/plugin-commonjs": "^18.0.0",
     "@rollup/plugin-json": "^4.0.3",
     "@rollup/plugin-node-resolve": "^11.1.1",
@@ -81,7 +83,6 @@
     "babel-loader": "^8.2.1",
     "babel-plugin-istanbul": "^6.0.0",
     "babel-plugin-transform-custom-element-classes": "^0.1.0",
-    "balanced-match": "^2.0.0",
     "browser-sync": "^2.26.13",
     "chai": "^4.2.0",
     "chai-colors": "^1.0.1",
@@ -109,7 +110,6 @@
     "mocha": "^8.2.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.33.3",
-    "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-eslint": "^7.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "webpack": "^4.44.2"
