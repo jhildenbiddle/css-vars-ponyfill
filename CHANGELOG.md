@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.4.5
+
+*2021-04-29*
+
+- Fix ES6 syntax in ES5 distributable files (#158)
+
 ## 2.4.4
 
 *2021-04-26*
