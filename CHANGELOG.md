@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.4.6
+
+*2021-06-26*
+
+- Improve CSS parser performance (#160)
+
 ## 2.4.5
 
 *2021-04-29*
