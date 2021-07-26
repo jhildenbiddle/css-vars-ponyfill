@@ -14,7 +14,7 @@ import balanced from 'balanced-match';
 /**
  * Parses CSS string and generates AST object
  *
- * @param {string}  css The CSS stringt to be converted to an AST
+ * @param {string}  css The CSS string to be converted to an AST
  * @param {object}  [options] Options object
  * @param {boolean} [options.preserveStatic=true] Determines if CSS
  *                  declarations that do not reference a custom property will
@@ -111,19 +111,48 @@ function parseCss(css, options = {}) {
             error('extra closing bracket');
         }
 
+        // Match selector
         const m = match(/^(("(?:\\"|[^"])*"|'(?:\\'|[^'])*'|[^{])+)/);
 
         if (m) {
-            return m[0]
-                .trim() // remove all comments from selectors
-                .replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, '')
-                .replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, function(m) {
+            let selector = m[0].trim();
+            let selectorItems;
+
+            const hasComment = /\/\*/.test(selector);
+
+            if (hasComment) {
+                // Remove comments
+                selector = selector.replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, '');
+            }
+
+            const hasCommaInQuotes = /["']\w*,\w*["']/.test(selector);
+
+            if (hasCommaInQuotes) {
+                // Replace comma in comma-separated lists with marker
+                selector = selector.replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, function(m) {
                     return m.replace(/,/g, '\u200C');
-                })
-                .split(/\s*(?![^(]*\)),\s*/)
-                .map(function(s) {
+                });
+            }
+
+            const hasMultipleSelectors = /,/.test(selector);
+
+            // Create array of selectors
+            if (hasMultipleSelectors) {
+                // From comma-separated list
+                selectorItems = selector.split(/\s*(?![^(]*\)),\s*/);
+            }
+            else {
+                selectorItems = [selector];
+            }
+
+            if (hasCommaInQuotes) {
+                // Restore comma in comma-separated lists
+                selectorItems = selectorItems.map(function(s) {
                     return s.replace(/\u200C/g, ',');
                 });
+            }
+
+            return selectorItems;
         }
     }
 
