@@ -43,8 +43,8 @@ a {
 }
 
 /* variables */
-:root { --color: red; }
-a { color: var(--color); }
+:root { --color: red; --var-with\.escaped-dot: blue; }
+a { color: var(--color); background: var(--var-with\.escaped-dot);  }
 
 /* misc */
 foo bar baz {
