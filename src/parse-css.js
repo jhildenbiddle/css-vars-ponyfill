@@ -167,7 +167,7 @@ function parseCss(css, options = {}) {
         match(/^([;\s]*)+/); // ignore empty declarations + whitespace
 
         const comment_regexp = /\/\*[^*]*\*+([^/*][^*]*\*+)*\//g;
-        let prop = match(/^(\*?[-#\/*\\\w\.]+(\[[0-9a-z_-]+\])?)\s*/);
+        let prop = match(/^(\*?[-#/*\\\w.]+(\[[0-9a-z_-]+\])?)\s*/);
 
         if (!prop) {
             return;
