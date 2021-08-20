@@ -20,6 +20,7 @@ const defaults = {
     // Targets
     rootElement   : isBrowser ? document : null,
     shadowDOM     : false,
+    namespace     : '',
     // Sources
     include       : 'style,link[rel=stylesheet]',
     exclude       : '',
@@ -349,7 +350,8 @@ function cssVars(options = {}) {
                     // custom property values for subsequent ponyfill calls.
                     parseVars(cssText, {
                         store    : variableStore.dom,
-                        onWarning: handleWarning
+                        onWarning: handleWarning,
+                        namespace: settings.namespace
                     });
 
                     isShadowDOMReady = true;
@@ -432,7 +434,8 @@ function cssVars(options = {}) {
                                 parseVars(cssTree, {
                                     parseHost: Boolean(settings.rootElement.host),
                                     store    : variableStore.dom,
-                                    onWarning: handleWarning
+                                    onWarning: handleWarning,
+                                    namespace: settings.namespace
                                 });
 
                                 // Cache data
