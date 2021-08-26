@@ -1,4 +1,4 @@
-name: 'Build & Test'
+name: 'Test'
 
 on: [push, pull_request]
 
@@ -8,16 +8,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
     steps:
-      - name: 'Checkout repository'
+      - name: 'Checkout'
         uses: actions/checkout@v2
 
       - name: 'Install'
         run: npm ci --ignore-scripts
-
-      - name: 'Lint'
-        run: npm run lint
 
       - name: 'Build'
         run: npm run build
