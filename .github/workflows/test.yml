@@ -13,11 +13,14 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v2
 
-      - name: 'Install and build'
-        run: npm install
+      - name: 'Install'
+        run: npm ci --ignore-scripts
 
       - name: 'Lint'
         run: npm run lint
+
+      - name: 'Build'
+        run: npm run build
 
       - name: 'Setup BrowserStack environment'
         uses: browserstack/github-actions/setup-env@master
