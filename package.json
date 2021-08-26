@@ -57,7 +57,7 @@
   "scripts": {
     "prepare": "rimraf dist/*.js* && npm run build",
     "build": "rollup -c",
-    "prebuild": "cpy 'src/index.d.ts' 'dist' --rename=css-vars-ponyfill.d.ts",
+    "prebuild": "cpy src/index.d.ts dist --rename=css-vars-ponyfill.d.ts",
     "postbuild": "es-check es5 './dist/*ponyfill.js' && es-check es5 './dist/*.esm.js' --module",
     "dev": "npm start | npm run test-debug",
     "lint": "eslint .",
