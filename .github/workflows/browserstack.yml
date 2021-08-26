@@ -1,32 +1,40 @@
-name: 'BrowserStack Test'
+name: 'Build & Test'
+
 on: [push, pull_request]
+
 jobs:
-  ubuntu-job:
-    name: 'BrowserStack Test on Ubuntu'
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
-      - name: 'BrowserStack Env Setup'
+      - name: 'Checkout repository'
+        uses: actions/checkout@v2
+
+      - name: 'Lint'
+        run: npx eslint .
+
+      - name: 'Install dependencies and build'
+        run: npm install
+
+      - name: 'Setup BrowserStack environment'
         uses: browserstack/github-actions/setup-env@master
         with:
           username:  ${{ secrets.BROWSERSTACK_USERNAME }}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
-      - name: 'BrowserStack Local Tunnel Setup'
+      - name: 'Start BrowserStack local tunnel'
         uses: browserstack/github-actions/setup-local@master
         with:
           local-testing: start
           local-identifier: random
 
-      - name: 'Checkout the repository'
-        uses: actions/checkout@v2
-
-      - name: 'Building web application to be tested'
-        run: npm install
-
-      - name: 'Running test on BrowserStack'
+      - name: 'Run tests on BrowserStack'
         run: npm run test-remote
 
-      - name: 'BrowserStackLocal Stop'
+      - name: 'Stop BrowserStack local tunnel'
         uses: browserstack/github-actions/setup-local@master
         with:
           local-testing: stop
