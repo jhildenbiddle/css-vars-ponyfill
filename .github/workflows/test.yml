@@ -13,7 +13,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v2
 
-      - name: 'Install dependencies and build'
+      - name: 'Install and build'
         run: npm install
 
       - name: 'Lint'
