@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-next-line first-line-heading -->
 - [Documentation](/)
 - [Changelog](changelog)
 - **Links**
