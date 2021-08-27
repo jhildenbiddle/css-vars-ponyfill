@@ -44,7 +44,9 @@ a {
 
 /* variables */
 :root { --color: red; }
+:root { --var-with\.escaped-dot: blue; }
 a { color: var(--color); }
+a { background: var(--var-with\.escaped-dot); }
 
 /* misc */
 foo bar baz {
