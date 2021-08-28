@@ -1,6 +1,6 @@
 name: 'Build & Test'
 
-on: [push, pull_request]
+on: [push, pull_request_target]
 
 jobs:
   build:
@@ -22,26 +22,8 @@ jobs:
       - name: Build
         run: npm run build
 
-  test-local:
-    if: (!secrets.BROWSERSTACK_USERNAME) || (!secrets.BROWSERSTACK_ACCESS_KEY)
-    name: Test (local)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install
-        run: npm ci --ignore-scripts
-
-      - name: Build
-        run: npm run build
-
-      - name: Run tests locally
-        run: npm run test
-
-  test-remote:
-    if: secrets.BROWSERSTACK_USERNAME && secrets.BROWSERSTACK_ACCESS_KEY
-    name: Test (remote)
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
