@@ -10,49 +10,65 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
-      - name: 'Checkout'
+      - name: Checkout
         uses: actions/checkout@v2
 
-      - name: 'Install'
+      - name: Install
         run: npm ci --ignore-scripts
 
-      - name: 'Lint'
+      - name: Lint
         run: npm run lint
 
-      - name: 'Build'
+      - name: Build
         run: npm run build
-  test:
-    name: Test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+
+  test-local:
+    if: (!secrets.BROWSERSTACK_USERNAME) || (!secrets.BROWSERSTACK_ACCESS_KEY)
+    name: Test (local)
+    runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout'
+      - name: Checkout
         uses: actions/checkout@v2
 
-      - name: 'Install'
+      - name: Install
         run: npm ci --ignore-scripts
 
-      - name: 'Build'
+      - name: Build
         run: npm run build
 
-      - name: 'Setup BrowserStack environment'
+      - name: Run tests locally
+        run: npm run test
+
+  test-remote:
+    if: secrets.BROWSERSTACK_USERNAME && secrets.BROWSERSTACK_ACCESS_KEY
+    name: Test (remote)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup BrowserStack environment
         uses: browserstack/github-actions/setup-env@master
         with:
           username:  ${{ secrets.BROWSERSTACK_USERNAME }}
           access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
-      - name: 'Start BrowserStack tunnel'
+      - name: Start BrowserStack tunnel
         uses: browserstack/github-actions/setup-local@master
         with:
           local-testing: start
           local-identifier: random
 
-      - name: 'Run tests on BrowserStack'
+      - name: Run tests on BrowserStack
         run: npm run test-remote
 
-      - name: 'Stop BrowserStack tunnel'
+      - name: Stop BrowserStack tunnel
         uses: browserstack/github-actions/setup-local@master
         with:
           local-testing: stop
