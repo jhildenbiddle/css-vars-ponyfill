@@ -1,8 +1,8 @@
 # css-vars-ponyfill
 
 [![NPM](https://img.shields.io/npm/v/css-vars-ponyfill.svg?style=flat-square)](https://www.npmjs.com/package/css-vars-ponyfill)
-[![Build Status](https://img.shields.io/travis/jhildenbiddle/css-vars-ponyfill/master.svg?style=flat-square)](https://travis-ci.org/jhildenbiddle/css-vars-ponyfill)
-[![Codacy](https://img.shields.io/codacy/grade/5d967da1e518489aac42d99b87088671.svg?style=flat-square)](https://www.codacy.com/app/jhildenbiddle/css-vars-ponyfill?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jhildenbiddle/css-vars-ponyfill&amp;utm_campaign=Badge_Grade)
+[![GitHub checks](https://img.shields.io/github/checks-status/jhildenbiddle/css-vars-ponyfill/master?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/actions)
+[![Codacy](https://img.shields.io/codacy/grade/cb3acd7af0a34f3ea2c9f330548e2055/master?style=flat-square)](https://app.codacy.com/gh/jhildenbiddle/css-vars-ponyfill/dashboard?branch=master)
 [![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
 [![jsDelivr](https://data.jsdelivr.com/v1/package/npm/css-vars-ponyfill/badge)](https://www.jsdelivr.com/package/npm/css-vars-ponyfill)
