@@ -1,5 +1,12 @@
 # Change Log
 
+## 2.4.7
+
+*2021-09-01*
+
+- Add ability to parse escaped period in variable declaration (#162)
+- Replace Travis CI with GitHub workflows
+
 ## 2.4.6
 
 *2021-06-26*
