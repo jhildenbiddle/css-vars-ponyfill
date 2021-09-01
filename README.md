@@ -10,8 +10,7 @@
 
 A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) (aka "CSS variables") in legacy and modern browsers.
 
-- [Documentation](https://jhildenbiddle.github.io/css-vars-ponyfill)
-- [Demo](https://codepen.io/jhildenbiddle/pen/ZxYJrR/) (CodePen)
+- [Documentation & Demos](https://jhildenbiddle.github.io/css-vars-ponyfill)
 
 ## Features
 

@@ -10,8 +10,6 @@
 
 A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS custom properties](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) (aka "CSS variables") in legacy and modern browsers.
 
-- [Demo](https://codepen.io/jhildenbiddle/pen/ZxYJrR/) (CodePen)
-
 ## Features
 
 - Client-side transformation of CSS custom properties to static values
@@ -44,6 +42,17 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 <br>
 <img src="assets/img/safari.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> Safari 6+
 
+## Demos
+
+- [Loading from CDN using `<script>`](https://glitch.com/edit/#!/css-vars-ponyfill-demo?path=demo.css%3A11%3A1)\
+  Demonstrates usage with basic HTML and JavaScript.
+
+- [Bundling using ES6 `import`](https://codesandbox.io/s/css-vars-ponyfill-demo-988bm?file=/src/demo.css)\
+  Demonstrates importing and bundling as an ES6 module.
+
+- [Angular using `options.watch`](https://codesandbox.io/s/css-vars-ponyfill-angular-demo-zqb2w?file=/src/demo.css)\
+  Demonstrates Angular integration and automated processing of mounted/unmounted component styles.
+
 ## Installation
 
 **NPM**
@@ -54,18 +63,20 @@ npm install css-vars-ponyfill
 
 ```js
 import cssVars from 'css-vars-ponyfill';
+
+cssVars({
+  // Options...
+});
 ```
 
 **CDN** ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/))
 
 ```html
-<!-- Latest v2.x.x -->
+<!-- index.html -->
+
 <script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
+<script src="main.js"></script>
 ```
-
-## Usage
-
-This library is offered as a [ponyfill](https://ponyfill.com/), not a polyfill. As a result, a function must be called in order for processing to take place.
 
 ```js
 /* main.js */
@@ -75,17 +86,21 @@ cssVars({
 });
 ```
 
+## Usage
+
+*This library is offered as a [ponyfill](https://ponyfill.com/), not a polyfill. This means that the `cssVars()` function must be called at least once in order for processing to take place (see [demos](#demos) and [installation](#installation) for details).*
+
 For each `<link>` and `<style>` element processed the ponyfill will:
 
 1. Get the CSS content (including `@import` rules)
-1. Parse the CSS and convert it to an AST
-1. Parse custom property declarations from `:root` and `:host` rulesets
-1. Transform CSS `var()` functions to static values
-1. Transforms relative `url()` paths to absolute URLs
-1. Fix nested `calc()` functions
-1. Convert the AST back to CSS
-1. Append legacy-compatible CSS to the DOM
-1. Disable the original stylesheet if styles are no longer needed
+2. Parse the CSS and convert it to an AST
+3. Parse custom property declarations from `:root` and `:host` rulesets
+4. Transform CSS `var()` functions to static values
+5. Transforms relative `url()` paths to absolute URLs
+6. Fix nested `calc()` functions
+7. Convert the AST back to CSS
+8. Append legacy-compatible CSS to the DOM
+9. Disable the original stylesheet if styles are no longer needed
 
 Example:
 
@@ -920,9 +935,13 @@ cssVars({
 
 - **Will the ponyfill support any of the above scenarios in the future?**
 
-  From [this comment](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/31#issuecomment-527674559):
+  Probably not. See [this comment](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/31#issuecomment-527674559) from [#31](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/31):
 
   > I also have to consider the fact that as time marches on, legacy browser support becomes less of an issue and so it becomes harder to justify time spent supporting them. If feedback proved that this was a critical issue for folks or if we were having this discussion in 2014/2015, I'd be much more likely to take on the work. Since neither of those are the case, it seems focusing on other tasks is a better use of time. That being said, I would be happy to review and assist with a PR if someone else wanted to have a go at it.
+
+- **How can I conditionally load the ponyfill?**
+
+  See [this comment](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/64#issuecomment-474233684) from [#64](https://github.com/jhildenbiddle/css-vars-ponyfill/issues/64).
 
 ## Attribution
 
