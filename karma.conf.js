@@ -27,7 +27,7 @@ const settings = {
         [files.test]    : ['eslint', 'webpack', 'sourcemap']
     },
     frameworks: ['mocha', 'chai'],
-    reporters : ['mocha', 'coverage-istanbul'],
+    reporters : ['mocha', 'coverage-istanbul', 'BrowserStack'],
     fileFixtures: {
         stripPrefix: 'tests/fixtures/'
     },
@@ -125,8 +125,14 @@ module.exports = function(config) {
         settings.browserStack = {
             username : process.env.BROWSERSTACK_USERNAME,
             accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-            build    : `${process.env.TRAVIS_BRANCH || gitInfo.branch}: ${process.env.TRAVIS_COMMIT_MESSAGE || gitInfo.commitMessage}`,
-            name     : (process.env.TRAVIS_BUILD_NUMBER ? `Travis ${process.env.TRAVIS_BUILD_NUMBER}` : 'Local') + ` @ ${new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short', hour12: true })}`,
+            build    : [
+                `${gitInfo.branch}:` ,
+                gitInfo.commitMessage,
+                '@',
+                new Date().toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short', hour12: true }),
+                '-',
+                process.env.GITHUB_RUN_ID ? 'GitHub' : 'Local'
+            ].join(' '),
             project  : pkg.name,
             video    : false
         };
