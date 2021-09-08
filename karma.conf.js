@@ -132,7 +132,7 @@ module.exports = function(config) {
             accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
             build    : [
                 `${process.env.GITHUB_RUN_ID ? 'GitHub' : 'Local'}:${gitInfo.branch} -`,
-                gitInfo.isClean ? gitInfo.commitMessage : 'Uncommitted Changes',
+                gitInfo.isClean ? gitInfo.commitMsg : 'Uncommitted changes',
                 `@ ${new Date().toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short', hour12: true })}`
             ].join(' '),
             project  : pkg.name,
