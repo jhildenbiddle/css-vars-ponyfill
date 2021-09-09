@@ -54,3 +54,9 @@ jobs:
         uses: browserstack/github-actions/setup-local@master
         with:
           local-testing: stop
+
+      - name: Report code coverage
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: coverage/lcov.info

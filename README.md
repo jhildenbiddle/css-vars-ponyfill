@@ -2,8 +2,8 @@
 
 [![NPM](https://img.shields.io/npm/v/css-vars-ponyfill.svg?style=flat-square)](https://www.npmjs.com/package/css-vars-ponyfill)
 [![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/jhildenbiddle/css-vars-ponyfill/Build%20&%20Test/master?label=checks&style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/actions?query=branch%3Amaster+)
-[![Codacy](https://img.shields.io/codacy/grade/cb3acd7af0a34f3ea2c9f330548e2055/master?style=flat-square)](https://app.codacy.com/gh/jhildenbiddle/css-vars-ponyfill/dashboard?branch=master)
-[![Codecov](https://img.shields.io/codecov/c/github/jhildenbiddle/css-vars-ponyfill.svg?style=flat-square)](https://codecov.io/gh/jhildenbiddle/css-vars-ponyfill)
+[![Codacy code quality](https://img.shields.io/codacy/grade/cb3acd7af0a34f3ea2c9f330548e2055/master?style=flat-square)](https://app.codacy.com/gh/jhildenbiddle/css-vars-ponyfill/dashboard?branch=master)
+[![Codacy branch coverage](https://img.shields.io/codacy/coverage/cb3acd7af0a34f3ea2c9f330548e2055/master?style=flat-square)](https://app.codacy.com/gh/jhildenbiddle/css-vars-ponyfill/dashboard?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
 [![jsDelivr](https://data.jsdelivr.com/v1/package/npm/css-vars-ponyfill/badge)](https://www.jsdelivr.com/package/npm/css-vars-ponyfill)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript)
