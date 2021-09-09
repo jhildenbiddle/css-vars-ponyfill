@@ -32,7 +32,7 @@ const settings = {
         [files.test]    : ['eslint', 'webpack', 'sourcemap']
     },
     frameworks: ['mocha', 'chai'],
-    reporters : ['mocha', 'coverage-istanbul', 'BrowserStack'],
+    reporters : ['mocha', 'coverage-istanbul'], // 'Browserstack' added below
     fileFixtures: {
         stripPrefix: 'tests/fixtures/'
     },
