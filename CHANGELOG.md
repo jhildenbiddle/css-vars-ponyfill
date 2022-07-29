@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.4.8
+
+*2022-07-29*
+
+- Fix `fixKeyframes` error when using shadowDOM (#171)
+
 ## 2.4.7
 
 *2021-09-01*
