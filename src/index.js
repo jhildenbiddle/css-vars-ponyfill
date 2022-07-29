@@ -834,7 +834,7 @@ function fixKeyframes(rootElement) {
     ].filter(prop => getComputedStyle(document.body)[prop])[0];
 
     if (animationNameProp) {
-        const allNodes      = rootElement.getElementsByTagName('*');
+        const allNodes      = [].slice.call(rootElement.querySelectorAll('*'));
         const keyframeNodes = [];
         const nameMarker    = '__CSSVARSPONYFILL-KEYFRAMES__';
 
