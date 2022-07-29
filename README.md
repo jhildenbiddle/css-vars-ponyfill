@@ -44,11 +44,15 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 <br>
 <img src="https://jhildenbiddle.github.io/css-vars-ponyfill/assets/img/safari.svg" style="margin-right: 0.4em; vertical-align: text-bottom;"> Safari 6+
 
+## Usage & Options
+
+See the [documentation site](https://jhildenbiddle.github.io/css-vars-ponyfill) for details.
+
 ## Contact
 
 - Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports, feature requests, or questions
 - Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for announcements
-- Add a ⭐️ [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or ❤️ [tweet](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
+- Add a ⭐️ [star on GitHub](https://github.com/jhildenbiddle/css-vars-ponyfill) or 🐦 [tweet](https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fjhildenbiddle%2Fcss-vars-ponyfill&hashtags=css,developers,frontend,javascript) to support the project!
 
 ## License
 
