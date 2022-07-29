@@ -2,14 +2,14 @@
 // =============================================================================
 const path = require('path');
 
-import { babel }  from '@rollup/plugin-babel';
-import commonjs   from '@rollup/plugin-commonjs';
-import { eslint } from 'rollup-plugin-eslint';
-import json       from '@rollup/plugin-json';
-import merge      from 'lodash.merge';
-import pkg        from './package.json';
-import resolve    from '@rollup/plugin-node-resolve';
-import { terser } from 'rollup-plugin-terser';
+import { babel }       from '@rollup/plugin-babel';
+import commonjs        from '@rollup/plugin-commonjs';
+import { eslint }      from 'rollup-plugin-eslint';
+import json            from '@rollup/plugin-json';
+import merge           from 'lodash.merge';
+import pkg             from './package.json';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import { terser }      from 'rollup-plugin-terser';
 
 
 // Settings
@@ -75,7 +75,7 @@ const config = {
         sourcemap: true
     },
     plugins: [
-        resolve(),
+        nodeResolve(),
         commonjs(),
         json(),
         eslint(pluginSettings.eslint),
