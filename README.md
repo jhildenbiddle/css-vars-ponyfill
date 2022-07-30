@@ -48,7 +48,7 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 
 See the [documentation site](https://jhildenbiddle.github.io/css-vars-ponyfill) for details.
 
-## Contact
+## Contact & Support
 
 - Create a [Github issue](https://github.com/jhildenbiddle/css-vars-ponyfill/issues) for bug reports, feature requests, or questions
 - Follow [@jhildenbiddle](https://twitter.com/jhildenbiddle) for announcements
