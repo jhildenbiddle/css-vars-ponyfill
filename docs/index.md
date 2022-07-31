@@ -61,30 +61,15 @@ A [ponyfill](https://ponyfill.com/) that provides client-side support for [CSS c
 npm install css-vars-ponyfill
 ```
 
-```js
-import cssVars from 'css-vars-ponyfill';
+**CDN**
 
-cssVars({
-  // Options...
-});
-```
-
-**CDN** ([jsdelivr.com](https://www.jsdelivr.com/) shown, also on [unpkg.com](https://unpkg.com/))
+Available on [jsdelivr](https://www.jsdelivr.com/package/npm/css-vars-ponyfill) (below), [unpkg](https://unpkg.com/browse/css-vars-ponyfill/), and other CDN services that auto-publish npm packages.
 
 ```html
-<!-- index.html -->
-
 <script src="https://cdn.jsdelivr.net/npm/css-vars-ponyfill@2"></script>
-<script src="main.js"></script>
 ```
 
-```js
-/* main.js */
-
-cssVars({
-  // Options...
-});
-```
+!> Note the `@` version lock in the URLs above. This prevents breaking changes in future releases from affecting your project and is therefore the safest method of loading dependencies from a CDN. When a new major version is released, you will need to manually update your CDN URLs by changing the version after the `@` symbol.
 
 ## Usage
 
@@ -129,6 +114,16 @@ div {
   margin: var(--unknown, 20px); /* Fallback */
   padding: calc(2 * var(--a)); /* Nested */
 }
+```
+
+Call the ponyfill with your preferred [options](#options):
+
+```js
+/* main.js */
+
+cssVars({
+  // Options...
+});
 ```
 
 Output:
