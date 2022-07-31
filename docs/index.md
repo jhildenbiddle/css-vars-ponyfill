@@ -73,7 +73,7 @@ Available on [jsdelivr](https://www.jsdelivr.com/package/npm/css-vars-ponyfill) 
 
 ## Usage
 
-*This library is offered as a [ponyfill](https://ponyfill.com/), not a polyfill. This means that the `cssVars()` function must be called at least once in order for processing to take place (see [demos](#demos) and [installation](#installation) for details).*
+*This library is offered as a [ponyfill](https://ponyfill.com/), not a polyfill. This means that the `cssVars()` function must be called at least once in order for processing to take place (see [demos](#demos) for details).*
 
 For each `<link>` and `<style>` element processed the ponyfill will:
 
