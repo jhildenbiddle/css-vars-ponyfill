@@ -6,7 +6,7 @@ import { babel }       from '@rollup/plugin-babel';
 import commonjs        from '@rollup/plugin-commonjs';
 import { eslint }      from 'rollup-plugin-eslint';
 import json            from '@rollup/plugin-json';
-import merge           from 'lodash.merge';
+import mergician       from 'mergician';
 import pkg             from './package.json';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { terser }      from 'rollup-plugin-terser';
@@ -89,7 +89,7 @@ const config = {
 // Formats
 // -----------------------------------------------------------------------------
 // ES Module
-const esm = merge({}, config, {
+const esm = mergician({}, config, {
     output: {
         file  : config.output.file.replace(/\.js$/, '.esm.js'),
         format: 'esm'
@@ -100,7 +100,7 @@ const esm = merge({}, config, {
 });
 
 // ES Module (Minified)
-const esmMinified = merge({}, config, {
+const esmMinified = mergician({}, config, {
     output: {
         file  : esm.output.file.replace(/\.js$/, '.min.js'),
         format: esm.output.format
@@ -111,7 +111,7 @@ const esmMinified = merge({}, config, {
 });
 
 // UMD
-const umd = merge({}, config, {
+const umd = mergician({}, config, {
     output: {
         format: 'umd'
     },
@@ -121,7 +121,7 @@ const umd = merge({}, config, {
 });
 
 // UMD (Minified)
-const umdMinified = merge({}, config, {
+const umdMinified = mergician({}, config, {
     output: {
         file  : umd.output.file.replace(/\.js$/, '.min.js'),
         format: umd.output.format
