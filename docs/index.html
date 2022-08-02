@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no, viewport-fit=cover">
     <meta name="description" content="css-vars-ponyfill - Client-side support for CSS custom properties (aka &quot;CSS variables&quot;) in legacy and modern browsers">
-    <title>css-vars-ponyfill - Client-side support for CSS custom properties (aka &quot;CSS variables&quot;) in legacy and modern browsers</title>
+    <title>css-vars-ponyfill - Client-side support for CSS custom properties in legacy and modern browsers</title>
     <link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
     <link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css">
 
@@ -52,7 +52,25 @@
                 depth      : 3,
                 noData     : 'No results!',
                 placeholder: 'Search...'
-            }
+            },
+            plugins: [
+                // Restores initial <title>
+                function persistTitle(hook, vm) {
+                    var titleElm = document.querySelector('title');
+                    var rootTitle = titleElm && titleElm.textContent;
+                    var pageTitlePrefix = window.$docsify.name ? window.$docsify.name + ' - ' : '';
+
+                    if (rootTitle) {
+                        hook.doneEach(function () {
+                            var currentTitle = titleElm.textContent;
+                            var isRoot = !/\/[a-z]/.test(location.hash);
+                            var newTitle = isRoot ? rootTitle : pageTitlePrefix + currentTitle;
+
+                            titleElm.textContent = newTitle;
+                        });
+                    }
+                }
+            ]
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
