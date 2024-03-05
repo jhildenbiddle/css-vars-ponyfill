@@ -1,7 +1,7 @@
 # css-vars-ponyfill
 
 [![NPM](https://img.shields.io/npm/v/css-vars-ponyfill.svg?style=flat-square)](https://www.npmjs.com/package/css-vars-ponyfill)
-[![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/jhildenbiddle/css-vars-ponyfill/Build%20&%20Test/master?label=checks&style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/actions?query=branch%3Amaster+)
+[![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/jhildenbiddle/css-vars-ponyfill/test.yml?branch=master&label=checks&style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/actions?query=branch%3Amaster+)
 [![Codacy code quality](https://img.shields.io/codacy/grade/cb3acd7af0a34f3ea2c9f330548e2055/master?style=flat-square)](https://app.codacy.com/gh/jhildenbiddle/css-vars-ponyfill/dashboard?branch=master)
 [![Codacy branch coverage](https://img.shields.io/codacy/coverage/cb3acd7af0a34f3ea2c9f330548e2055/master?style=flat-square)](https://app.codacy.com/gh/jhildenbiddle/css-vars-ponyfill/dashboard?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/jhildenbiddle/css-vars-ponyfill/blob/master/LICENSE)
