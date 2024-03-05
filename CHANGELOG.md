@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.4.9
+
+*2024-03-05*
+
+- Update GitHub workflow and badge
+
 ## 2.4.8
 
 *2022-07-29*
